@@ -1051,10 +1051,6 @@
         </div>
         <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Fecha límite</label>
-                <input class="modal-input" id="etFecha" type="date" />
-            </div>
-            <div class="modal-field">
                 <label class="modal-label">Fecha finalización</label>
                 <input class="modal-input" id="etFechaFin" type="date" />
             </div>
@@ -2063,13 +2059,12 @@
 
         const payload = {
             actividad,
-            proyecto:    document.getElementById("ntProyecto").value.trim()    || null,
-            area:        document.getElementById("ntArea").value.trim()        || null,
-            estado:      document.getElementById("ntEstado").value,
-            prioridad:   document.getElementById("ntPrioridad").value,
-            asignado:    document.getElementById("ntAsignado").value.trim()    || null,
-            fecha_limite:document.getElementById("ntFecha").value              || null,
-            descripcion: document.getElementById("ntDescripcion").value.trim() || null,
+            proyecto_macro: document.getElementById("ntProyecto").value.trim()    || null,
+            area:           document.getElementById("ntArea").value.trim()        || null,
+            estado:         document.getElementById("ntEstado").value,
+            prioridad:      document.getElementById("ntPrioridad").value,
+            asignado:       document.getElementById("ntAsignado").value.trim()    || null,
+            notas:          document.getElementById("ntDescripcion").value.trim() || null,
         };
 
         const { error } = await supabaseClient.from("actividades").insert([payload]);
@@ -2202,7 +2197,6 @@
             estado:             document.getElementById("etEstado").value,
             prioridad:          document.getElementById("etPrioridad").value,
             asignado:           document.getElementById("etAsignado").value.trim()  || null,
-            fecha_limite:       document.getElementById("etFecha").value            || null,
             fecha_finalizacion: document.getElementById("etFechaFin").value         || null,
             notas:              document.getElementById("etNotas").value.trim()     || null,
         };
