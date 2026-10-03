@@ -7,53 +7,37 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f6f8;
-            color: #1f2937;
-        }
-
+        body { font-family: Arial, Helvetica, sans-serif; background: #f5f6f8; color: #1f2937; }
         .app { display: flex; min-height: 100vh; }
 
         /* ── SIDEBAR ── */
         .sidebar {
-            width: 250px;
-            background: #111827;
-            color: white;
-            min-height: 100vh;
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
+            width: 250px; background: #111827; color: white;
+            min-height: 100vh; position: fixed; left: 0; top: 0; bottom: 0;
+            display: flex; flex-direction: column;
         }
         .brand {
-            height: 75px;
-            display: flex;
-            align-items: center;
-            padding: 0 25px;
-            border-bottom: 1px solid rgba(255,255,255,.08);
+            height: 75px; display: flex; align-items: center;
+            padding: 0 25px; border-bottom: 1px solid rgba(255,255,255,.08);
         }
         .brand-icon {
-            width: 38px; height: 38px;
-            background: white; color: #111827;
-            border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; margin-right: 12px;
+            width: 38px; height: 38px; background: white; color: #111827;
+            border-radius: 9px; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; margin-right: 12px;
         }
-        .brand-name   { font-size: 19px; font-weight: bold; }
+        .brand-name     { font-size: 19px; font-weight: bold; }
         .brand-subtitle { font-size: 10px; color: #9ca3af; margin-top: 2px; }
 
         .menu { padding: 20px 12px; flex: 1; }
         .menu-title {
-            font-size: 10px; text-transform: uppercase;
-            color: #6b7280; padding: 0 13px;
-            margin-bottom: 8px; letter-spacing: .08em;
+            font-size: 10px; text-transform: uppercase; color: #6b7280;
+            padding: 0 13px; margin-bottom: 8px; letter-spacing: .08em;
         }
         .menu-item {
             display: flex; align-items: center; gap: 12px;
             padding: 12px 13px; border-radius: 8px; margin-bottom: 4px;
-            color: #d1d5db; cursor: pointer; transition: .2s; font-size: 14px;
+            color: #d1d5db; cursor: pointer; transition: .15s; font-size: 14px;
+            user-select: none;
         }
         .menu-item:hover  { background: #1f2937; color: white; }
         .menu-item.active { background: #374151; color: white; }
@@ -62,102 +46,79 @@
         .sidebar-user { padding: 18px; border-top: 1px solid rgba(255,255,255,.08); }
         .sidebar-user-inner { display: flex; align-items: center; gap: 10px; }
         .avatar {
-            width: 38px; height: 38px; border-radius: 50%;
-            background: #374151;
+            width: 38px; height: 38px; border-radius: 50%; background: #374151;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: bold;
+            font-size: 13px; font-weight: bold; flex-shrink: 0;
         }
-        .user-name  { font-size: 13px; font-weight: bold; }
-        .user-role  { color: #9ca3af; font-size: 11px; margin-top: 3px; }
+        .user-name { font-size: 13px; font-weight: bold; }
+        .user-role { color: #9ca3af; font-size: 11px; margin-top: 3px; }
         .logout {
             margin-top: 12px; width: 100%; padding: 9px;
-            border: 1px solid rgba(255,255,255,.1);
-            background: transparent; color: #d1d5db;
-            border-radius: 7px; cursor: pointer; font-size: 12px;
+            border: 1px solid rgba(255,255,255,.1); background: transparent;
+            color: #d1d5db; border-radius: 7px; cursor: pointer; font-size: 12px;
         }
         .logout:hover { background: #1f2937; color: white; }
 
         /* ── MAIN ── */
         .main { margin-left: 250px; width: calc(100% - 250px); min-height: 100vh; }
-
         .topbar {
-            height: 75px; background: white;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex; align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
+            height: 75px; background: white; border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 32px; position: sticky; top: 0; z-index: 10;
         }
         .page-title    { font-size: 20px; font-weight: 700; color: #111827; }
         .page-subtitle { color: #6b7280; font-size: 13px; margin-top: 4px; }
         .topbar-right  { display: flex; align-items: center; gap: 18px; }
         .notification {
-            width: 35px; height: 35px;
-            border-radius: 8px; background: #f3f4f6;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative;
+            width: 35px; height: 35px; border-radius: 8px; background: #f3f4f6;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
 
-        .content { padding: 30px 32px; }
+        /* ── PÁGINAS ── */
+        .page { display: none; padding: 30px 32px; }
+        .page.active { display: block; }
 
+        /* ── WELCOME ── */
         .welcome {
             background: white; border: 1px solid #e5e7eb;
             border-radius: 12px; padding: 24px; margin-bottom: 25px;
         }
-        .welcome h2  { font-size: 20px; margin-bottom: 7px; color: #111827; }
-        .welcome p   { font-size: 14px; color: #6b7280; }
+        .welcome h2 { font-size: 20px; margin-bottom: 7px; color: #111827; }
+        .welcome p  { font-size: 14px; color: #6b7280; }
 
         /* ── METRIC CARDS ── */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px; margin-bottom: 25px;
-        }
-        .card {
-            background: white; border: 1px solid #e5e7eb;
-            border-radius: 12px; padding: 20px;
-        }
+        .cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-bottom: 25px; }
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; cursor: default; }
+        .card.clickable { cursor: pointer; transition: box-shadow .15s; }
+        .card.clickable:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
         .card-top   { display: flex; justify-content: space-between; align-items: center; }
         .card-title { font-size: 13px; color: #6b7280; }
-        .card-icon  {
-            width: 38px; height: 38px; border-radius: 9px;
-            background: #f3f4f6;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .card-icon  { width: 38px; height: 38px; border-radius: 9px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; }
         .card-number      { font-size: 28px; font-weight: bold; margin-top: 15px; color: #111827; }
         .card-description { font-size: 11px; color: #9ca3af; margin-top: 5px; }
-
-        /* card accent lines */
         .card.accent-blue   { border-top: 3px solid #3b82f6; }
         .card.accent-yellow { border-top: 3px solid #f59e0b; }
         .card.accent-green  { border-top: 3px solid #10b981; }
         .card.accent-purple { border-top: 3px solid #8b5cf6; }
 
-        /* ── LOWER GRID ── */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px; margin-bottom: 25px;
-        }
-        .panel {
-            background: white; border: 1px solid #e5e7eb;
-            border-radius: 12px; overflow: hidden;
-        }
+        /* ── DASHBOARD GRID ── */
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .panel { background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
         .panel-header {
             padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
             display: flex; justify-content: space-between; align-items: center;
         }
         .panel-title  { font-size: 15px; font-weight: bold; color: #111827; }
-        .panel-action { font-size: 12px; color: #4b5563; cursor: pointer; }
+        .panel-action { font-size: 12px; color: #6366f1; cursor: pointer; font-weight: 600; }
+        .panel-action:hover { text-decoration: underline; }
 
-        /* activity rows */
         .activity {
             display: flex; align-items: center;
             padding: 14px 20px; border-bottom: 1px solid #f0f0f0;
         }
         .activity:last-child { border-bottom: none; }
         .activity-icon {
-            width: 35px; height: 35px; border-radius: 8px;
-            background: #f3f4f6;
+            width: 35px; height: 35px; border-radius: 8px; background: #f3f4f6;
             display: flex; align-items: center; justify-content: center;
             margin-right: 12px; flex-shrink: 0; font-size: 14px;
         }
@@ -165,98 +126,113 @@
         .activity-title { font-size: 13px; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .activity-meta  { font-size: 11px; color: #9ca3af; margin-top: 3px; }
 
-        /* pending task rows */
         .task { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; }
         .task:last-child { border-bottom: none; }
-        .task-name {
-            font-size: 13px; font-weight: 600; margin-bottom: 7px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .task-name { font-size: 13px; font-weight: 600; margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .task-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
         /* ── BADGES ── */
-        .badge {
-            display: inline-block; padding: 3px 8px;
-            border-radius: 5px; font-size: 10px; font-weight: 600;
-        }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 600; }
         .badge-terminado   { background: #d1fae5; color: #065f46; }
         .badge-en-proceso  { background: #fef3c7; color: #92400e; }
-        .badge-no-iniciado { background: #f3f4f6; color: #4b5563;  }
-
+        .badge-no-iniciado { background: #f3f4f6; color: #4b5563; }
         .badge-alta  { background: #fee2e2; color: #991b1b; }
         .badge-media { background: #fef3c7; color: #92400e; }
         .badge-baja  { background: #f0fdf4; color: #166534; }
 
-        /* ── FULL TASK TABLE ── */
-        .section-header {
+        /* ── TABLA / FILTROS ── */
+        .page-section-header {
             display: flex; align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
+            justify-content: space-between; margin-bottom: 16px;
         }
         .section-title { font-size: 16px; font-weight: 700; color: #111827; }
-
-        .filters {
-            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;
-        }
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
         .filter-select {
             padding: 8px 12px; border: 1px solid #e5e7eb;
             border-radius: 8px; font-size: 13px; background: white;
             color: #374151; cursor: pointer; outline: none;
         }
         .filter-select:focus { border-color: #6366f1; }
-
         .filter-input {
             padding: 8px 12px; border: 1px solid #e5e7eb;
             border-radius: 8px; font-size: 13px; background: white;
-            color: #374151; outline: none; width: 220px;
+            color: #374151; outline: none; width: 240px;
         }
         .filter-input:focus { border-color: #6366f1; }
+        .filter-count { font-size: 12px; color: #6b7280; }
 
-        .filter-count {
-            font-size: 12px; color: #6b7280;
-            display: flex; align-items: center;
-        }
-
-        .table-wrap {
-            background: white; border: 1px solid #e5e7eb;
-            border-radius: 12px; overflow: hidden;
-        }
+        .table-wrap { background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
-            background: #f9fafb; padding: 12px 16px;
-            text-align: left; font-size: 11px; font-weight: 700;
-            color: #6b7280; text-transform: uppercase;
-            letter-spacing: .05em; border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb; padding: 12px 16px; text-align: left;
+            font-size: 11px; font-weight: 700; color: #6b7280;
+            text-transform: uppercase; letter-spacing: .05em;
+            border-bottom: 1px solid #e5e7eb;
         }
-        tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .15s; }
+        tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .12s; }
         tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: #f9fafb; }
         td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
-
         .td-actividad { max-width: 340px; }
-        .td-actividad-text {
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 320px; display: block;
-        }
+        .td-actividad-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; display: block; }
         .td-proyecto { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-
         .asignado-chip {
-            display: inline-block; padding: 3px 8px;
-            border-radius: 20px; font-size: 11px; font-weight: 600;
-            background: #ede9fe; color: #5b21b6;
+            display: inline-block; padding: 3px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; background: #ede9fe; color: #5b21b6;
         }
+        .empty-state { padding: 48px 20px; text-align: center; color: #9ca3af; font-size: 14px; }
+        .loading-row td { color: #9ca3af; font-style: italic; padding: 20px 16px; }
 
-        .empty-state {
-            padding: 48px 20px; text-align: center; color: #9ca3af;
-            font-size: 14px;
+        /* ── REPORTES ── */
+        .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .report-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 22px; }
+        .report-card-title { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 18px; }
+        .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .bar-label { font-size: 12px; color: #374151; width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bar-track { flex: 1; background: #f3f4f6; border-radius: 4px; height: 8px; }
+        .bar-fill  { height: 8px; border-radius: 4px; transition: width .4s; }
+        .bar-value { font-size: 12px; color: #6b7280; width: 28px; text-align: right; flex-shrink: 0; }
+
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { font-size: 13px; color: #374151; }
+        .stat-value { font-size: 18px; font-weight: 700; color: #111827; }
+
+        /* ── USUARIOS PAGE ── */
+        .users-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-primary {
+            padding: 9px 18px; background: #6366f1; color: white;
+            border: none; border-radius: 8px; font-size: 13px;
+            cursor: pointer; font-weight: 600; transition: background .15s;
         }
+        .btn-primary:hover { background: #4f46e5; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .dot-active   { background: #10b981; }
+        .dot-inactive { background: #d1d5db; }
 
-        .loading-row td { color: #9ca3af; font-style: italic; }
+        /* ── CONFIGURACIÓN ── */
+        .config-section { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .config-section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #111827; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9fafb; }
+        .config-row:last-child { border-bottom: none; }
+        .config-label  { font-size: 13px; color: #374151; }
+        .config-value  { font-size: 13px; color: #6b7280; }
+        .config-badge  { display: inline-block; padding: 3px 10px; background: #d1fae5; color: #065f46; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+        /* ── PLACEHOLDER ── */
+        .placeholder-box {
+            background: white; border: 2px dashed #e5e7eb;
+            border-radius: 12px; padding: 60px 20px;
+            text-align: center; color: #9ca3af;
+        }
+        .placeholder-box .ph-icon { font-size: 36px; margin-bottom: 12px; }
+        .placeholder-box p { font-size: 14px; }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 1100px) {
-            .cards { grid-template-columns: repeat(2, 1fr); }
+            .cards { grid-template-columns: repeat(2,1fr); }
             .dashboard-grid { grid-template-columns: 1fr; }
+            .report-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 700px) {
             .sidebar { width: 70px; }
@@ -266,7 +242,7 @@
             .menu-item { justify-content: center; }
             .main { margin-left: 70px; width: calc(100% - 70px); }
             .topbar { padding: 0 18px; }
-            .content { padding: 20px 15px; }
+            .page { padding: 20px 15px; }
             .cards { grid-template-columns: 1fr; }
             .filters { flex-direction: column; }
             .filter-input { width: 100%; }
@@ -294,29 +270,38 @@
         </div>
 
         <div class="menu">
+
             <div class="menu-title">Principal</div>
-            <div class="menu-item active">
+
+            <div class="menu-item active" data-page="dashboard" onclick="navegar('dashboard')">
                 <span class="menu-icon">⌂</span>
                 <span class="menu-text">Dashboard</span>
             </div>
-            <div class="menu-item">
+
+            <div class="menu-item" data-page="actividades" onclick="navegar('actividades')">
                 <span class="menu-icon">✓</span>
                 <span class="menu-text">Actividades</span>
             </div>
-            <div class="menu-item">
+
+            <div class="menu-item" data-page="usuarios" onclick="navegar('usuarios')">
                 <span class="menu-icon">◉</span>
                 <span class="menu-text">Usuarios</span>
             </div>
+
             <br>
+
             <div class="menu-title">Gestión</div>
-            <div class="menu-item">
+
+            <div class="menu-item" data-page="reportes" onclick="navegar('reportes')">
                 <span class="menu-icon">▥</span>
                 <span class="menu-text">Reportes</span>
             </div>
-            <div class="menu-item">
+
+            <div class="menu-item" data-page="configuracion" onclick="navegar('configuracion')">
                 <span class="menu-icon">⚙</span>
                 <span class="menu-text">Configuración</span>
             </div>
+
         </div>
 
         <div class="sidebar-user">
@@ -324,7 +309,7 @@
                 <div class="avatar" id="avatar">--</div>
                 <div class="user-info">
                     <div class="user-name" id="sidebarName">Cargando...</div>
-                    <div class="user-role" id="sidebarRole">...</div>
+                    <div class="user-role"  id="sidebarRole">...</div>
                 </div>
             </div>
             <button class="logout" onclick="cerrarSesion()">Cerrar sesión</button>
@@ -338,8 +323,8 @@
 
         <header class="topbar">
             <div>
-                <div class="page-title">Dashboard</div>
-                <div class="page-subtitle">Panel de control — Alterna TI</div>
+                <div class="page-title"    id="topbarTitle">Dashboard</div>
+                <div class="page-subtitle" id="topbarSubtitle">Panel de control — Alterna TI</div>
             </div>
             <div class="topbar-right">
                 <div class="notification">♢</div>
@@ -347,19 +332,18 @@
         </header>
 
 
-        <section class="content">
+        <!-- ══════════════════════════════════════
+             PÁGINA: DASHBOARD
+        ══════════════════════════════════════ -->
+        <section class="page active" id="page-dashboard">
 
-            <!-- BIENVENIDA -->
             <div class="welcome">
                 <h2 id="welcomeMessage">Cargando...</h2>
                 <p>Aquí tienes un resumen del estado actual de actividades del equipo.</p>
             </div>
 
-
-            <!-- METRIC CARDS -->
             <div class="cards">
-
-                <div class="card accent-blue">
+                <div class="card accent-blue clickable" onclick="navegar('actividades','En proceso')">
                     <div class="card-top">
                         <div class="card-title">En proceso</div>
                         <div class="card-icon">⚡</div>
@@ -367,8 +351,7 @@
                     <div class="card-number" id="cntEnProceso">—</div>
                     <div class="card-description">Actividades activas</div>
                 </div>
-
-                <div class="card accent-yellow">
+                <div class="card accent-yellow clickable" onclick="navegar('actividades','No iniciado')">
                     <div class="card-top">
                         <div class="card-title">Sin iniciar</div>
                         <div class="card-icon">◷</div>
@@ -376,8 +359,7 @@
                     <div class="card-number" id="cntNoIniciado">—</div>
                     <div class="card-description">Pendientes de comenzar</div>
                 </div>
-
-                <div class="card accent-green">
+                <div class="card accent-green clickable" onclick="navegar('actividades','Terminado')">
                     <div class="card-top">
                         <div class="card-title">Completadas</div>
                         <div class="card-icon">✓</div>
@@ -385,8 +367,7 @@
                     <div class="card-number" id="cntTerminado">—</div>
                     <div class="card-description">Actividades finalizadas</div>
                 </div>
-
-                <div class="card accent-purple">
+                <div class="card accent-purple clickable" onclick="navegar('usuarios')">
                     <div class="card-top">
                         <div class="card-title">Usuarios</div>
                         <div class="card-icon">◉</div>
@@ -394,34 +375,29 @@
                     <div class="card-number" id="totalUsuarios">—</div>
                     <div class="card-description">Usuarios registrados</div>
                 </div>
-
             </div>
 
-
-            <!-- LOWER GRID -->
             <div class="dashboard-grid">
 
-                <!-- Actividad reciente -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title">Completadas recientemente</div>
-                        <div class="panel-action" onclick="filtrarEstado('Terminado')">Ver todas</div>
+                        <div class="panel-action" onclick="navegar('actividades','Terminado')">Ver todas →</div>
                     </div>
                     <div id="actividadReciente">
                         <div class="activity">
                             <div class="activity-icon">◷</div>
                             <div class="activity-text">
-                                <div class="activity-title">Cargando actividades...</div>
+                                <div class="activity-title">Cargando...</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Pendientes / En proceso -->
                 <div class="panel">
                     <div class="panel-header">
                         <div class="panel-title">En proceso</div>
-                        <div class="panel-action" onclick="filtrarEstado('En proceso')">Ver todo</div>
+                        <div class="panel-action" onclick="navegar('actividades','En proceso')">Ver todo →</div>
                     </div>
                     <div id="panelPendientes">
                         <div class="task">
@@ -432,21 +408,23 @@
 
             </div>
 
+        </section>
 
-            <!-- TABLA COMPLETA -->
-            <div class="section-header">
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: ACTIVIDADES
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-actividades">
+
+            <div class="page-section-header">
                 <div class="section-title">Todas las actividades</div>
                 <div class="filter-count" id="filterCount"></div>
             </div>
 
             <div class="filters">
-                <input
-                    class="filter-input"
-                    id="busqueda"
-                    type="text"
+                <input class="filter-input" id="busqueda" type="text"
                     placeholder="Buscar actividad o proyecto..."
-                    oninput="renderTabla()"
-                />
+                    oninput="renderTabla()" />
                 <select class="filter-select" id="filtroEstado" onchange="renderTabla()">
                     <option value="">Todos los estados</option>
                     <option value="En proceso">En proceso</option>
@@ -482,11 +460,107 @@
                         </tr>
                     </thead>
                     <tbody id="tablaBody">
-                        <tr class="loading-row">
-                            <td colspan="6">Cargando datos...</td>
-                        </tr>
+                        <tr class="loading-row"><td colspan="6">Cargando datos...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: USUARIOS
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-usuarios">
+
+            <div class="users-header">
+                <div class="section-title">Usuarios del sistema</div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuariosBody">
+                        <tr class="loading-row"><td colspan="4">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: REPORTES
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-reportes">
+
+            <div class="report-grid">
+
+                <!-- Resumen general -->
+                <div class="report-card">
+                    <div class="report-card-title">Resumen general</div>
+                    <div id="reportResumen"></div>
+                </div>
+
+                <!-- Por asignado -->
+                <div class="report-card">
+                    <div class="report-card-title">Actividades por responsable</div>
+                    <div id="reportAsignado"></div>
+                </div>
+
+                <!-- Por área -->
+                <div class="report-card" style="grid-column: 1 / -1;">
+                    <div class="report-card-title">Actividades por área</div>
+                    <div id="reportArea"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: CONFIGURACIÓN
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-configuracion">
+
+            <div class="config-section">
+                <div class="config-section-title">Conexión</div>
+                <div class="config-row">
+                    <span class="config-label">Supabase URL</span>
+                    <span class="config-value" id="cfgUrl">—</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Estado de conexión</span>
+                    <span class="config-badge" id="cfgEstado">Conectado</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Total actividades cargadas</span>
+                    <span class="config-value" id="cfgTotal">—</span>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-section-title">Sesión actual</div>
+                <div class="config-row">
+                    <span class="config-label">Usuario</span>
+                    <span class="config-value" id="cfgNombre">—</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Correo</span>
+                    <span class="config-value" id="cfgCorreo">—</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Rol</span>
+                    <span class="config-value" id="cfgRol">—</span>
+                </div>
             </div>
 
         </section>
@@ -498,25 +572,21 @@
 
 <script>
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        SUPABASE
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        SESIÓN
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     const usuarioGuardado = localStorage.getItem("usuario");
-
-    if (!usuarioGuardado) {
-        window.location.href = "index.html";
-    }
+    if (!usuarioGuardado) window.location.href = "index.html";
 
     let usuario = null;
-
     try {
         usuario = JSON.parse(usuarioGuardado);
     } catch {
@@ -525,15 +595,74 @@
     }
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        ESTADO GLOBAL
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     let todasActividades = [];
+    let paginaActual = "dashboard";
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
+       NAVEGACIÓN SPA
+       navegar(pagina, filtroEstadoOpcional)
+    ═══════════════════════════════════════════ */
+    const metaPaginas = {
+        dashboard:     { titulo: "Dashboard",      subtitulo: "Panel de control — Alterna TI" },
+        actividades:   { titulo: "Actividades",    subtitulo: "Gestión de actividades del equipo" },
+        usuarios:      { titulo: "Usuarios",       subtitulo: "Administración de accesos" },
+        reportes:      { titulo: "Reportes",       subtitulo: "Análisis y estadísticas" },
+        configuracion: { titulo: "Configuración",  subtitulo: "Ajustes del sistema" },
+    };
+
+    function navegar(pagina, filtroEstado) {
+        // Ocultar página actual
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.querySelectorAll(".menu-item").forEach(m => m.classList.remove("active"));
+
+        // Mostrar nueva página
+        const nuevaPagina = document.getElementById("page-" + pagina);
+        if (!nuevaPagina) return;
+        nuevaPagina.classList.add("active");
+
+        // Marcar menú activo
+        const menuItem = document.querySelector(`.menu-item[data-page="${pagina}"]`);
+        if (menuItem) menuItem.classList.add("active");
+
+        // Actualizar topbar
+        const meta = metaPaginas[pagina] || {};
+        document.getElementById("topbarTitle").textContent    = meta.titulo    || pagina;
+        document.getElementById("topbarSubtitle").textContent = meta.subtitulo || "";
+
+        paginaActual = pagina;
+
+        // Scroll top
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Acciones por página
+        if (pagina === "actividades") {
+            if (filtroEstado) {
+                document.getElementById("filtroEstado").value = filtroEstado;
+            }
+            renderTabla();
+        }
+
+        if (pagina === "usuarios") {
+            cargarTablaUsuarios();
+        }
+
+        if (pagina === "reportes") {
+            renderReportes();
+        }
+
+        if (pagina === "configuracion") {
+            renderConfiguracion();
+        }
+    }
+
+
+    /* ═══════════════════════════════════════════
        CARGAR USUARIO
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     async function cargarUsuario() {
         if (!usuario?.id) return;
 
@@ -543,10 +672,7 @@
             .eq("id", usuario.id)
             .single();
 
-        if (error) {
-            console.error("Error obteniendo usuario:", error);
-            return;
-        }
+        if (error) { console.error("Error usuario:", error); return; }
 
         if (!data.activo) {
             localStorage.removeItem("usuario");
@@ -561,43 +687,39 @@
     }
 
 
-    /* ═══════════════════════════════════════════════
-       MOSTRAR USUARIO EN UI
-    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       MOSTRAR USUARIO EN SIDEBAR
+    ═══════════════════════════════════════════ */
     function mostrarUsuario() {
         const nombre = usuario.nombre || "Usuario";
         const rol    = usuario.rol    || "usuario";
 
-        document.getElementById("sidebarName").textContent  = nombre;
-        document.getElementById("sidebarRole").textContent  = rol;
-        document.getElementById("welcomeMessage").textContent = "Bienvenido, " + nombre;
+        document.getElementById("sidebarName").textContent      = nombre;
+        document.getElementById("sidebarRole").textContent      = rol;
+        document.getElementById("welcomeMessage").textContent   = "Bienvenido, " + nombre;
 
         const partes = nombre.trim().split(/\s+/);
         const iniciales = partes.length >= 2
             ? partes[0].charAt(0) + partes[1].charAt(0)
             : partes[0].substring(0, 2);
-
         document.getElementById("avatar").textContent = iniciales.toUpperCase();
     }
 
 
-    /* ═══════════════════════════════════════════════
-       CARGAR TOTAL USUARIOS
-    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       CARGAR TOTAL USUARIOS (card)
+    ═══════════════════════════════════════════ */
     async function cargarTotalUsuarios() {
         const { count, error } = await supabaseClient
             .from("usuarios")
             .select("*", { count: "exact", head: true });
-
-        if (!error) {
-            document.getElementById("totalUsuarios").textContent = count ?? 0;
-        }
+        if (!error) document.getElementById("totalUsuarios").textContent = count ?? 0;
     }
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        CARGAR ACTIVIDADES
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     async function cargarActividades() {
         const { data, error } = await supabaseClient
             .from("actividades")
@@ -605,14 +727,15 @@
             .order("id", { ascending: false });
 
         if (error) {
-            console.error("Error cargando actividades:", error);
+            console.error("Error actividades:", error);
             document.getElementById("tablaBody").innerHTML =
-                '<tr><td colspan="6" style="color:#ef4444;padding:20px">Error cargando datos. Verifica que la tabla exista en Supabase.</td></tr>';
+                `<tr><td colspan="6" style="color:#ef4444;padding:20px 16px">
+                    Error al cargar datos. Verifica que la tabla exista en Supabase.
+                 </td></tr>`;
             return;
         }
 
         todasActividades = data || [];
-
         actualizarMetricCards();
         renderActividadReciente();
         renderPanelPendientes();
@@ -621,70 +744,66 @@
     }
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        METRIC CARDS
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     function actualizarMetricCards() {
         const enProceso  = todasActividades.filter(a => a.estado === "En proceso").length;
         const noIniciado = todasActividades.filter(a => a.estado === "No iniciado").length;
         const terminado  = todasActividades.filter(a => a.estado === "Terminado").length;
-
         document.getElementById("cntEnProceso").textContent  = enProceso;
         document.getElementById("cntNoIniciado").textContent = noIniciado;
         document.getElementById("cntTerminado").textContent  = terminado;
     }
 
 
-    /* ═══════════════════════════════════════════════
-       ACTIVIDAD RECIENTE (últimas 6 completadas)
-    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       DASHBOARD — COMPLETADAS RECIENTES
+    ═══════════════════════════════════════════ */
     function renderActividadReciente() {
+        const iconos = { TI:"💻", Proyectos:"📋", Pipeline:"🔄", Talento:"👥",
+                         MELI:"🏪", Devela:"🏢", Adquisiciones:"🛒",
+                         Administración:"📁", Cultivación:"🌱" };
+
         const recientes = todasActividades
             .filter(a => a.estado === "Terminado" && a.fecha_finalizacion)
-            .sort((a, b) => new Date(b.fecha_finalizacion) - new Date(a.fecha_finalizacion))
+            .sort((a,b) => new Date(b.fecha_finalizacion) - new Date(a.fecha_finalizacion))
             .slice(0, 6);
-
-        const iconos = { TI: "💻", Proyectos: "📋", Pipeline: "🔄", Talento: "👥",
-                         MELI: "🏪", Devela: "🏢", Adquisiciones: "🛒",
-                         Administración: "📁", Cultivación: "🌱" };
 
         const container = document.getElementById("actividadReciente");
 
         if (!recientes.length) {
-            container.innerHTML = '<div class="activity"><div class="activity-text"><div class="activity-title" style="color:#9ca3af">Sin completadas recientes</div></div></div>';
+            container.innerHTML = `<div class="activity"><div class="activity-text">
+                <div class="activity-title" style="color:#9ca3af">Sin completadas recientes</div>
+            </div></div>`;
             return;
         }
 
-        container.innerHTML = recientes.map(a => {
-            const icono = iconos[a.area] || "✓";
-            const fecha = formatFecha(a.fecha_finalizacion);
-            return `
+        container.innerHTML = recientes.map(a => `
             <div class="activity">
-                <div class="activity-icon">${icono}</div>
+                <div class="activity-icon">${iconos[a.area] || "✓"}</div>
                 <div class="activity-text">
                     <div class="activity-title" title="${esc(a.actividad)}">${esc(truncar(a.actividad, 55))}</div>
-                    <div class="activity-meta">${esc(a.proyecto_macro || "")} · ${fecha} · ${esc(a.asignado || "")}</div>
+                    <div class="activity-meta">${esc(a.proyecto_macro||"")} · ${formatFecha(a.fecha_finalizacion)} · ${esc(a.asignado||"")}</div>
                 </div>
-            </div>`;
-        }).join("");
+            </div>`).join("");
     }
 
 
-    /* ═══════════════════════════════════════════════
-       PANEL PENDIENTES (en proceso, orden prioridad)
-    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       DASHBOARD — EN PROCESO
+    ═══════════════════════════════════════════ */
     function renderPanelPendientes() {
-        const orden = { "Alta": 0, "Media": 1, "Baja": 2 };
-
+        const orden = { "Alta":0, "Media":1, "Baja":2 };
         const activas = todasActividades
             .filter(a => a.estado === "En proceso")
-            .sort((a, b) => (orden[a.prioridad] ?? 3) - (orden[b.prioridad] ?? 3))
+            .sort((a,b) => (orden[a.prioridad]??3) - (orden[b.prioridad]??3))
             .slice(0, 6);
 
         const container = document.getElementById("panelPendientes");
 
         if (!activas.length) {
-            container.innerHTML = '<div class="task"><div class="task-name" style="color:#9ca3af">Sin actividades en proceso</div></div>';
+            container.innerHTML = `<div class="task"><div class="task-name" style="color:#9ca3af">Sin actividades en proceso</div></div>`;
             return;
         }
 
@@ -692,21 +811,21 @@
             <div class="task">
                 <div class="task-name" title="${esc(a.actividad)}">${esc(truncar(a.actividad, 42))}</div>
                 <div class="task-footer">
-                    ${badgeEstado(a.estado)}
                     ${badgePrioridad(a.prioridad)}
-                    <span style="font-size:11px;color:#9ca3af">${esc(a.asignado || "")}</span>
+                    <span style="font-size:11px;color:#9ca3af">${esc(a.asignado||"")}</span>
                 </div>
-            </div>`
-        ).join("");
+            </div>`).join("");
     }
 
 
-    /* ═══════════════════════════════════════════════
-       POBLAR FILTRO DE ÁREA
-    ═══════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       ACTIVIDADES — FILTROS + TABLA
+    ═══════════════════════════════════════════ */
     function poblarFiltroArea() {
         const areas = [...new Set(todasActividades.map(a => a.area).filter(Boolean))].sort();
         const sel = document.getElementById("filtroArea");
+        // evitar duplicados en re-render
+        sel.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
         areas.forEach(area => {
             const opt = document.createElement("option");
             opt.value = area; opt.textContent = area;
@@ -714,40 +833,34 @@
         });
     }
 
-
-    /* ═══════════════════════════════════════════════
-       RENDER TABLA CON FILTROS
-    ═══════════════════════════════════════════════ */
     function renderTabla() {
-        const busq     = document.getElementById("busqueda").value.toLowerCase();
-        const estado   = document.getElementById("filtroEstado").value;
-        const asignado = document.getElementById("filtroAsignado").value;
-        const prioridad= document.getElementById("filtroPrioridad").value;
-        const area     = document.getElementById("filtroArea").value;
+        const busq      = document.getElementById("busqueda").value.toLowerCase();
+        const estado    = document.getElementById("filtroEstado").value;
+        const asignado  = document.getElementById("filtroAsignado").value;
+        const prioridad = document.getElementById("filtroPrioridad").value;
+        const area      = document.getElementById("filtroArea").value;
 
-        const orden = { "Alta": 0, "Media": 1, "Baja": 2 };
-        const estadoOrden = { "En proceso": 0, "No iniciado": 1, "Terminado": 2 };
+        const orden       = { "Alta":0, "Media":1, "Baja":2 };
+        const estadoOrden = { "En proceso":0, "No iniciado":1, "Terminado":2 };
 
         let filtradas = todasActividades.filter(a => {
             if (estado    && a.estado    !== estado)    return false;
             if (prioridad && a.prioridad !== prioridad) return false;
             if (area      && a.area      !== area)      return false;
             if (asignado) {
-                const asig = (a.asignado || "").toLowerCase();
-                if (!asig.includes(asignado.toLowerCase())) return false;
+                if (!(a.asignado||"").toLowerCase().includes(asignado.toLowerCase())) return false;
             }
             if (busq) {
-                const haystack = `${a.actividad} ${a.proyecto_macro} ${a.area} ${a.asignado} ${a.notas}`.toLowerCase();
-                if (!haystack.includes(busq)) return false;
+                const h = `${a.actividad} ${a.proyecto_macro} ${a.area} ${a.asignado} ${a.notas}`.toLowerCase();
+                if (!h.includes(busq)) return false;
             }
             return true;
         });
 
-        // sort: estado → prioridad
-        filtradas.sort((a, b) => {
-            const es = (estadoOrden[a.estado] ?? 3) - (estadoOrden[b.estado] ?? 3);
+        filtradas.sort((a,b) => {
+            const es = (estadoOrden[a.estado]??3) - (estadoOrden[b.estado]??3);
             if (es !== 0) return es;
-            return (orden[a.prioridad] ?? 3) - (orden[b.prioridad] ?? 3);
+            return (orden[a.prioridad]??3) - (orden[b.prioridad]??3);
         });
 
         document.getElementById("filterCount").textContent =
@@ -756,7 +869,7 @@
         const tbody = document.getElementById("tablaBody");
 
         if (!filtradas.length) {
-            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">No se encontraron actividades con los filtros aplicados.</div></td></tr>';
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No se encontraron actividades con los filtros aplicados.</div></td></tr>`;
             return;
         }
 
@@ -764,88 +877,182 @@
             <tr>
                 <td class="td-actividad">
                     <span class="td-actividad-text" title="${esc(a.actividad)}">${esc(a.actividad)}</span>
-                    <div class="td-proyecto">${esc(a.proyecto_macro || "")}</div>
+                    <div class="td-proyecto">${esc(a.proyecto_macro||"")}</div>
                 </td>
-                <td>${esc(a.area || "—")}</td>
+                <td>${esc(a.area||"—")}</td>
                 <td>${badgePrioridad(a.prioridad)}</td>
                 <td>${badgeEstado(a.estado)}</td>
-                <td><span class="asignado-chip">${esc(a.asignado || "—")}</span></td>
+                <td><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
                 <td style="white-space:nowrap;color:#6b7280">${formatFecha(a.fecha_finalizacion)}</td>
-            </tr>`
-        ).join("");
+            </tr>`).join("");
     }
 
 
-    /* ═══════════════════════════════════════════════
-       HELPERS — BADGES
-    ═══════════════════════════════════════════════ */
-    function badgeEstado(estado) {
-        const mapa = {
-            "Terminado":   "badge-terminado",
-            "En proceso":  "badge-en-proceso",
-            "No iniciado": "badge-no-iniciado",
-        };
-        return `<span class="badge ${mapa[estado] || 'badge-no-iniciado'}">${esc(estado || "—")}</span>`;
+    /* ═══════════════════════════════════════════
+       USUARIOS — TABLA
+    ═══════════════════════════════════════════ */
+    async function cargarTablaUsuarios() {
+        const tbody = document.getElementById("usuariosBody");
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="4">Cargando...</td></tr>`;
+
+        const { data, error } = await supabaseClient
+            .from("usuarios")
+            .select("nombre, correo, rol, activo")
+            .order("nombre");
+
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="4" style="color:#ef4444;padding:20px 16px">Error al cargar usuarios.</td></tr>`;
+            return;
+        }
+
+        if (!data || !data.length) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No hay usuarios registrados.</div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(u => `
+            <tr>
+                <td><strong>${esc(u.nombre||"—")}</strong></td>
+                <td style="color:#6b7280">${esc(u.correo||"—")}</td>
+                <td><span class="asignado-chip">${esc(u.rol||"—")}</span></td>
+                <td>
+                    <span class="status-dot ${u.activo ? 'dot-active' : 'dot-inactive'}"></span>
+                    ${u.activo ? "Activo" : "Inactivo"}
+                </td>
+            </tr>`).join("");
     }
 
+
+    /* ═══════════════════════════════════════════
+       REPORTES
+    ═══════════════════════════════════════════ */
+    function renderReportes() {
+        if (!todasActividades.length) return;
+
+        const total       = todasActividades.length;
+        const enProceso   = todasActividades.filter(a => a.estado === "En proceso").length;
+        const noIniciado  = todasActividades.filter(a => a.estado === "No iniciado").length;
+        const terminado   = todasActividades.filter(a => a.estado === "Terminado").length;
+        const pctDone     = Math.round((terminado / total) * 100);
+
+        // Resumen
+        document.getElementById("reportResumen").innerHTML = `
+            <div class="stat-row">
+                <span class="stat-label">Total de actividades</span>
+                <span class="stat-value">${total}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Completadas</span>
+                <span class="stat-value" style="color:#10b981">${terminado}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">En proceso</span>
+                <span class="stat-value" style="color:#f59e0b">${enProceso}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Sin iniciar</span>
+                <span class="stat-value" style="color:#6b7280">${noIniciado}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">% de avance global</span>
+                <span class="stat-value" style="color:#6366f1">${pctDone}%</span>
+            </div>`;
+
+        // Por asignado
+        const porAsignado = {};
+        todasActividades.forEach(a => {
+            const nombres = (a.asignado || "Sin asignar").split("/").map(n => n.trim());
+            nombres.forEach(n => {
+                if (!porAsignado[n]) porAsignado[n] = { total:0, terminado:0 };
+                porAsignado[n].total++;
+                if (a.estado === "Terminado") porAsignado[n].terminado++;
+            });
+        });
+        const maxA = Math.max(...Object.values(porAsignado).map(v => v.total));
+        document.getElementById("reportAsignado").innerHTML =
+            Object.entries(porAsignado)
+                .sort((a,b) => b[1].total - a[1].total)
+                .map(([nombre, v]) => barRow(nombre, v.total, maxA, "#6366f1",
+                    `${v.terminado}/${v.total}`)).join("");
+
+        // Por área
+        const porArea = {};
+        todasActividades.forEach(a => {
+            const area = a.area || "Sin área";
+            if (!porArea[area]) porArea[area] = 0;
+            porArea[area]++;
+        });
+        const maxB = Math.max(...Object.values(porArea));
+        document.getElementById("reportArea").innerHTML =
+            Object.entries(porArea)
+                .sort((a,b) => b[1] - a[1])
+                .map(([area, cnt]) => barRow(area, cnt, maxB, "#3b82f6")).join("");
+    }
+
+    function barRow(label, value, max, color, extraLabel) {
+        const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+        return `
+            <div class="bar-row">
+                <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+                </div>
+                <div class="bar-value">${extraLabel || value}</div>
+            </div>`;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       CONFIGURACIÓN
+    ═══════════════════════════════════════════ */
+    function renderConfiguracion() {
+        document.getElementById("cfgUrl").textContent    = SUPABASE_URL;
+        document.getElementById("cfgTotal").textContent  = todasActividades.length + " registros";
+        document.getElementById("cfgNombre").textContent = usuario?.nombre  || "—";
+        document.getElementById("cfgCorreo").textContent = usuario?.correo  || "—";
+        document.getElementById("cfgRol").textContent    = usuario?.rol     || "—";
+    }
+
+
+    /* ═══════════════════════════════════════════
+       HELPERS
+    ═══════════════════════════════════════════ */
+    function badgeEstado(e) {
+        const m = { "Terminado":"badge-terminado", "En proceso":"badge-en-proceso", "No iniciado":"badge-no-iniciado" };
+        return `<span class="badge ${m[e]||'badge-no-iniciado'}">${esc(e||"—")}</span>`;
+    }
     function badgePrioridad(p) {
-        const mapa = { "Alta": "badge-alta", "Media": "badge-media", "Baja": "badge-baja" };
-        return `<span class="badge ${mapa[p] || 'badge-baja'}">${esc(p || "—")}</span>`;
+        const m = { "Alta":"badge-alta", "Media":"badge-media", "Baja":"badge-baja" };
+        return `<span class="badge ${m[p]||'badge-baja'}">${esc(p||"—")}</span>`;
     }
-
-
-    /* ═══════════════════════════════════════════════
-       HELPERS — TEXTO / FECHA
-    ═══════════════════════════════════════════════ */
     function esc(str) {
-        return String(str ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+        return String(str??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
-
     function truncar(str, max) {
         return str && str.length > max ? str.slice(0, max) + "…" : str;
     }
-
     function formatFecha(iso) {
         if (!iso) return "—";
-        try {
-            const [y, m, d] = iso.split("-");
-            return `${d}/${m}/${y}`;
-        } catch { return iso; }
+        try { const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`; }
+        catch { return iso; }
     }
 
 
-    /* ═══════════════════════════════════════════════
-       HELPER — FILTRAR DESDE PANEL
-    ═══════════════════════════════════════════════ */
-    function filtrarEstado(estado) {
-        document.getElementById("filtroEstado").value = estado;
-        renderTabla();
-        document.querySelector(".table-wrap").scrollIntoView({ behavior: "smooth" });
-    }
-
-
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        CERRAR SESIÓN
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     function cerrarSesion() {
         localStorage.removeItem("usuario");
         window.location.href = "index.html";
     }
 
 
-    /* ═══════════════════════════════════════════════
+    /* ═══════════════════════════════════════════
        INIT
-    ═══════════════════════════════════════════════ */
+    ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
         await cargarUsuario();
-        await Promise.all([
-            cargarTotalUsuarios(),
-            cargarActividades(),
-        ]);
+        await Promise.all([cargarTotalUsuarios(), cargarActividades()]);
     }
 
     iniciarDashboard();
