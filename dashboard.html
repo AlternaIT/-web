@@ -816,6 +816,7 @@
 
             <div class="users-header">
                 <div class="section-title">Usuarios del sistema</div>
+                <button class="btn-primary" onclick="abrirModalNuevoUsuario()">＋ Nuevo usuario</button>
             </div>
 
             <div class="table-wrap">
@@ -952,6 +953,81 @@
 
     </main>
 
+</div>
+
+<!-- MODAL NUEVO USUARIO -->
+<div class="modal-overlay" id="modalNuevoUsuario">
+    <div class="modal">
+        <div class="modal-title">👤 Nuevo Usuario</div>
+        <div class="modal-field">
+            <label class="modal-label">Nombre completo *</label>
+            <input class="modal-input" id="nuNombre" type="text" placeholder="Ej. María López" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Correo *</label>
+            <input class="modal-input" id="nuCorreo" type="email" placeholder="correo@alterna.pro" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Contraseña *</label>
+            <input class="modal-input" id="nuPassword" type="text" placeholder="Contraseña inicial" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Rol</label>
+            <select class="modal-select" id="nuRol">
+                <option value="usuario">Usuario</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <div class="modal-msg" id="nuMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalNuevoUsuario()">Cancelar</button>
+            <button class="btn-primary" id="nuGuardar" onclick="guardarNuevoUsuario()">Crear usuario</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL FICHA USUARIO -->
+<div class="modal-overlay" id="modalFichaUsuario">
+    <div class="modal modal-wide">
+        <div class="modal-title">👤 <span id="fuNombreTitle">—</span></div>
+        <input type="hidden" id="fuId" />
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Nombre</label>
+                <input class="modal-input" id="fuNombre" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Correo</label>
+                <input class="modal-input" id="fuCorreo" type="email" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Contraseña</label>
+                <input class="modal-input" id="fuPassword" type="text" placeholder="Dejar vacío para no cambiar" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Rol</label>
+                <select class="modal-select" id="fuRol">
+                    <option value="usuario">Usuario</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Estado</label>
+            <select class="modal-select" id="fuActivo">
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+            </select>
+        </div>
+        <div class="modal-msg" id="fuMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="eliminarUsuario()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalFichaUsuario()">Cancelar</button>
+            <button class="btn-primary" id="fuGuardar" onclick="guardarFichaUsuario()">Guardar cambios</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL NUEVA TAREA -->
@@ -1772,13 +1848,15 @@
     /* ═══════════════════════════════════════════
        USUARIOS — TABLA
     ═══════════════════════════════════════════ */
+    let todosUsuarios = [];
+
     async function cargarTablaUsuarios() {
         const tbody = document.getElementById("usuariosBody");
         tbody.innerHTML = `<tr class="loading-row"><td colspan="4">Cargando...</td></tr>`;
 
         const { data, error } = await supabaseClient
             .from("usuarios")
-            .select("nombre, correo, rol, activo")
+            .select("id, nombre, correo, rol, activo, contraseña")
             .order("nombre");
 
         if (error) {
@@ -1791,8 +1869,10 @@
             return;
         }
 
+        todosUsuarios = data;
+
         tbody.innerHTML = data.map(u => `
-            <tr>
+            <tr class="clickable-row" onclick="abrirFichaUsuario(${u.id})" style="cursor:pointer">
                 <td><strong>${esc(u.nombre||"—")}</strong></td>
                 <td style="color:#6b7280">${esc(u.correo||"—")}</td>
                 <td><span class="asignado-chip">${esc(u.rol||"—")}</span></td>
@@ -1802,6 +1882,140 @@
                 </td>
             </tr>`).join("");
     }
+
+    /* ═══════════════════════════════════════════
+       NUEVO USUARIO
+    ═══════════════════════════════════════════ */
+    function abrirModalNuevoUsuario() {
+        document.getElementById("nuNombre").value   = "";
+        document.getElementById("nuCorreo").value   = "";
+        document.getElementById("nuPassword").value = "";
+        document.getElementById("nuRol").value      = "usuario";
+        document.getElementById("nuMsg").textContent = "";
+        document.getElementById("nuGuardar").disabled = false;
+        document.getElementById("modalNuevoUsuario").classList.add("open");
+    }
+
+    function cerrarModalNuevoUsuario() {
+        document.getElementById("modalNuevoUsuario").classList.remove("open");
+    }
+
+    async function guardarNuevoUsuario() {
+        const nombre   = document.getElementById("nuNombre").value.trim();
+        const correo   = document.getElementById("nuCorreo").value.trim();
+        const password = document.getElementById("nuPassword").value.trim();
+        const rol      = document.getElementById("nuRol").value;
+
+        if (!nombre || !correo || !password) {
+            document.getElementById("nuMsg").textContent = "⚠ Nombre, correo y contraseña son obligatorios.";
+            document.getElementById("nuMsg").style.color = "#ef4444";
+            return;
+        }
+
+        const btn = document.getElementById("nuGuardar");
+        btn.disabled = true;
+        document.getElementById("nuMsg").textContent = "Guardando...";
+        document.getElementById("nuMsg").style.color = "#6b7280";
+
+        const { error } = await supabaseClient.from("usuarios").insert([{
+            nombre, correo, contraseña: password, rol, activo: true
+        }]);
+
+        if (error) {
+            document.getElementById("nuMsg").textContent = "❌ " + error.message;
+            document.getElementById("nuMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+
+        document.getElementById("nuMsg").textContent = "✅ Usuario creado correctamente.";
+        document.getElementById("nuMsg").style.color = "#10b981";
+        await cargarTablaUsuarios();
+        await cargarTotalUsuarios();
+        setTimeout(() => cerrarModalNuevoUsuario(), 700);
+    }
+
+    document.getElementById("modalNuevoUsuario").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalNuevoUsuario();
+    });
+
+    /* ═══════════════════════════════════════════
+       FICHA USUARIO
+    ═══════════════════════════════════════════ */
+    function abrirFichaUsuario(id) {
+        const u = todosUsuarios.find(x => x.id === id);
+        if (!u) return;
+        document.getElementById("fuId").value             = u.id;
+        document.getElementById("fuNombreTitle").textContent = u.nombre || "—";
+        document.getElementById("fuNombre").value         = u.nombre    || "";
+        document.getElementById("fuCorreo").value         = u.correo    || "";
+        document.getElementById("fuPassword").value       = "";
+        document.getElementById("fuRol").value            = u.rol       || "usuario";
+        document.getElementById("fuActivo").value         = String(u.activo ?? true);
+        document.getElementById("fuMsg").textContent      = "";
+        document.getElementById("fuGuardar").disabled     = false;
+        document.getElementById("modalFichaUsuario").classList.add("open");
+    }
+
+    function cerrarModalFichaUsuario() {
+        document.getElementById("modalFichaUsuario").classList.remove("open");
+    }
+
+    async function guardarFichaUsuario() {
+        const id     = parseInt(document.getElementById("fuId").value);
+        const nombre = document.getElementById("fuNombre").value.trim();
+        const correo = document.getElementById("fuCorreo").value.trim();
+        const rol    = document.getElementById("fuRol").value;
+        const activo = document.getElementById("fuActivo").value === "true";
+        const pass   = document.getElementById("fuPassword").value.trim();
+
+        if (!nombre || !correo) {
+            document.getElementById("fuMsg").textContent = "⚠ Nombre y correo son obligatorios.";
+            document.getElementById("fuMsg").style.color = "#ef4444";
+            return;
+        }
+
+        const btn = document.getElementById("fuGuardar");
+        btn.disabled = true;
+        document.getElementById("fuMsg").textContent = "Guardando...";
+        document.getElementById("fuMsg").style.color = "#6b7280";
+
+        const payload = { nombre, correo, rol, activo };
+        if (pass) payload.contraseña = pass;
+
+        const { error } = await supabaseClient.from("usuarios").update(payload).eq("id", id);
+
+        if (error) {
+            document.getElementById("fuMsg").textContent = "❌ " + error.message;
+            document.getElementById("fuMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+
+        document.getElementById("fuMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("fuMsg").style.color = "#10b981";
+        await cargarTablaUsuarios();
+        await cargarTotalUsuarios();
+        setTimeout(() => cerrarModalFichaUsuario(), 700);
+    }
+
+    async function eliminarUsuario() {
+        const id = parseInt(document.getElementById("fuId").value);
+        if (id === usuario?.id) {
+            alert("No puedes eliminar tu propio usuario.");
+            return;
+        }
+        if (!confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("usuarios").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalFichaUsuario();
+        await cargarTablaUsuarios();
+        await cargarTotalUsuarios();
+    }
+
+    document.getElementById("modalFichaUsuario").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalFichaUsuario();
+    });
 
 
     /* ═══════════════════════════════════════════
