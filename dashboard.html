@@ -1051,6 +1051,10 @@
         </div>
         <div class="modal-grid-2">
             <div class="modal-field">
+                <label class="modal-label">Fecha límite</label>
+                <input class="modal-input" id="etFecha" type="date" />
+            </div>
+            <div class="modal-field">
                 <label class="modal-label">Fecha finalización</label>
                 <input class="modal-input" id="etFechaFin" type="date" />
             </div>
@@ -2164,6 +2168,7 @@
         document.getElementById("etEstado").value      = a.estado           || "No iniciado";
         document.getElementById("etPrioridad").value   = a.prioridad        || "Media";
         document.getElementById("etAsignado").value    = a.asignado         || "";
+        document.getElementById("etFecha").value       = a.fecha_limite       || "";
         document.getElementById("etFechaFin").value    = a.fecha_finalizacion || "";
         document.getElementById("etNotas").value       = a.notas            || "";
         document.getElementById("etMsg").textContent   = "";
@@ -2196,6 +2201,7 @@
             estado:             document.getElementById("etEstado").value,
             prioridad:          document.getElementById("etPrioridad").value,
             asignado:           document.getElementById("etAsignado").value.trim()  || null,
+            fecha_limite:       document.getElementById("etFecha").value            || null,
             fecha_finalizacion: document.getElementById("etFechaFin").value         || null,
             notas:              document.getElementById("etNotas").value.trim()     || null,
         };
