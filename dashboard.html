@@ -675,7 +675,9 @@
                         </div>
                         <div>
                             <label class="modal-label">Asignado a</label>
-                            <input class="modal-input" id="pntAsignado" type="text" placeholder="Responsable" />
+                            <select class="modal-select" id="pntAsignado">
+                                <option value="">— Sin asignar —</option>
+                            </select>
                         </div>
                     </div>
 
@@ -1066,7 +1068,9 @@
         </div>
         <div class="modal-field">
             <label class="modal-label">Asignado a</label>
-            <input class="modal-input" id="ntAsignado" type="text" placeholder="Nombre del responsable" />
+            <select class="modal-select" id="ntAsignado">
+                <option value="">— Sin asignar —</option>
+            </select>
         </div>
         <div class="modal-field">
             <label class="modal-label">Fecha límite</label>
@@ -1122,7 +1126,9 @@
             </div>
             <div class="modal-field">
                 <label class="modal-label">Asignado a</label>
-                <input class="modal-input" id="etAsignado" type="text" placeholder="Responsable" />
+                <select class="modal-select" id="etAsignado">
+                    <option value="">— Sin asignar —</option>
+                </select>
             </div>
         </div>
         <div class="modal-grid-2">
@@ -2381,7 +2387,15 @@
         document.getElementById("etArea").value        = a.area             || "";
         document.getElementById("etEstado").value      = a.estado           || "No iniciado";
         document.getElementById("etPrioridad").value   = a.prioridad        || "Media";
-        document.getElementById("etAsignado").value    = a.asignado         || "";
+        // Si el valor guardado no está en las opciones del select, añadirlo
+        const etSel = document.getElementById("etAsignado");
+        const asignadoVal = a.asignado || "";
+        if (asignadoVal && ![...etSel.options].some(o => o.value === asignadoVal)) {
+            const opt = document.createElement("option");
+            opt.value = asignadoVal; opt.textContent = asignadoVal;
+            etSel.appendChild(opt);
+        }
+        etSel.value = asignadoVal;
         document.getElementById("etFecha").value       = a.fecha_limite       || "";
         document.getElementById("etFechaFin").value    = a.fecha_finalizacion || "";
         document.getElementById("etNotas").value       = a.notas            || "";
@@ -2538,11 +2552,56 @@
 
 
     /* ═══════════════════════════════════════════
+       USUARIOS EN SELECTS DE ASIGNADO
+    ═══════════════════════════════════════════ */
+    async function cargarUsuariosEnSelects() {
+        const { data, error } = await supabaseClient
+            .from("usuarios")
+            .select("id, nombre")
+            .eq("activo", true)
+            .order("nombre");
+
+        if (error || !data) return;
+
+        const opciones = data.map(u =>
+            `<option value="${esc(u.nombre)}">${esc(u.nombre)}</option>`
+        ).join("");
+
+        const base = `<option value="">— Sin asignar —</option>` + opciones;
+
+        // Página nueva tarea
+        const pntSel = document.getElementById("pntAsignado");
+        if (pntSel) pntSel.innerHTML = base;
+
+        // Modal nueva tarea
+        const ntSel = document.getElementById("ntAsignado");
+        if (ntSel) ntSel.innerHTML = base;
+
+        // Modal editar tarea (conserva valor actual si ya estaba abierto)
+        const etSel = document.getElementById("etAsignado");
+        if (etSel) {
+            const valActual = etSel.value;
+            etSel.innerHTML = base;
+            if (valActual) etSel.value = valActual;
+        }
+
+        // Filtro de tabla (sección actividades)
+        const filtroSel = document.getElementById("filtroAsignado");
+        if (filtroSel) {
+            const valFiltro = filtroSel.value;
+            filtroSel.innerHTML =
+                `<option value="">Todos los asignados</option>` + opciones;
+            if (valFiltro) filtroSel.value = valFiltro;
+        }
+    }
+
+
+    /* ═══════════════════════════════════════════
        INIT
     ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
         await cargarUsuario();
-        await Promise.all([cargarTotalUsuarios(), cargarActividades()]);
+        await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects()]);
     }
 
     iniciarDashboard();
