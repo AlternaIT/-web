@@ -752,7 +752,7 @@
                             <th class="sortable" data-col="prioridad" onclick="sortTabla('prioridad')">Prioridad<span class="sort-icon"></span></th>
                             <th class="sortable" data-col="estado" onclick="sortTabla('estado')">Estado<span class="sort-icon"></span></th>
                             <th>Asignado</th>
-                            <th class="sortable" data-col="fecha_limite" onclick="sortTabla('fecha_limite')">Fecha límite<span class="sort-icon"></span></th>
+                            <th id="thFecha" class="sortable" data-col="fecha_limite" onclick="sortTabla('fecha_limite')">Fecha límite<span class="sort-icon"></span></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -1563,7 +1563,11 @@
             const estadoMap = { "Terminado":"badge-terminado","En proceso":"badge-en-proceso","No iniciado":"badge-no-iniciado" };
             const eClass    = estadoMap[a.estado] || "badge-no-iniciado";
 
-            const { texto: fechaTxt, clase: fechaClass } = fechaRelativa(a.fecha_limite, a.estado);
+            const esTerminado = a.estado === "Terminado";
+            const fechaParaMostrar = esTerminado ? a.fecha_finalizacion : a.fecha_limite;
+            const { texto: fechaTxt, clase: fechaClass } = esTerminado
+                ? { texto: formatFecha(a.fecha_finalizacion) || "—", clase: "" }
+                : fechaRelativa(a.fecha_limite, a.estado);
 
             return `<tr class="${rowClass}" onclick="abrirDrawer(${a.id})">
                 <td class="td-actividad">
@@ -1586,6 +1590,12 @@
                 </td>
             </tr>`;
         }).join("");
+
+        // Actualizar encabezado de columna fecha según filtro
+        const thFecha = document.getElementById("thFecha");
+        if (thFecha) {
+            thFecha.innerHTML = (estado === "Terminado" ? "Finalización" : "Fecha límite") + '<span class="sort-icon"></span>';
+        }
 
         // Render paginación
         renderPaginacion(filtradas.length, totalPags);
