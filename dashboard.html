@@ -219,6 +219,56 @@
         .config-value  { font-size: 13px; color: #6b7280; }
         .config-badge  { display: inline-block; padding: 3px 10px; background: #d1fae5; color: #065f46; border-radius: 20px; font-size: 11px; font-weight: 600; }
 
+        /* ── SUBMENU ── */
+        .submenu {
+            display: none; flex-direction: column;
+            padding-left: 20px; margin-top: 2px; margin-bottom: 4px;
+        }
+        .submenu.open { display: flex; }
+        .submenu-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 13px; border-radius: 7px; margin-bottom: 2px;
+            color: #9ca3af; cursor: pointer; font-size: 13px;
+            transition: .15s; user-select: none;
+        }
+        .submenu-item:hover { background: #1f2937; color: #e5e7eb; }
+        .submenu-item.active { color: #a5b4fc; background: #1f2937; }
+        .submenu-icon { font-size: 12px; width: 16px; text-align: center; }
+        .menu-item .arrow {
+            margin-left: auto; font-size: 10px; transition: transform .2s;
+        }
+        .menu-item.open .arrow { transform: rotate(90deg); }
+
+        /* ── MODAL NUEVA TAREA ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.45); z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: white; border-radius: 14px; padding: 28px;
+            width: 480px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        }
+        .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; color: #111827; }
+        .modal-field { margin-bottom: 15px; }
+        .modal-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: .04em; }
+        .modal-input, .modal-select, .modal-textarea {
+            width: 100%; padding: 9px 12px; border: 1px solid #e5e7eb;
+            border-radius: 8px; font-size: 13px; color: #111827;
+            outline: none; font-family: inherit;
+        }
+        .modal-input:focus, .modal-select:focus, .modal-textarea:focus { border-color: #6366f1; }
+        .modal-textarea { resize: vertical; min-height: 80px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .btn-secondary {
+            padding: 9px 18px; background: #f3f4f6; color: #374151;
+            border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px;
+            cursor: pointer; font-weight: 600;
+        }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .modal-msg { font-size: 13px; text-align: center; margin-top: 10px; }
+
         /* ── PLACEHOLDER ── */
         .placeholder-box {
             background: white; border: 2px dashed #e5e7eb;
@@ -278,9 +328,28 @@
                 <span class="menu-text">Dashboard</span>
             </div>
 
-            <div class="menu-item" data-page="actividades" onclick="navegar('actividades')">
+            <div class="menu-item" data-page="actividades" onclick="toggleSubmenu(this, 'actividades')">
                 <span class="menu-icon">✓</span>
                 <span class="menu-text">Actividades</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="submenu" id="submenu-actividades">
+                <div class="submenu-item" onclick="abrirModalNuevaTarea()">
+                    <span class="submenu-icon">＋</span>
+                    <span>Nueva Tarea</span>
+                </div>
+                <div class="submenu-item" onclick="navegarSubmenu('actividades','No iniciado')" data-sub="No iniciado">
+                    <span class="submenu-icon">○</span>
+                    <span>No Iniciado</span>
+                </div>
+                <div class="submenu-item" onclick="navegarSubmenu('actividades','En proceso')" data-sub="En proceso">
+                    <span class="submenu-icon">◑</span>
+                    <span>En Proceso</span>
+                </div>
+                <div class="submenu-item" onclick="navegarSubmenu('actividades','Terminado')" data-sub="Terminado">
+                    <span class="submenu-icon">●</span>
+                    <span>Terminado</span>
+                </div>
             </div>
 
             <div class="menu-item" data-page="usuarios" onclick="navegar('usuarios')">
@@ -569,6 +638,59 @@
 
 </div>
 
+<!-- MODAL NUEVA TAREA -->
+<div class="modal-overlay" id="modalNuevaTarea">
+    <div class="modal">
+        <div class="modal-title">➕ Nueva Tarea</div>
+        <div class="modal-field">
+            <label class="modal-label">Actividad *</label>
+            <input class="modal-input" id="ntActividad" type="text" placeholder="Nombre de la actividad" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Proyecto</label>
+            <input class="modal-input" id="ntProyecto" type="text" placeholder="Nombre del proyecto" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Área</label>
+            <input class="modal-input" id="ntArea" type="text" placeholder="Área responsable" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="ntEstado">
+                    <option value="No iniciado">No iniciado</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Terminado">Terminado</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="ntPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Asignado a</label>
+            <input class="modal-input" id="ntAsignado" type="text" placeholder="Nombre del responsable" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Fecha límite</label>
+            <input class="modal-input" id="ntFecha" type="date" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción</label>
+            <textarea class="modal-textarea" id="ntDescripcion" placeholder="Descripción opcional..."></textarea>
+        </div>
+        <div class="modal-msg" id="ntMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn-primary" id="ntGuardar" onclick="guardarNuevaTarea()">Guardar Tarea</button>
+        </div>
+    </div>
+</div>
 
 <script>
 
@@ -627,6 +749,14 @@
         // Marcar menú activo
         const menuItem = document.querySelector(`.menu-item[data-page="${pagina}"]`);
         if (menuItem) menuItem.classList.add("active");
+
+        // Abrir/cerrar submenú según página
+        document.querySelectorAll(".submenu").forEach(s => s.classList.remove("open"));
+        document.querySelectorAll(".menu-item").forEach(m => m.classList.remove("open"));
+        if (pagina === "actividades") {
+            const sub = document.getElementById("submenu-actividades");
+            if (sub) { sub.classList.add("open"); menuItem && menuItem.classList.add("open"); }
+        }
 
         // Actualizar topbar
         const meta = metaPaginas[pagina] || {};
@@ -1036,6 +1166,97 @@
         try { const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`; }
         catch { return iso; }
     }
+
+
+    /* ═══════════════════════════════════════════
+       SUBMENÚ ACTIVIDADES
+    ═══════════════════════════════════════════ */
+    function toggleSubmenu(item, pagina) {
+        const submenu = document.getElementById("submenu-" + pagina);
+        if (!submenu) { navegar(pagina); return; }
+        const isOpen = submenu.classList.contains("open");
+        submenu.classList.toggle("open", !isOpen);
+        item.classList.toggle("open", !isOpen);
+        // Si se abre, navegar a la página también
+        if (!isOpen) navegar(pagina);
+    }
+
+    function navegarSubmenu(pagina, filtroEstado) {
+        // Marcar subitem activo
+        document.querySelectorAll(".submenu-item").forEach(i => i.classList.remove("active"));
+        const activo = document.querySelector(`.submenu-item[data-sub="${filtroEstado}"]`);
+        if (activo) activo.classList.add("active");
+        navegar(pagina, filtroEstado);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       MODAL NUEVA TAREA
+    ═══════════════════════════════════════════ */
+    function abrirModalNuevaTarea() {
+        document.getElementById("modalNuevaTarea").classList.add("open");
+        document.getElementById("ntActividad").value  = "";
+        document.getElementById("ntProyecto").value   = "";
+        document.getElementById("ntArea").value       = "";
+        document.getElementById("ntEstado").value     = "No iniciado";
+        document.getElementById("ntPrioridad").value  = "Media";
+        document.getElementById("ntAsignado").value   = "";
+        document.getElementById("ntFecha").value      = "";
+        document.getElementById("ntDescripcion").value = "";
+        document.getElementById("ntMsg").textContent  = "";
+        document.getElementById("ntMsg").style.color  = "";
+        document.getElementById("ntGuardar").disabled = false;
+        navegar("actividades");
+    }
+
+    function cerrarModal() {
+        document.getElementById("modalNuevaTarea").classList.remove("open");
+    }
+
+    async function guardarNuevaTarea() {
+        const actividad = document.getElementById("ntActividad").value.trim();
+        if (!actividad) {
+            document.getElementById("ntMsg").textContent = "⚠ El nombre de la actividad es obligatorio.";
+            document.getElementById("ntMsg").style.color = "#ef4444";
+            return;
+        }
+        const btn = document.getElementById("ntGuardar");
+        btn.disabled = true;
+        document.getElementById("ntMsg").textContent = "Guardando...";
+        document.getElementById("ntMsg").style.color = "#6b7280";
+
+        const payload = {
+            actividad,
+            proyecto:    document.getElementById("ntProyecto").value.trim()    || null,
+            area:        document.getElementById("ntArea").value.trim()        || null,
+            estado:      document.getElementById("ntEstado").value,
+            prioridad:   document.getElementById("ntPrioridad").value,
+            asignado:    document.getElementById("ntAsignado").value.trim()    || null,
+            fecha_limite:document.getElementById("ntFecha").value              || null,
+            descripcion: document.getElementById("ntDescripcion").value.trim() || null,
+        };
+
+        const { error } = await supabaseClient.from("actividades").insert([payload]);
+
+        if (error) {
+            document.getElementById("ntMsg").textContent = "❌ Error al guardar: " + error.message;
+            document.getElementById("ntMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+
+        document.getElementById("ntMsg").textContent = "✅ Tarea guardada correctamente.";
+        document.getElementById("ntMsg").style.color = "#10b981";
+
+        // Recargar actividades y cerrar modal
+        await cargarActividades();
+        setTimeout(() => cerrarModal(), 800);
+    }
+
+    // Cerrar modal al hacer click fuera
+    document.getElementById("modalNuevaTarea").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModal();
+    });
 
 
     /* ═══════════════════════════════════════════
