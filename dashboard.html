@@ -355,7 +355,7 @@
                 <span class="arrow">›</span>
             </div>
             <div class="submenu" id="submenu-actividades">
-                <div class="submenu-item" onclick="abrirModalNuevaTarea()">
+                <div class="submenu-item" onclick="navegarSubmenu('nueva-tarea', null)" data-sub="nueva-tarea">
                     <span class="submenu-icon">＋</span>
                     <span>Nueva Tarea</span>
                 </div>
@@ -510,6 +510,88 @@
 
             </div>
 
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: NUEVA TAREA
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-nueva-tarea">
+            <div style="max-width:620px;margin:0 auto">
+
+                <div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:32px">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
+                        <div style="width:42px;height:42px;background:#ede9fe;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">＋</div>
+                        <div>
+                            <div style="font-size:18px;font-weight:700;color:#111827">Nueva Tarea</div>
+                            <div style="font-size:13px;color:#6b7280;margin-top:2px">Completa los campos para registrar una nueva actividad</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:18px">
+                        <label class="modal-label">Actividad *</label>
+                        <input class="modal-input" id="pntActividad" type="text" placeholder="Nombre de la actividad" />
+                    </div>
+
+                    <div class="modal-grid-2" style="margin-bottom:18px">
+                        <div>
+                            <label class="modal-label">Proyecto / Macro</label>
+                            <input class="modal-input" id="pntProyecto" type="text" placeholder="Nombre del proyecto" />
+                        </div>
+                        <div>
+                            <label class="modal-label">Área</label>
+                            <input class="modal-input" id="pntArea" type="text" placeholder="Área responsable" />
+                        </div>
+                    </div>
+
+                    <div class="modal-grid-3" style="margin-bottom:18px">
+                        <div>
+                            <label class="modal-label">Estado</label>
+                            <select class="modal-select" id="pntEstado">
+                                <option value="No iniciado">No iniciado</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Terminado">Terminado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modal-label">Prioridad</label>
+                            <select class="modal-select" id="pntPrioridad">
+                                <option value="Alta">Alta</option>
+                                <option value="Media" selected>Media</option>
+                                <option value="Baja">Baja</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modal-label">Asignado a</label>
+                            <input class="modal-input" id="pntAsignado" type="text" placeholder="Responsable" />
+                        </div>
+                    </div>
+
+                    <div class="modal-grid-2" style="margin-bottom:18px">
+                        <div>
+                            <label class="modal-label">Fecha límite</label>
+                            <input class="modal-input" id="pntFecha" type="date" />
+                        </div>
+                        <div>
+                            <label class="modal-label">Fecha finalización</label>
+                            <input class="modal-input" id="pntFechaFin" type="date" />
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:24px">
+                        <label class="modal-label">Notas / Descripción</label>
+                        <textarea class="modal-textarea" id="pntNotas" placeholder="Descripción, contexto o notas adicionales..." style="min-height:100px"></textarea>
+                    </div>
+
+                    <div id="pntMsg" style="font-size:13px;margin-bottom:14px;min-height:18px"></div>
+
+                    <div style="display:flex;gap:10px;justify-content:flex-end">
+                        <button class="btn-secondary" onclick="limpiarNuevaTarea()">Limpiar</button>
+                        <button class="btn-primary" id="pntGuardar" onclick="guardarPaginaNuevaTarea()">✓ Guardar Tarea</button>
+                    </div>
+                </div>
+
+            </div>
         </section>
 
 
@@ -952,6 +1034,7 @@
     ═══════════════════════════════════════════ */
     const metaPaginas = {
         dashboard:          { titulo: "Dashboard",           subtitulo: "Panel de control — Alterna TI" },
+        "nueva-tarea":      { titulo: "Nueva Tarea",         subtitulo: "Registrar una nueva actividad" },
         actividades:        { titulo: "Actividades",         subtitulo: "Gestión de actividades del equipo" },
         usuarios:           { titulo: "Usuarios",            subtitulo: "Administración de accesos" },
         reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
@@ -969,9 +1052,16 @@
         if (!nuevaPagina) return;
         nuevaPagina.classList.add("active");
 
-        // Marcar menú activo
-        const menuItem = document.querySelector(`.menu-item[data-page="${pagina}"]`);
+        // Marcar menú activo — nueva-tarea pertenece al grupo Actividades
+        const menuPage = pagina === "nueva-tarea" ? "actividades" : pagina;
+        const menuItem = document.querySelector(`.menu-item[data-page="${menuPage}"]`);
         if (menuItem) menuItem.classList.add("active");
+
+        // Mantener submenú de actividades abierto para páginas hijas
+        if (pagina === "nueva-tarea") {
+            const sub = document.getElementById("submenu-actividades");
+            if (sub) { sub.classList.add("open"); menuItem && menuItem.classList.add("open"); }
+        }
 
 
 
@@ -1564,6 +1654,67 @@
     document.getElementById("modalNuevaTarea").addEventListener("click", function(e) {
         if (e.target === this) cerrarModal();
     });
+
+
+    /* ═══════════════════════════════════════════
+       PÁGINA NUEVA TAREA
+    ═══════════════════════════════════════════ */
+    function limpiarNuevaTarea() {
+        document.getElementById("pntActividad").value  = "";
+        document.getElementById("pntProyecto").value   = "";
+        document.getElementById("pntArea").value       = "";
+        document.getElementById("pntEstado").value     = "No iniciado";
+        document.getElementById("pntPrioridad").value  = "Media";
+        document.getElementById("pntAsignado").value   = "";
+        document.getElementById("pntFecha").value      = "";
+        document.getElementById("pntFechaFin").value   = "";
+        document.getElementById("pntNotas").value      = "";
+        document.getElementById("pntMsg").textContent  = "";
+        document.getElementById("pntMsg").style.color  = "";
+        document.getElementById("pntGuardar").disabled = false;
+        document.getElementById("pntActividad").focus();
+    }
+
+    async function guardarPaginaNuevaTarea() {
+        const actividad = document.getElementById("pntActividad").value.trim();
+        if (!actividad) {
+            document.getElementById("pntMsg").textContent = "⚠ El nombre de la actividad es obligatorio.";
+            document.getElementById("pntMsg").style.color = "#ef4444";
+            document.getElementById("pntActividad").focus();
+            return;
+        }
+        const btn = document.getElementById("pntGuardar");
+        btn.disabled = true;
+        document.getElementById("pntMsg").textContent = "Guardando...";
+        document.getElementById("pntMsg").style.color = "#6b7280";
+
+        const payload = {
+            actividad,
+            proyecto_macro:     document.getElementById("pntProyecto").value.trim()   || null,
+            area:               document.getElementById("pntArea").value.trim()       || null,
+            estado:             document.getElementById("pntEstado").value,
+            prioridad:          document.getElementById("pntPrioridad").value,
+            asignado:           document.getElementById("pntAsignado").value.trim()   || null,
+            fecha_limite:       document.getElementById("pntFecha").value             || null,
+            fecha_finalizacion: document.getElementById("pntFechaFin").value          || null,
+            notas:              document.getElementById("pntNotas").value.trim()      || null,
+        };
+
+        const { error } = await supabaseClient.from("actividades").insert([payload]);
+        if (error) {
+            document.getElementById("pntMsg").textContent = "❌ Error: " + error.message;
+            document.getElementById("pntMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+
+        document.getElementById("pntMsg").textContent = "✅ Tarea guardada correctamente.";
+        document.getElementById("pntMsg").style.color = "#10b981";
+        await cargarActividades();
+
+        // Limpiar form después de un momento para nueva entrada
+        setTimeout(() => limpiarNuevaTarea(), 1200);
+    }
 
 
     /* ═══════════════════════════════════════════
