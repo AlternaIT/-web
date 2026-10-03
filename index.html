@@ -1,0 +1,561 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Alterna | Iniciar sesión</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 15px;
+            border-radius: 14px;
+            background: #111827;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .logo h1 {
+            font-size: 26px;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .logo p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: #111827;
+            box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-container input {
+            padding-right: 45px;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 13px;
+            user-select: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            background: #111827;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #1f2937;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .error {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .loading {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-card">
+
+        <div class="logo">
+
+            <div class="logo-icon">
+                A
+            </div>
+
+            <h1>Alterna</h1>
+
+            <p>Sistema de Gestión</p>
+
+        </div>
+
+
+        <div id="errorMessage" class="error"></div>
+
+
+        <form id="loginForm">
+
+            <div class="form-group">
+
+                <label for="correo">
+                    Correo electrónico
+                </label>
+
+                <input
+                    type="email"
+                    id="correo"
+                    placeholder="correo@alterna.pro"
+                    autocomplete="username"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="contraseña">
+                    Contraseña
+                </label>
+
+                <div class="password-container">
+
+                    <input
+                        type="password"
+                        id="contraseña"
+                        placeholder="Ingresa tu contraseña"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <span
+                        class="show-password"
+                        onclick="mostrarContraseña()"
+                    >
+                        Mostrar
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                id="loginButton"
+            >
+                <span id="buttonText">
+                    Iniciar sesión
+                </span>
+
+                <span
+                    id="loadingText"
+                    class="loading"
+                >
+                    Verificando...
+                </span>
+            </button>
+
+        </form>
+
+
+        <div class="footer">
+            Asociación Alterna ONG
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+    ============================================
+    CONFIGURACIÓN SUPABASE
+    ============================================
+    */
+
+    const SUPABASE_URL = "TU_PROJECT_URL";
+
+    const SUPABASE_KEY =
+        "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+
+
+    const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+    /*
+    ============================================
+    LOGIN
+    ============================================
+    */
+
+    document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const correo =
+                document
+                    .getElementById("correo")
+                    .value
+                    .trim();
+
+            const contraseña =
+                document
+                    .getElementById("contraseña")
+                    .value;
+
+
+            const errorMessage =
+                document.getElementById("errorMessage");
+
+            const loginButton =
+                document.getElementById("loginButton");
+
+            const buttonText =
+                document.getElementById("buttonText");
+
+            const loadingText =
+                document.getElementById("loadingText");
+
+
+            /*
+            Limpiar error
+            */
+
+            errorMessage.style.display = "none";
+            errorMessage.textContent = "";
+
+
+            /*
+            Estado de carga
+            */
+
+            loginButton.disabled = true;
+
+            buttonText.style.display = "none";
+            loadingText.style.display = "inline";
+
+
+            try {
+
+                /*
+                ============================================
+                CONSULTAR SUPABASE
+                ============================================
+                */
+
+                const { data, error } =
+                    await supabaseClient.rpc(
+                        "login_usuario",
+                        {
+                            p_correo: correo,
+                            p_contraseña: contraseña
+                        }
+                    );
+
+
+                if (error) {
+
+                    console.error(
+                        "Error Supabase:",
+                        error
+                    );
+
+                    throw new Error(
+                        "No fue posible conectar con el servidor."
+                    );
+                }
+
+
+                /*
+                ============================================
+                USUARIO NO ENCONTRADO
+                ============================================
+                */
+
+                if (!data || data.length === 0) {
+
+                    throw new Error(
+                        "Correo o contraseña incorrectos."
+                    );
+                }
+
+
+                /*
+                ============================================
+                USUARIO ENCONTRADO
+                ============================================
+                */
+
+                const usuario = data[0];
+
+
+                /*
+                Verificar estado
+                */
+
+                if (!usuario.activo) {
+
+                    throw new Error(
+                        "Tu usuario se encuentra desactivado."
+                    );
+                }
+
+
+                /*
+                ============================================
+                GUARDAR SESIÓN
+                ============================================
+                */
+
+                localStorage.setItem(
+                    "usuario",
+                    JSON.stringify(usuario)
+                );
+
+
+                /*
+                ============================================
+                REDIRECCIÓN
+                ============================================
+                */
+
+                window.location.href =
+                    "dashboard.html";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                errorMessage.textContent =
+                    error.message;
+
+
+                errorMessage.style.display =
+                    "block";
+
+
+            } finally {
+
+                loginButton.disabled = false;
+
+                buttonText.style.display =
+                    "inline";
+
+                loadingText.style.display =
+                    "none";
+
+            }
+
+        });
+
+
+    /*
+    ============================================
+    MOSTRAR / OCULTAR CONTRASEÑA
+    ============================================
+    */
+
+    function mostrarContraseña() {
+
+        const input =
+            document.getElementById("contraseña");
+
+        const boton =
+            document.querySelector(".show-password");
+
+
+        if (input.type === "password") {
+
+            input.type = "text";
+
+            boton.textContent = "Ocultar";
+
+        } else {
+
+            input.type = "password";
+
+            boton.textContent = "Mostrar";
+
+        }
+
+    }
+
+</script>
+
+</body>
+</html>
+```
+
+### Lo único que falta
+
+En esta línea:
+
+```javascript
+const SUPABASE_URL = "TU_PROJECT_URL";
+```
+
+pones la **Project URL** de:
+
+**Supabase → Settings → API → Project URL**
+
+Por ejemplo:
+
+```javascript
+const SUPABASE_URL = "https://xxxxxxxxxxxx.supabase.co";
+```
+
+La `sb_publishable_...` que ya tienes **sí puede estar en el frontend**.
+
+### Con tu usuario actual
+
+Podrás entrar con:
+
+```text
+Correo:
+hector.reyes@alterna.pro
+
+Contraseña:
+Cheetos-2025
+```
+
+El flujo será:
+
+```text
+index.html
+    ↓
+correo + contraseña
+    ↓
+Supabase RPC: login_usuario()
+    ↓
+public.usuarios
+    ↓
+¿correo + contraseña + activo?
+    ↓
+      SÍ
+      ↓
+localStorage
+      ↓
+dashboard.html
+```
+
+Y el `dashboard.html` podrá obtener:
+
+```javascript
+const usuario = JSON.parse(
+    localStorage.getItem("usuario")
+);
+
+console.log(usuario.nombre);
+console.log(usuario.rol);
+```
+
+Por ejemplo, para tu usuario:
+
+```text
+Hector Reyes
+admin
+```
+
+**Una cosa que sí cambiaría antes de poner esto en producción:** no dejaría `Cheetos-2025` almacenada en texto plano. Para la primera prueba está bien para comprobar que toda la conexión funciona; después podemos pasar la columna a contraseñas con hash sin cambiar el diseño del login.
