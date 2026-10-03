@@ -750,13 +750,7 @@
         const menuItem = document.querySelector(`.menu-item[data-page="${pagina}"]`);
         if (menuItem) menuItem.classList.add("active");
 
-        // Abrir/cerrar submenú según página
-        document.querySelectorAll(".submenu").forEach(s => s.classList.remove("open"));
-        document.querySelectorAll(".menu-item").forEach(m => m.classList.remove("open"));
-        if (pagina === "actividades") {
-            const sub = document.getElementById("submenu-actividades");
-            if (sub) { sub.classList.add("open"); menuItem && menuItem.classList.add("open"); }
-        }
+
 
         // Actualizar topbar
         const meta = metaPaginas[pagina] || {};
@@ -1177,8 +1171,7 @@
         const isOpen = submenu.classList.contains("open");
         submenu.classList.toggle("open", !isOpen);
         item.classList.toggle("open", !isOpen);
-        // Si se abre, navegar a la página también
-        if (!isOpen) navegar(pagina);
+        // Solo despliega/colapsa el menú, NO navega
     }
 
     function navegarSubmenu(pagina, filtroEstado) {
