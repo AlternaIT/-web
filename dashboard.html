@@ -268,6 +268,27 @@
         }
         .btn-secondary:hover { background: #e5e7eb; }
         .modal-msg { font-size: 13px; text-align: center; margin-top: 10px; }
+        .modal-wide { width: 620px; max-height: 90vh; overflow-y: auto; }
+        .modal-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .btn-danger {
+            padding: 9px 18px; background: #fee2e2; color: #991b1b;
+            border: 1px solid #fca5a5; border-radius: 8px; font-size: 13px;
+            cursor: pointer; font-weight: 600; margin-right: auto;
+        }
+        .btn-danger:hover { background: #fecaca; }
+        .btn-edit {
+            padding: 4px 10px; background: #ede9fe; color: #5b21b6;
+            border: none; border-radius: 6px; font-size: 11px;
+            cursor: pointer; font-weight: 600; white-space: nowrap;
+        }
+        .btn-edit:hover { background: #ddd6fe; }
+        .modal-section-title {
+            font-size: 11px; font-weight: 700; color: #6b7280;
+            text-transform: uppercase; letter-spacing: .06em;
+            margin: 18px 0 10px; padding-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6;
+        }
 
         /* ── PLACEHOLDER ── */
         .placeholder-box {
@@ -538,10 +559,11 @@
                             <th>Estado</th>
                             <th>Asignado</th>
                             <th>Finalización</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="tablaBody">
-                        <tr class="loading-row"><td colspan="6">Cargando datos...</td></tr>
+                        <tr class="loading-row"><td colspan="7">Cargando datos...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -679,10 +701,11 @@
                             <th>País</th>
                             <th>Contacto</th>
                             <th>Licencia</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="officeBody">
-                        <tr class="loading-row"><td colspan="9">Cargando...</td></tr>
+                        <tr class="loading-row"><td colspan="10">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -743,6 +766,150 @@
         <div class="modal-footer">
             <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
             <button class="btn-primary" id="ntGuardar" onclick="guardarNuevaTarea()">Guardar Tarea</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR TAREA -->
+<div class="modal-overlay" id="modalEditarTarea">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Tarea</div>
+        <input type="hidden" id="etId" />
+        <div class="modal-field">
+            <label class="modal-label">Actividad *</label>
+            <input class="modal-input" id="etActividad" type="text" placeholder="Nombre de la actividad" />
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Proyecto</label>
+                <input class="modal-input" id="etProyecto" type="text" placeholder="Proyecto macro" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Área</label>
+                <input class="modal-input" id="etArea" type="text" placeholder="Área responsable" />
+            </div>
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="etEstado">
+                    <option value="No iniciado">No iniciado</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Terminado">Terminado</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="etPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Asignado a</label>
+                <input class="modal-input" id="etAsignado" type="text" placeholder="Responsable" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Fecha límite</label>
+                <input class="modal-input" id="etFecha" type="date" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha finalización</label>
+                <input class="modal-input" id="etFechaFin" type="date" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Notas / Descripción</label>
+            <textarea class="modal-textarea" id="etNotas" placeholder="Notas opcionales..."></textarea>
+        </div>
+        <div class="modal-msg" id="etMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="eliminarTarea()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalEditar()">Cancelar</button>
+            <button class="btn-primary" id="etGuardar" onclick="guardarEditarTarea()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR LICENCIA OFFICE -->
+<div class="modal-overlay" id="modalEditarOffice">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Licencia Office</div>
+        <input type="hidden" id="eoId" />
+        <div class="modal-section-title">Identificación</div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Licencia #</label>
+                <input class="modal-input" id="eoNumLic" type="number" min="1" placeholder="1" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Slot</label>
+                <input class="modal-input" id="eoSlot" type="text" placeholder="1, 2, Master..." />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <input class="modal-input" id="eoTipo" type="text" placeholder="Master / Cta. Compartida..." />
+            </div>
+        </div>
+        <div class="modal-section-title">Usuario</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Nombre</label>
+                <input class="modal-input" id="eoNombre" type="text" placeholder="Nombre completo" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Nombre de cuenta</label>
+                <input class="modal-input" id="eoNombreCuenta" type="text" placeholder="Nombre de cuenta MS" />
+            </div>
+        </div>
+        <div class="modal-section-title">Credenciales</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Correo</label>
+                <input class="modal-input" id="eoCorreo" type="email" placeholder="correo@outlook.com" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Password</label>
+                <input class="modal-input" id="eoPassword" type="text" placeholder="Contraseña" />
+            </div>
+        </div>
+        <div class="modal-section-title">Datos adicionales</div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Fecha expiración</label>
+                <input class="modal-input" id="eoExpiracion" type="text" placeholder="dd/mm/aa" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha de nacimiento</label>
+                <input class="modal-input" id="eoFechaNac" type="text" placeholder="dd/mm/aa" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">País</label>
+                <input class="modal-input" id="eoPais" type="text" placeholder="País" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Teléfono / Correo de contacto</label>
+                <input class="modal-input" id="eoContacto" type="text" placeholder="Contacto" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">PIN</label>
+                <input class="modal-input" id="eoPin" type="text" placeholder="PIN" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Recuperación Zoho / Notas</label>
+            <textarea class="modal-textarea" id="eoNotas" placeholder="Notas, recuperación, observaciones..." style="min-height:60px"></textarea>
+        </div>
+        <div class="modal-msg" id="eoMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="eliminarOffice()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalEditarOffice()">Cancelar</button>
+            <button class="btn-primary" id="eoGuardar" onclick="guardarEditarOffice()">Guardar cambios</button>
         </div>
     </div>
 </div>
@@ -1068,6 +1235,7 @@
                 <td>${badgeEstado(a.estado)}</td>
                 <td><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
                 <td style="white-space:nowrap;color:#6b7280">${formatFecha(a.fecha_finalizacion)}</td>
+                <td><button class="btn-edit" onclick="abrirEditarTarea(${a.id})">✏ Editar</button></td>
             </tr>`).join("");
     }
 
@@ -1305,7 +1473,7 @@
             if (r.numero_licencia !== lastLic) {
                 lastLic = r.numero_licencia;
                 sep = `<tr style="background:#f0f4ff">
-                    <td colspan="9" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
+                    <td colspan="10" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
                         📦 Licencia ${esc(String(r.numero_licencia || "—"))}
                     </td>
                 </tr>`;
@@ -1323,6 +1491,7 @@
                 <td style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
                 <td style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
                 <td style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+                <td><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
             </tr>`;
         }).join("");
     }
@@ -1394,6 +1563,165 @@
     // Cerrar modal al hacer click fuera
     document.getElementById("modalNuevaTarea").addEventListener("click", function(e) {
         if (e.target === this) cerrarModal();
+    });
+
+
+    /* ═══════════════════════════════════════════
+       EDITAR TAREA
+    ═══════════════════════════════════════════ */
+    function abrirEditarTarea(id) {
+        const a = todasActividades.find(x => x.id === id);
+        if (!a) return;
+        document.getElementById("etId").value          = a.id;
+        document.getElementById("etActividad").value   = a.actividad        || "";
+        document.getElementById("etProyecto").value    = a.proyecto_macro   || "";
+        document.getElementById("etArea").value        = a.area             || "";
+        document.getElementById("etEstado").value      = a.estado           || "No iniciado";
+        document.getElementById("etPrioridad").value   = a.prioridad        || "Media";
+        document.getElementById("etAsignado").value    = a.asignado         || "";
+        document.getElementById("etFecha").value       = a.fecha_limite     || "";
+        document.getElementById("etFechaFin").value    = a.fecha_finalizacion || "";
+        document.getElementById("etNotas").value       = a.notas            || "";
+        document.getElementById("etMsg").textContent   = "";
+        document.getElementById("etMsg").style.color   = "";
+        document.getElementById("etGuardar").disabled  = false;
+        document.getElementById("modalEditarTarea").classList.add("open");
+    }
+
+    function cerrarModalEditar() {
+        document.getElementById("modalEditarTarea").classList.remove("open");
+    }
+
+    async function guardarEditarTarea() {
+        const id = parseInt(document.getElementById("etId").value);
+        const actividad = document.getElementById("etActividad").value.trim();
+        if (!actividad) {
+            document.getElementById("etMsg").textContent = "⚠ El nombre es obligatorio.";
+            document.getElementById("etMsg").style.color = "#ef4444";
+            return;
+        }
+        const btn = document.getElementById("etGuardar");
+        btn.disabled = true;
+        document.getElementById("etMsg").textContent = "Guardando...";
+        document.getElementById("etMsg").style.color = "#6b7280";
+
+        const payload = {
+            actividad,
+            proyecto_macro:     document.getElementById("etProyecto").value.trim()  || null,
+            area:               document.getElementById("etArea").value.trim()      || null,
+            estado:             document.getElementById("etEstado").value,
+            prioridad:          document.getElementById("etPrioridad").value,
+            asignado:           document.getElementById("etAsignado").value.trim()  || null,
+            fecha_limite:       document.getElementById("etFecha").value            || null,
+            fecha_finalizacion: document.getElementById("etFechaFin").value         || null,
+            notas:              document.getElementById("etNotas").value.trim()     || null,
+        };
+
+        const { error } = await supabaseClient.from("actividades").update(payload).eq("id", id);
+        if (error) {
+            document.getElementById("etMsg").textContent = "❌ " + error.message;
+            document.getElementById("etMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+        document.getElementById("etMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("etMsg").style.color = "#10b981";
+        await cargarActividades();
+        setTimeout(() => cerrarModalEditar(), 700);
+    }
+
+    async function eliminarTarea() {
+        const id = parseInt(document.getElementById("etId").value);
+        if (!confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("actividades").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalEditar();
+        await cargarActividades();
+    }
+
+    document.getElementById("modalEditarTarea").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalEditar();
+    });
+
+
+    /* ═══════════════════════════════════════════
+       EDITAR LICENCIA OFFICE
+    ═══════════════════════════════════════════ */
+    function abrirEditarOffice(id) {
+        const r = todasLicenciasOffice.find(x => x.id === id);
+        if (!r) return;
+        document.getElementById("eoId").value           = r.id;
+        document.getElementById("eoNumLic").value       = r.numero_licencia  || "";
+        document.getElementById("eoSlot").value         = r.slot             || "";
+        document.getElementById("eoTipo").value         = r.tipo             || "";
+        document.getElementById("eoNombre").value       = r.nombre           || "";
+        document.getElementById("eoNombreCuenta").value = r.nombre_cuenta    || "";
+        document.getElementById("eoCorreo").value       = r.correo           || "";
+        document.getElementById("eoPassword").value     = r.password         || "";
+        document.getElementById("eoExpiracion").value   = r.fecha_expiracion || "";
+        document.getElementById("eoFechaNac").value     = r.fecha_nacimiento || "";
+        document.getElementById("eoPais").value         = r.pais             || "";
+        document.getElementById("eoContacto").value     = r.contacto         || "";
+        document.getElementById("eoPin").value          = r.pin              || "";
+        document.getElementById("eoNotas").value        = [r.recuperacion_zoho, r.notas].filter(Boolean).join(" | ") || "";
+        document.getElementById("eoMsg").textContent    = "";
+        document.getElementById("eoMsg").style.color    = "";
+        document.getElementById("eoGuardar").disabled   = false;
+        document.getElementById("modalEditarOffice").classList.add("open");
+    }
+
+    function cerrarModalEditarOffice() {
+        document.getElementById("modalEditarOffice").classList.remove("open");
+    }
+
+    async function guardarEditarOffice() {
+        const id = parseInt(document.getElementById("eoId").value);
+        const btn = document.getElementById("eoGuardar");
+        btn.disabled = true;
+        document.getElementById("eoMsg").textContent = "Guardando...";
+        document.getElementById("eoMsg").style.color = "#6b7280";
+
+        const notasRaw = document.getElementById("eoNotas").value.trim();
+        const payload = {
+            numero_licencia:  parseInt(document.getElementById("eoNumLic").value)       || null,
+            slot:             document.getElementById("eoSlot").value.trim()            || null,
+            tipo:             document.getElementById("eoTipo").value.trim()            || null,
+            nombre:           document.getElementById("eoNombre").value.trim()          || null,
+            nombre_cuenta:    document.getElementById("eoNombreCuenta").value.trim()    || null,
+            correo:           document.getElementById("eoCorreo").value.trim()          || null,
+            password:         document.getElementById("eoPassword").value               || null,
+            fecha_expiracion: document.getElementById("eoExpiracion").value.trim()      || null,
+            fecha_nacimiento: document.getElementById("eoFechaNac").value.trim()        || null,
+            pais:             document.getElementById("eoPais").value.trim()            || null,
+            contacto:         document.getElementById("eoContacto").value.trim()        || null,
+            pin:              document.getElementById("eoPin").value.trim()             || null,
+            notas:            notasRaw                                                  || null,
+        };
+
+        const { error } = await supabaseClient.from("licencias_office").update(payload).eq("id", id);
+        if (error) {
+            document.getElementById("eoMsg").textContent = "❌ " + error.message;
+            document.getElementById("eoMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+        document.getElementById("eoMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("eoMsg").style.color = "#10b981";
+        await cargarLicenciasOffice();
+        setTimeout(() => cerrarModalEditarOffice(), 700);
+    }
+
+    async function eliminarOffice() {
+        const id = parseInt(document.getElementById("eoId").value);
+        if (!confirm("¿Eliminar este registro de licencia? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("licencias_office").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalEditarOffice();
+        await cargarLicenciasOffice();
+    }
+
+    document.getElementById("modalEditarOffice").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalEditarOffice();
     });
 
 
