@@ -7,8 +7,9 @@
 
     <title>Alterna | Dashboard</title>
 
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -21,19 +22,12 @@
             color: #1f2937;
         }
 
-        /* =========================================
-           LAYOUT
-        ========================================= */
-
         .app {
             display: flex;
             min-height: 100vh;
         }
 
-
-        /* =========================================
-           SIDEBAR
-        ========================================= */
+        /* SIDEBAR */
 
         .sidebar {
             width: 250px;
@@ -48,7 +42,6 @@
             flex-direction: column;
         }
 
-
         .brand {
             height: 75px;
             display: flex;
@@ -56,7 +49,6 @@
             padding: 0 25px;
             border-bottom: 1px solid rgba(255,255,255,.08);
         }
-
 
         .brand-icon {
             width: 38px;
@@ -71,12 +63,10 @@
             margin-right: 12px;
         }
 
-
         .brand-name {
             font-size: 19px;
             font-weight: bold;
         }
-
 
         .brand-subtitle {
             font-size: 10px;
@@ -84,16 +74,10 @@
             margin-top: 2px;
         }
 
-
-        /* =========================================
-           MENU
-        ========================================= */
-
         .menu {
             padding: 20px 12px;
             flex: 1;
         }
-
 
         .menu-title {
             font-size: 10px;
@@ -103,7 +87,6 @@
             margin-bottom: 8px;
             letter-spacing: .08em;
         }
-
 
         .menu-item {
             display: flex;
@@ -118,18 +101,15 @@
             font-size: 14px;
         }
 
-
         .menu-item:hover {
             background: #1f2937;
             color: white;
         }
 
-
         .menu-item.active {
             background: #374151;
             color: white;
         }
-
 
         .menu-icon {
             width: 20px;
@@ -137,23 +117,16 @@
             font-size: 15px;
         }
 
-
-        /* =========================================
-           USER SIDEBAR
-        ========================================= */
-
         .sidebar-user {
             padding: 18px;
             border-top: 1px solid rgba(255,255,255,.08);
         }
-
 
         .sidebar-user-inner {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-
 
         .avatar {
             width: 38px;
@@ -167,302 +140,16 @@
             font-weight: bold;
         }
 
-
         .user-name {
             font-size: 13px;
             font-weight: bold;
         }
-
 
         .user-role {
             color: #9ca3af;
             font-size: 11px;
             margin-top: 3px;
         }
-
-
-        /* =========================================
-           MAIN
-        ========================================= */
-
-        .main {
-            margin-left: 250px;
-            width: calc(100% - 250px);
-            min-height: 100vh;
-        }
-
-
-        /* =========================================
-           TOPBAR
-        ========================================= */
-
-        .topbar {
-            height: 75px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-        }
-
-
-        .page-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #111827;
-        }
-
-
-        .page-subtitle {
-            color: #6b7280;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-
-        .notification {
-            width: 35px;
-            height: 35px;
-            border-radius: 8px;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-
-        /* =========================================
-           CONTENT
-        ========================================= */
-
-        .content {
-            padding: 30px 32px;
-        }
-
-
-        /* =========================================
-           WELCOME
-        ========================================= */
-
-        .welcome {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 25px;
-        }
-
-
-        .welcome h2 {
-            font-size: 20px;
-            margin-bottom: 7px;
-            color: #111827;
-        }
-
-
-        .welcome p {
-            font-size: 14px;
-            color: #6b7280;
-        }
-
-
-        /* =========================================
-           CARDS
-        ========================================= */
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 25px;
-        }
-
-
-        .card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-
-        .card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-
-        .card-title {
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-
-        .card-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 9px;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-
-        .card-number {
-            font-size: 28px;
-            font-weight: bold;
-            margin-top: 15px;
-            color: #111827;
-        }
-
-
-        .card-description {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 5px;
-        }
-
-
-        /* =========================================
-           GRID
-        ========================================= */
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-
-        .panel {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-
-        .panel-header {
-            padding: 18px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-
-        .panel-title {
-            font-size: 15px;
-            font-weight: bold;
-            color: #111827;
-        }
-
-
-        .panel-action {
-            font-size: 12px;
-            color: #4b5563;
-            cursor: pointer;
-        }
-
-
-        .panel-body {
-            padding: 0;
-        }
-
-
-        /* =========================================
-           ACTIVITY
-        ========================================= */
-
-        .activity {
-            display: flex;
-            align-items: center;
-            padding: 17px 20px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-
-        .activity:last-child {
-            border-bottom: none;
-        }
-
-
-        .activity-icon {
-            width: 35px;
-            height: 35px;
-            border-radius: 8px;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-        }
-
-
-        .activity-text {
-            flex: 1;
-        }
-
-
-        .activity-title {
-            font-size: 13px;
-            color: #374151;
-        }
-
-
-        .activity-time {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-
-
-        /* =========================================
-           TASKS
-        ========================================= */
-
-        .task {
-            padding: 16px 20px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-
-        .task:last-child {
-            border-bottom: none;
-        }
-
-
-        .task-name {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-
-        .task-status {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 10px;
-            background: #f3f4f6;
-            color: #4b5563;
-        }
-
-
-        /* =========================================
-           LOGOUT
-        ========================================= */
 
         .logout {
             margin-top: 12px;
@@ -476,19 +163,234 @@
             font-size: 12px;
         }
 
-
         .logout:hover {
             background: #1f2937;
             color: white;
         }
 
+        /* MAIN */
 
-        /* =========================================
-           RESPONSIVE
-        ========================================= */
+        .main {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            height: 75px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .page-subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .notification {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .content {
+            padding: 30px 32px;
+        }
+
+        .welcome {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            font-size: 20px;
+            margin-bottom: 7px;
+            color: #111827;
+        }
+
+        .welcome p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* CARDS */
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #111827;
+        }
+
+        .card-description {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        /* PANELS */
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .panel-action {
+            font-size: 12px;
+            color: #4b5563;
+            cursor: pointer;
+        }
+
+        .activity {
+            display: flex;
+            align-items: center;
+            padding: 17px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .activity:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .activity-text {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .task {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .task:last-child {
+            border-bottom: none;
+        }
+
+        .task-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .loading {
+            color: #9ca3af;
+        }
+
+        /* RESPONSIVE */
 
         @media (max-width: 1100px) {
-
             .cards {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -496,12 +398,9 @@
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
-
         }
 
-
         @media (max-width: 700px) {
-
             .sidebar {
                 width: 70px;
             }
@@ -514,7 +413,7 @@
             .brand-text,
             .menu-title,
             .menu-text,
-            .sidebar-user .user-info,
+            .user-info,
             .logout {
                 display: none;
             }
@@ -543,26 +442,18 @@
             .cards {
                 grid-template-columns: 1fr;
             }
-
         }
 
     </style>
-
 </head>
-
 
 <body>
 
-
 <div class="app">
 
-
-    <!-- =========================================
-         SIDEBAR
-    ========================================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
-
 
         <div class="brand">
 
@@ -593,46 +484,26 @@
 
 
             <div class="menu-item active">
-
                 <span class="menu-icon">⌂</span>
-
-                <span class="menu-text">
-                    Dashboard
-                </span>
-
+                <span class="menu-text">Dashboard</span>
             </div>
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">▣</span>
-
-                <span class="menu-text">
-                    Tickets
-                </span>
-
+                <span class="menu-text">Tickets</span>
             </div>
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">▤</span>
-
-                <span class="menu-text">
-                    Equipos
-                </span>
-
+                <span class="menu-text">Equipos</span>
             </div>
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">◉</span>
-
-                <span class="menu-text">
-                    Usuarios
-                </span>
-
+                <span class="menu-text">Usuarios</span>
             </div>
 
 
@@ -645,41 +516,24 @@
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">✓</span>
-
-                <span class="menu-text">
-                    Pendientes
-                </span>
-
+                <span class="menu-text">Pendientes</span>
             </div>
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">▥</span>
-
-                <span class="menu-text">
-                    Reportes
-                </span>
-
+                <span class="menu-text">Reportes</span>
             </div>
 
 
             <div class="menu-item">
-
                 <span class="menu-icon">⚙</span>
-
-                <span class="menu-text">
-                    Configuración
-                </span>
-
+                <span class="menu-text">Configuración</span>
             </div>
 
         </div>
 
-
-        <!-- USER -->
 
         <div class="sidebar-user">
 
@@ -689,7 +543,7 @@
                     class="avatar"
                     id="avatar"
                 >
-                    HR
+                    --
                 </div>
 
 
@@ -699,14 +553,14 @@
                         class="user-name"
                         id="sidebarName"
                     >
-                        Usuario
+                        Cargando...
                     </div>
 
                     <div
                         class="user-role"
                         id="sidebarRole"
                     >
-                        usuario
+                        ...
                     </div>
 
                 </div>
@@ -723,18 +577,12 @@
 
         </div>
 
-
     </aside>
 
 
-    <!-- =========================================
-         MAIN
-    ========================================== -->
+    <!-- MAIN -->
 
     <main class="main">
-
-
-        <!-- TOPBAR -->
 
         <header class="topbar">
 
@@ -762,17 +610,14 @@
         </header>
 
 
-        <!-- CONTENT -->
-
         <section class="content">
-
 
             <!-- WELCOME -->
 
             <div class="welcome">
 
                 <h2 id="welcomeMessage">
-                    Bienvenido
+                    Cargando...
                 </h2>
 
                 <p>
@@ -861,7 +706,7 @@
                         class="card-number"
                         id="totalUsuarios"
                     >
-                        1
+                        0
                     </div>
 
                     <div class="card-description">
@@ -907,8 +752,6 @@
             <div class="dashboard-grid">
 
 
-                <!-- ACTIVIDAD -->
-
                 <div class="panel">
 
                     <div class="panel-header">
@@ -924,8 +767,7 @@
                     </div>
 
 
-                    <div class="panel-body">
-
+                    <div>
 
                         <div class="activity">
 
@@ -992,13 +834,10 @@
 
                         </div>
 
-
                     </div>
 
                 </div>
 
-
-                <!-- PENDIENTES -->
 
                 <div class="panel">
 
@@ -1015,8 +854,7 @@
                     </div>
 
 
-                    <div class="panel-body">
-
+                    <div>
 
                         <div class="task">
 
@@ -1056,14 +894,12 @@
 
                         </div>
 
-
                     </div>
 
                 </div>
 
 
             </div>
-
 
         </section>
 
@@ -1075,9 +911,29 @@
 <script>
 
     /*
-    ============================================
-    VERIFICAR SESIÓN
-    ============================================
+    ==================================================
+    SUPABASE
+    ==================================================
+    */
+
+    const SUPABASE_URL =
+        "https://nxbncqixxlmdvepapuqe.supabase.co";
+
+    const SUPABASE_KEY =
+        "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+
+
+    const supabaseClient =
+        supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+
+
+    /*
+    ==================================================
+    SESIÓN
+    ==================================================
     */
 
     const usuarioGuardado =
@@ -1092,7 +948,7 @@
     }
 
 
-    let usuario;
+    let usuario = null;
 
 
     try {
@@ -1111,12 +967,85 @@
 
 
     /*
-    ============================================
-    CARGAR USUARIO
-    ============================================
+    ==================================================
+    CARGAR USUARIO DESDE SUPABASE
+    ==================================================
     */
 
-    if (usuario) {
+    async function cargarUsuario() {
+
+        if (!usuario || !usuario.id) {
+            return;
+        }
+
+
+        const { data, error } =
+            await supabaseClient
+                .from("usuarios")
+                .select("id, correo, nombre, rol, activo")
+                .eq("id", usuario.id)
+                .single();
+
+
+        if (error) {
+
+            console.error(
+                "Error obteniendo usuario:",
+                error
+            );
+
+            return;
+        }
+
+
+        /*
+        Usuario desactivado
+        */
+
+        if (!data.activo) {
+
+            localStorage.removeItem("usuario");
+
+            alert(
+                "Tu usuario se encuentra desactivado."
+            );
+
+            window.location.href =
+                "index.html";
+
+            return;
+        }
+
+
+        usuario = data;
+
+
+        /*
+        Actualizar sesión local
+        */
+
+        localStorage.setItem(
+            "usuario",
+            JSON.stringify(usuario)
+        );
+
+
+        /*
+        Mostrar datos
+        */
+
+        mostrarUsuario();
+
+    }
+
+
+    /*
+    ==================================================
+    MOSTRAR USUARIO
+    ==================================================
+    */
+
+    function mostrarUsuario() {
 
         const nombre =
             usuario.nombre || "Usuario";
@@ -1125,27 +1054,17 @@
             usuario.rol || "usuario";
 
 
-        /*
-        Nombre
-        */
-
         document
             .getElementById("sidebarName")
-            .textContent = nombre;
+            .textContent =
+                nombre;
 
-
-        /*
-        Rol
-        */
 
         document
             .getElementById("sidebarRole")
-            .textContent = rol;
+            .textContent =
+                rol;
 
-
-        /*
-        Bienvenida
-        */
 
         document
             .getElementById("welcomeMessage")
@@ -1154,13 +1073,13 @@
 
 
         /*
-        Avatar
+        Iniciales
         */
 
         const partes =
             nombre
                 .trim()
-                .split(" ");
+                .split(/\s+/);
 
 
         let iniciales = "";
@@ -1175,7 +1094,8 @@
         } else {
 
             iniciales =
-                partes[0].substring(0, 2);
+                partes[0]
+                    .substring(0, 2);
 
         }
 
@@ -1189,9 +1109,61 @@
 
 
     /*
-    ============================================
+    ==================================================
+    CONTAR USUARIOS
+    ==================================================
+    */
+
+    async function cargarTotalUsuarios() {
+
+        const { count, error } =
+            await supabaseClient
+                .from("usuarios")
+                .select("*", {
+                    count: "exact",
+                    head: true
+                });
+
+
+        if (error) {
+
+            console.error(
+                "Error contando usuarios:",
+                error
+            );
+
+            return;
+
+        }
+
+
+        document
+            .getElementById("totalUsuarios")
+            .textContent =
+                count ?? 0;
+
+    }
+
+
+    /*
+    ==================================================
+    INICIALIZAR DASHBOARD
+    ==================================================
+    */
+
+    async function iniciarDashboard() {
+
+        await cargarUsuario();
+
+        await cargarTotalUsuarios();
+
+    }
+
+
+    /*
+    ==================================================
     CERRAR SESIÓN
-    ============================================
+    ==================================================
     */
 
     function cerrarSesion() {
@@ -1203,8 +1175,16 @@
 
     }
 
-</script>
 
+    /*
+    ==================================================
+    INICIAR
+    ==================================================
+    */
+
+    iniciarDashboard();
+
+</script>
 
 </body>
 </html>
