@@ -352,6 +352,18 @@
                 </div>
             </div>
 
+            <div class="menu-item" data-page="licencias" onclick="toggleSubmenu(this, 'licencias')">
+                <span class="menu-icon">🔑</span>
+                <span class="menu-text">Licencias</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="submenu" id="submenu-licencias">
+                <div class="submenu-item" onclick="navegarSubmenu('licencias-office', null)" data-sub="office">
+                    <span class="submenu-icon">📦</span>
+                    <span>Office</span>
+                </div>
+            </div>
+
             <div class="menu-item" data-page="usuarios" onclick="navegar('usuarios')">
                 <span class="menu-icon">◉</span>
                 <span class="menu-text">Usuarios</span>
@@ -634,6 +646,49 @@
 
         </section>
 
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: LICENCIAS — OFFICE
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-licencias-office">
+
+            <div class="page-section-header">
+                <div class="section-title">Licencias Office 365</div>
+                <div class="filter-count" id="officeCount"></div>
+            </div>
+
+            <div class="filters">
+                <input class="filter-input" id="officeBusqueda" type="text"
+                    placeholder="Buscar por nombre, correo, cuenta..."
+                    oninput="renderTablaOffice()" style="width:300px" />
+                <select class="filter-select" id="officeFiltroLic" onchange="renderTablaOffice()">
+                    <option value="">Todas las licencias</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Correo</th>
+                            <th>Nombre de cuenta</th>
+                            <th>Expiración</th>
+                            <th>País</th>
+                            <th>Contacto</th>
+                            <th>Licencia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="officeBody">
+                        <tr class="loading-row"><td colspan="9">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
     </main>
 
 </div>
@@ -729,11 +784,12 @@
        navegar(pagina, filtroEstadoOpcional)
     ═══════════════════════════════════════════ */
     const metaPaginas = {
-        dashboard:     { titulo: "Dashboard",      subtitulo: "Panel de control — Alterna TI" },
-        actividades:   { titulo: "Actividades",    subtitulo: "Gestión de actividades del equipo" },
-        usuarios:      { titulo: "Usuarios",       subtitulo: "Administración de accesos" },
-        reportes:      { titulo: "Reportes",       subtitulo: "Análisis y estadísticas" },
-        configuracion: { titulo: "Configuración",  subtitulo: "Ajustes del sistema" },
+        dashboard:          { titulo: "Dashboard",           subtitulo: "Panel de control — Alterna TI" },
+        actividades:        { titulo: "Actividades",         subtitulo: "Gestión de actividades del equipo" },
+        usuarios:           { titulo: "Usuarios",            subtitulo: "Administración de accesos" },
+        reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
+        configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
+        "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -780,6 +836,10 @@
 
         if (pagina === "configuracion") {
             renderConfiguracion();
+        }
+
+        if (pagina === "licencias-office") {
+            cargarLicenciasOffice();
         }
     }
 
@@ -1177,9 +1237,94 @@
     function navegarSubmenu(pagina, filtroEstado) {
         // Marcar subitem activo
         document.querySelectorAll(".submenu-item").forEach(i => i.classList.remove("active"));
-        const activo = document.querySelector(`.submenu-item[data-sub="${filtroEstado}"]`);
+        const activo = document.querySelector(`.submenu-item[data-sub="${filtroEstado || pagina.split('-')[1]}"]`);
         if (activo) activo.classList.add("active");
         navegar(pagina, filtroEstado);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       LICENCIAS — OFFICE
+    ═══════════════════════════════════════════ */
+    let todasLicenciasOffice = [];
+
+    async function cargarLicenciasOffice() {
+        const tbody = document.getElementById("officeBody");
+        if (!tbody) return;
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="9">Cargando...</td></tr>`;
+
+        const { data, error } = await supabaseClient
+            .from("licencias_office")
+            .select("*")
+            .order("numero_licencia, slot");
+
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
+            return;
+        }
+
+        todasLicenciasOffice = data || [];
+        poblarFiltroLicencia();
+        renderTablaOffice();
+    }
+
+    function poblarFiltroLicencia() {
+        const lics = [...new Set(todasLicenciasOffice.map(r => r.numero_licencia).filter(Boolean))].sort();
+        const sel = document.getElementById("officeFiltroLic");
+        sel.innerHTML = `<option value="">Todas las licencias</option>` +
+            lics.map(l => `<option value="${l}">Licencia ${l}</option>`).join("");
+    }
+
+    function renderTablaOffice() {
+        const tbody = document.getElementById("officeBody");
+        if (!tbody) return;
+        const q    = (document.getElementById("officeBusqueda")?.value || "").toLowerCase();
+        const flic = document.getElementById("officeFiltroLic")?.value || "";
+
+        let rows = todasLicenciasOffice.filter(r => {
+            const matchLic = !flic || String(r.numero_licencia) === flic;
+            const matchQ   = !q ||
+                (r.nombre||"").toLowerCase().includes(q) ||
+                (r.correo||"").toLowerCase().includes(q) ||
+                (r.nombre_cuenta||"").toLowerCase().includes(q) ||
+                (r.tipo||"").toLowerCase().includes(q);
+            return matchLic && matchQ;
+        });
+
+        document.getElementById("officeCount").textContent = `${rows.length} registro${rows.length !== 1 ? "s" : ""}`;
+
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No se encontraron licencias.</div></td></tr>`;
+            return;
+        }
+
+        // Agrupar por número de licencia para separadores visuales
+        let lastLic = null;
+        tbody.innerHTML = rows.map(r => {
+            let sep = "";
+            if (r.numero_licencia !== lastLic) {
+                lastLic = r.numero_licencia;
+                sep = `<tr style="background:#f0f4ff">
+                    <td colspan="9" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
+                        📦 Licencia ${esc(String(r.numero_licencia || "—"))}
+                    </td>
+                </tr>`;
+            }
+            const expBadge = r.fecha_expiracion
+                ? `<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600">${esc(r.fecha_expiracion)}</span>`
+                : `<span style="color:#9ca3af">—</span>`;
+            return sep + `<tr>
+                <td style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
+                <td><strong>${esc(r.nombre||"—")}</strong></td>
+                <td><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
+                <td style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
+                <td style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
+                <td>${expBadge}</td>
+                <td style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
+                <td style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
+                <td style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+            </tr>`;
+        }).join("");
     }
 
 
