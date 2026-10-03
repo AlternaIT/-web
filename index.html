@@ -1,872 +1,438 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alterna | Iniciar sesión</title>
-
-
-    <!-- =========================================
-         SUPABASE
-    ========================================== -->
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg:        #0f0f0f;
+            --surface:   #1c1c1e;
+            --border:    rgba(255,255,255,.08);
+            --text:      #f5f5f7;
+            --muted:     #8e8e93;
+            --accent:    #f5f5f7;
+            --input-bg:  #2c2c2e;
+            --input-border: rgba(255,255,255,.1);
+            --input-focus:  rgba(255,255,255,.3);
+            --error-bg:  rgba(255,69,58,.12);
+            --error:     #ff453a;
         }
-
 
         body {
             min-height: 100vh;
-
             display: flex;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── PANEL IZQUIERDO ── */
+        .left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 60px 80px;
+            position: relative;
+            overflow: hidden;
+        }
 
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
+        .left::before {
+            content: '';
+            position: absolute;
+            inset: 0;
             background:
-                linear-gradient(
-                    135deg,
-                    #f8fafc,
-                    #eef1f5
-                );
-
-            color: #111827;
+                radial-gradient(ellipse 60% 50% at 30% 40%, rgba(255,255,255,.035) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 80% 80%, rgba(255,255,255,.02) 0%, transparent 60%);
+            pointer-events: none;
         }
 
-
-        /* =========================================
-           CONTENEDOR
-        ========================================== */
-
-        .login-container {
+        .left-inner {
             width: 100%;
-            max-width: 430px;
-            padding: 20px;
+            max-width: 360px;
+            position: relative;
+            z-index: 1;
         }
 
-
-        /* =========================================
-           TARJETA
-        ========================================== */
-
-        .login-card {
-            background: white;
-
-            border: 1px solid #e5e7eb;
-
-            border-radius: 18px;
-
-            padding: 42px;
-
-            box-shadow:
-                0 20px 50px
-                rgba(0, 0, 0, .08);
+        /* LOGO */
+        .logo-wrap {
+            margin-bottom: 48px;
         }
 
-
-        /* =========================================
-           LOGO
-        ========================================== */
-
-        .logo {
-            text-align: center;
-            margin-bottom: 35px;
+        .logo-wrap img {
+            height: 32px;
+            width: auto;
+            filter: brightness(0) invert(1);
         }
 
-
-        .logo-icon {
-            width: 62px;
-            height: 62px;
-
-            margin: 0 auto 16px;
-
-            border-radius: 15px;
-
-            background: #111827;
-
-            color: white;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-size: 27px;
-            font-weight: bold;
-
-            box-shadow:
-                0 8px 20px
-                rgba(17, 24, 39, .18);
-        }
-
-
-        .logo h1 {
-            font-size: 27px;
-            color: #111827;
-
+        /* TÍTULO */
+        .heading {
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -.4px;
+            color: var(--text);
             margin-bottom: 6px;
+            line-height: 1.2;
         }
 
-
-        .logo p {
-            color: #6b7280;
+        .subheading {
             font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 36px;
+            font-weight: 400;
         }
 
-
-        /* =========================================
-           FORMULARIO
-        ========================================== */
-
-        .form-group {
-            margin-bottom: 21px;
+        /* FORM */
+        .field {
+            margin-bottom: 14px;
         }
-
 
         label {
             display: block;
-
-            font-size: 14px;
-            font-weight: 600;
-
-            color: #374151;
-
-            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 7px;
+            letter-spacing: .01em;
         }
 
-
-        input {
-            width: 100%;
-
-            padding: 14px;
-
-            border:
-                1px solid #d1d5db;
-
-            border-radius: 9px;
-
-            font-size: 15px;
-
-            color: #111827;
-
-            outline: none;
-
-            transition:
-                border .2s,
-                box-shadow .2s;
-        }
-
-
-        input:focus {
-            border-color: #111827;
-
-            box-shadow:
-                0 0 0 3px
-                rgba(17, 24, 39, .08);
-        }
-
-
-        input::placeholder {
-            color: #9ca3af;
-        }
-
-
-        /* =========================================
-           CONTRASEÑA
-        ========================================== */
-
-        .password-container {
+        .input-wrap {
             position: relative;
         }
 
-
-        .password-container input {
-            padding-right: 80px;
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            -webkit-appearance: none;
         }
 
+        input::placeholder { color: #48484a; }
 
-        .show-password {
+        input:focus {
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+        }
+
+        .toggle-pass {
             position: absolute;
-
             right: 13px;
             top: 50%;
-
-            transform:
-                translateY(-50%);
-
-            color: #6b7280;
-
+            transform: translateY(-50%);
             font-size: 12px;
-            font-weight: 600;
-
+            font-weight: 500;
+            color: var(--muted);
             cursor: pointer;
-
             user-select: none;
+            transition: color .15s;
         }
+        .toggle-pass:hover { color: var(--text); }
 
-
-        .show-password:hover {
-            color: #111827;
-        }
-
-
-        /* =========================================
-           ERROR
-        ========================================== */
-
-        .error {
+        /* ERROR */
+        .error-box {
             display: none;
-
-            padding: 12px 14px;
-
-            margin-bottom: 20px;
-
-            border-radius: 8px;
-
-            background: #fef2f2;
-
-            border:
-                1px solid #fecaca;
-
-            color: #b91c1c;
-
+            padding: 11px 14px;
+            background: var(--error-bg);
+            border: 1px solid rgba(255,69,58,.2);
+            border-radius: 9px;
+            color: var(--error);
             font-size: 13px;
-
+            margin-bottom: 18px;
             line-height: 1.4;
         }
 
-
-        /* =========================================
-           BOTÓN
-        ========================================== */
-
-        button {
+        /* BOTÓN */
+        .btn {
             width: 100%;
-
-            padding: 14px;
-
+            padding: 13px;
+            background: var(--text);
+            color: #0f0f0f;
             border: none;
-
-            border-radius: 9px;
-
-            background: #111827;
-
-            color: white;
-
+            border-radius: 10px;
             font-size: 15px;
-
             font-weight: 600;
-
+            font-family: inherit;
             cursor: pointer;
-
-            transition:
-                background .2s,
-                transform .1s;
-        }
-
-
-        button:hover {
-            background: #1f2937;
-        }
-
-
-        button:active {
-            transform: scale(.99);
-        }
-
-
-        button:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-
-        /* =========================================
-           FOOTER
-        ========================================== */
-
-        .footer {
-            text-align: center;
-
-            margin-top: 28px;
-
-            color: #9ca3af;
-
-            font-size: 12px;
-        }
-
-
-        /* =========================================
-           LOADING
-        ========================================== */
-
-        .loading {
-            display: none;
-
+            transition: opacity .15s, transform .1s;
+            margin-top: 8px;
+            display: flex;
             align-items: center;
             justify-content: center;
-
             gap: 8px;
         }
-
+        .btn:hover:not(:disabled) { opacity: .88; }
+        .btn:active:not(:disabled) { transform: scale(.99); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
 
         .spinner {
-            width: 14px;
-            height: 14px;
-
-            border:
-                2px solid
-                rgba(255,255,255,.4);
-
-            border-top-color: white;
-
+            width: 15px; height: 15px;
+            border: 2px solid rgba(0,0,0,.2);
+            border-top-color: #0f0f0f;
             border-radius: 50%;
+            animation: spin .65s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-            animation:
-                spin .7s linear infinite;
+        /* FOOTER */
+        .form-footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 12px;
+            color: #3a3a3c;
         }
 
-
-        @keyframes spin {
-
-            to {
-                transform: rotate(360deg);
-            }
-
+        /* ── PANEL DERECHO ── */
+        .right {
+            width: 420px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 48px;
+            position: relative;
+            overflow: hidden;
         }
 
-
-        /* =========================================
-           RESPONSIVE
-        ========================================== */
-
-        @media (max-width: 480px) {
-
-            .login-container {
-                padding: 15px;
-            }
-
-            .login-card {
-                padding: 30px 24px;
-            }
-
+        .right::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,.04) 0%, transparent 70%);
+            pointer-events: none;
         }
 
+        .right-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .right-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            color: #48484a;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+
+        .stat-block {
+            margin-bottom: 32px;
+        }
+
+        .stat-num {
+            font-size: 42px;
+            font-weight: 300;
+            letter-spacing: -1.5px;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .stat-desc {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 28px 0;
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .feature-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #48484a;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 820px) {
+            .right { display: none; }
+            .left { padding: 40px 28px; }
+        }
     </style>
-
 </head>
-
-
 <body>
 
+<!-- IZQUIERDA: FORMULARIO -->
+<div class="left">
+    <div class="left-inner">
 
-<div class="login-container">
-
-
-    <div class="login-card">
-
-
-        <!-- =====================================
-             LOGO
-        ====================================== -->
-
-        <div class="logo">
-
-            <div class="logo-icon">
-                A
-            </div>
-
-            <h1>
-                Alterna
-            </h1>
-
-            <p>
-                Sistema de Gestión
-            </p>
-
+        <div class="logo-wrap">
+            <img src="data:image/png;base64,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" alt="Alterna" />
         </div>
 
+        <div class="heading">Bienvenido de vuelta</div>
+        <div class="subheading">Ingresa tus credenciales para continuar</div>
 
-        <!-- =====================================
-             ERROR
-        ====================================== -->
+        <div class="error-box" id="errorBox"></div>
 
-        <div
-            id="errorMessage"
-            class="error"
-        ></div>
-
-
-        <!-- =====================================
-             LOGIN
-        ====================================== -->
-
-        <form id="loginForm">
-
-
-            <!-- CORREO -->
-
-            <div class="form-group">
-
-                <label for="correo">
-                    Correo electrónico
-                </label>
-
-                <input
-                    type="email"
-                    id="correo"
-                    name="correo"
-                    placeholder="correo@alterna.pro"
-                    autocomplete="username"
-                    required
-                >
-
-            </div>
-
-
-            <!-- CONTRASEÑA -->
-
-            <div class="form-group">
-
-                <label for="contraseña">
-                    Contraseña
-                </label>
-
-
-                <div class="password-container">
-
-                    <input
-                        type="password"
-                        id="contraseña"
-                        name="contraseña"
-                        placeholder="Ingresa tu contraseña"
-                        autocomplete="current-password"
-                        required
-                    >
-
-
-                    <span
-                        class="show-password"
-                        id="showPassword"
-                    >
-                        Mostrar
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- BOTÓN -->
-
-            <button
-                type="submit"
-                id="loginButton"
-            >
-
-                <span id="buttonText">
-                    Iniciar sesión
-                </span>
-
-
-                <span
-                    id="loading"
-                    class="loading"
-                >
-
-                    <span class="spinner"></span>
-
-                    Verificando...
-
-                </span>
-
-            </button>
-
-
-        </form>
-
-
-        <!-- FOOTER -->
-
-        <div class="footer">
-
-            Asociación Alterna ONG
-
+        <div class="field">
+            <label for="correo">Correo electrónico</label>
+            <input type="email" id="correo" placeholder="tu@correo.com" autocomplete="username" />
         </div>
 
+        <div class="field">
+            <label for="contrasena">Contraseña</label>
+            <div class="input-wrap">
+                <input type="password" id="contrasena" placeholder="••••••••" autocomplete="current-password" />
+                <span class="toggle-pass" id="togglePass">Mostrar</span>
+            </div>
+        </div>
+
+        <button class="btn" id="btnLogin" onclick="handleLogin()">
+            <span class="spinner" id="spinner"></span>
+            <span id="btnText">Iniciar sesión</span>
+        </button>
+
+        <div class="form-footer">Asociación Alterna ONG</div>
+    </div>
+</div>
+
+
+<!-- DERECHA: CONTEXTO -->
+<div class="right">
+    <div class="right-content">
+
+        <div class="right-label">Sistema de Gestión</div>
+
+        <div class="stat-block">
+            <div class="stat-num" id="statNum">—</div>
+            <div class="stat-desc">actividades registradas en el sistema</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <ul class="feature-list">
+            <li><span class="feature-dot"></span><span>Gestión de actividades y tareas por área y responsable</span></li>
+            <li><span class="feature-dot"></span><span>Control de licencias Office y accesos del equipo</span></li>
+            <li><span class="feature-dot"></span><span>Reportes de avance y seguimiento en tiempo real</span></li>
+        </ul>
 
     </div>
-
-
 </div>
 
 
 <script>
+    const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Cargar stat
+    (async () => {
+        const { count } = await sb.from("actividades").select("*", { count: "exact", head: true });
+        if (count != null) document.getElementById("statNum").textContent = count;
+    })();
 
-    /* =================================================
-       CONFIGURACIÓN SUPABASE
-    ================================================= */
+    // Toggle password
+    document.getElementById("togglePass").addEventListener("click", function() {
+        const input = document.getElementById("contrasena");
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        this.textContent = show ? "Ocultar" : "Mostrar";
+    });
 
+    // Enter key
+    document.addEventListener("keydown", e => {
+        if (e.key === "Enter") handleLogin();
+    });
 
-    const SUPABASE_URL =
-        "https://nxbncqixxlmdvepapuqe.supabase.co";
-
-
-    const SUPABASE_KEY =
-        "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
-
-
-    const supabaseClient =
-        supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_KEY
-        );
-
-
-
-    /* =================================================
-       ELEMENTOS
-    ================================================= */
-
-
-    const loginForm =
-        document.getElementById("loginForm");
-
-
-    const loginButton =
-        document.getElementById("loginButton");
-
-
-    const buttonText =
-        document.getElementById("buttonText");
-
-
-    const loading =
-        document.getElementById("loading");
-
-
-    const errorMessage =
-        document.getElementById("errorMessage");
-
-
-    const correoInput =
-        document.getElementById("correo");
-
-
-    const contraseñaInput =
-        document.getElementById("contraseña");
-
-
-    const showPassword =
-        document.getElementById("showPassword");
-
-
-
-    /* =================================================
-       MOSTRAR / OCULTAR CONTRASEÑA
-    ================================================= */
-
-
-    showPassword.addEventListener(
-        "click",
-        function() {
-
-            if (
-                contraseñaInput.type ===
-                "password"
-            ) {
-
-                contraseñaInput.type =
-                    "text";
-
-                showPassword.textContent =
-                    "Ocultar";
-
-            } else {
-
-                contraseñaInput.type =
-                    "password";
-
-                showPassword.textContent =
-                    "Mostrar";
-
-            }
-
-        }
-    );
-
-
-
-    /* =================================================
-       MOSTRAR ERROR
-    ================================================= */
-
-
-    function mostrarError(mensaje) {
-
-        errorMessage.textContent =
-            mensaje;
-
-        errorMessage.style.display =
-            "block";
-
+    function setLoading(on) {
+        document.getElementById("btnLogin").disabled = on;
+        document.getElementById("spinner").style.display = on ? "block" : "none";
+        document.getElementById("btnText").textContent = on ? "Verificando..." : "Iniciar sesión";
     }
 
-
-
-    /* =================================================
-       OCULTAR ERROR
-    ================================================= */
-
-
-    function ocultarError() {
-
-        errorMessage.textContent =
-            "";
-
-        errorMessage.style.display =
-            "none";
-
+    function showError(msg) {
+        const box = document.getElementById("errorBox");
+        box.textContent = msg;
+        box.style.display = "block";
     }
 
-
-
-    /* =================================================
-       ESTADO DE CARGA
-    ================================================= */
-
-
-    function cambiarEstadoCarga(cargando) {
-
-        loginButton.disabled =
-            cargando;
-
-
-        if (cargando) {
-
-            buttonText.style.display =
-                "none";
-
-            loading.style.display =
-                "flex";
-
-        } else {
-
-            buttonText.style.display =
-                "inline";
-
-            loading.style.display =
-                "none";
-
-        }
-
+    function hideError() {
+        document.getElementById("errorBox").style.display = "none";
     }
 
-
-
-    /* =================================================
-       LOGIN
-    ================================================= */
-
-
-    loginForm.addEventListener(
-        "submit",
-        async function(event) {
-
-            event.preventDefault();
-
-
-            ocultarError();
-
-
-            const correo =
-                correoInput.value
-                    .trim();
-
-
-            const contraseña =
-                contraseñaInput.value;
-
-
-            if (!correo || !contraseña) {
-
-                mostrarError(
-                    "Ingresa tu correo y contraseña."
-                );
-
-                return;
-
-            }
-
-
-            cambiarEstadoCarga(true);
-
-
-            try {
-
-
-                /* =====================================
-                   CONSULTA A SUPABASE
-                ====================================== */
-
-
-                const { data, error } =
-                    await supabaseClient.rpc(
-                        "login_usuario",
-                        {
-                            p_correo:
-                                correo,
-
-                            p_contraseña:
-                                contraseña
-                        }
-                    );
-
-
-                console.log(
-                    "Respuesta Supabase:",
-                    data
-                );
-
-
-                /* =====================================
-                   ERROR DE SUPABASE
-                ====================================== */
-
-
-                if (error) {
-
-                    console.error(
-                        "Error Supabase:",
-                        error
-                    );
-
-
-                    mostrarError(
-                        "No fue posible conectar con el servidor."
-                    );
-
-
-                    return;
-
-                }
-
-
-                /* =====================================
-                   USUARIO NO ENCONTRADO
-                ====================================== */
-
-
-                if (
-                    !data ||
-                    data.length === 0
-                ) {
-
-                    mostrarError(
-                        "Correo o contraseña incorrectos."
-                    );
-
-
-                    return;
-
-                }
-
-
-                /* =====================================
-                   USUARIO
-                ====================================== */
-
-
-                const usuario =
-                    data[0];
-
-
-                /* =====================================
-                   VERIFICAR ACTIVO
-                ====================================== */
-
-
-                if (
-                    usuario.activo !== true
-                ) {
-
-                    mostrarError(
-                        "Tu usuario se encuentra desactivado."
-                    );
-
-
-                    return;
-
-                }
-
-
-                /* =====================================
-                   GUARDAR SESIÓN
-                ====================================== */
-
-
-                localStorage.setItem(
-                    "usuario",
-                    JSON.stringify(usuario)
-                );
-
-
-                /* =====================================
-                   REDIRECCIÓN
-                ====================================== */
-
-
-                window.location.href =
-                    "dashboard.html";
-
-
-            } catch (error) {
-
-                console.error(
-                    "Error inesperado:",
-                    error
-                );
-
-
-                mostrarError(
-                    "Ocurrió un error inesperado."
-                );
-
-
-            } finally {
-
-                cambiarEstadoCarga(false);
-
-            }
-
+    async function handleLogin() {
+        hideError();
+        const correo = document.getElementById("correo").value.trim();
+        const contrasena = document.getElementById("contrasena").value;
+
+        if (!correo || !contrasena) {
+            showError("Ingresa tu correo y contraseña.");
+            return;
         }
-    );
 
+        setLoading(true);
 
+        try {
+            const { data, error } = await sb.rpc("login_usuario", {
+                p_correo: correo,
+                p_contraseña: contrasena
+            });
+
+            if (error) { showError("No fue posible conectar con el servidor."); return; }
+            if (!data || data.length === 0) { showError("Correo o contraseña incorrectos."); return; }
+
+            const usuario = data[0];
+            if (usuario.activo !== true) { showError("Tu usuario se encuentra desactivado."); return; }
+
+            localStorage.setItem("usuario", JSON.stringify(usuario));
+            window.location.href = "dashboard.html";
+
+        } catch(e) {
+            showError("Ocurrió un error inesperado.");
+        } finally {
+            setLoading(false);
+        }
+    }
 </script>
 
-
 </body>
-
 </html>
-```
