@@ -133,6 +133,30 @@
             box-shadow: 0 0 0 3px rgba(255,255,255,.06);
         }
 
+        /* ── AUTOFILL: neutraliza el fondo azul/blanco en todos los navegadores ── */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 999px #2c2c2e inset !important;
+            box-shadow: 0 0 0 999px #2c2c2e inset !important;
+            -webkit-text-fill-color: #f5f5f7 !important;
+            caret-color: #f5f5f7;
+            border-color: rgba(255,255,255,.1) !important;
+            transition: background-color 9999s ease 0s;
+        }
+
+        input:-webkit-autofill:focus {
+            border-color: rgba(255,255,255,.3) !important;
+            box-shadow: 0 0 0 999px #2c2c2e inset, 0 0 0 3px rgba(255,255,255,.06) !important;
+        }
+
+        /* Firefox */
+        input:autofill {
+            background: #2c2c2e !important;
+            color: #f5f5f7 !important;
+        }
+
         .toggle-pass {
             position: absolute;
             right: 13px;
