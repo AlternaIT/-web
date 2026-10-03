@@ -1720,10 +1720,11 @@
     }
 
     function abrirEditarDesdeDrawer() {
-        if (drawerIdActual) {
-            cerrarDrawer();
-            abrirEditarTarea(drawerIdActual);
-        }
+        const id = drawerIdActual;
+        if (!id) return;
+        cerrarDrawer();
+        // pequeño delay para que el drawer termine de cerrar antes de abrir el modal
+        setTimeout(() => abrirEditarTarea(id), 50);
     }
 
     function renderComentariosDrawer(id) {
