@@ -299,6 +299,118 @@
         .placeholder-box .ph-icon { font-size: 36px; margin-bottom: 12px; }
         .placeholder-box p { font-size: 14px; }
 
+        /* ── SORTABLE HEADERS ── */
+        thead th.sortable { cursor: pointer; user-select: none; }
+        thead th.sortable:hover { background: #f0f4ff; color: #6366f1; }
+        thead th.sortable .sort-icon { margin-left: 5px; opacity: .4; font-size: 10px; }
+        thead th.sortable.sort-asc .sort-icon::after  { content: "▲"; opacity: 1; }
+        thead th.sortable.sort-desc .sort-icon::after { content: "▼"; opacity: 1; }
+        thead th.sortable:not(.sort-asc):not(.sort-desc) .sort-icon::after { content: "⇅"; }
+
+        /* ── INLINE STATUS DROPDOWN ── */
+        .inline-estado {
+            border: none; background: transparent; font-size: 10px; font-weight: 600;
+            cursor: pointer; border-radius: 5px; padding: 3px 8px; outline: none;
+            -webkit-appearance: none; appearance: none;
+        }
+        .inline-estado.badge-terminado   { background: #d1fae5; color: #065f46; }
+        .inline-estado.badge-en-proceso  { background: #fef3c7; color: #92400e; }
+        .inline-estado.badge-no-iniciado { background: #f3f4f6; color: #4b5563; }
+        .inline-estado:hover { filter: brightness(.93); }
+
+        /* ── OVERDUE ROWS ── */
+        tr.row-vencida { background: #fff5f5 !important; }
+        tr.row-vencida:hover { background: #fee2e2 !important; }
+        .fecha-vencida { color: #ef4444 !important; font-weight: 600; }
+        .fecha-proxima { color: #f59e0b !important; font-weight: 600; }
+        .fecha-ok      { color: #10b981 !important; }
+
+        /* ── PAGINATION ── */
+        .pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; border-top: 1px solid #e5e7eb; background: white;
+            flex-wrap: wrap; gap: 8px;
+        }
+        .pagination-info { font-size: 12px; color: #6b7280; }
+        .pagination-btns { display: flex; gap: 5px; align-items: center; }
+        .pg-btn {
+            min-width: 30px; height: 30px; padding: 0 8px;
+            border: 1px solid #e5e7eb; border-radius: 6px; background: white;
+            font-size: 12px; cursor: pointer; color: #374151; transition: .12s;
+        }
+        .pg-btn:hover:not(:disabled) { border-color: #6366f1; color: #6366f1; }
+        .pg-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .pg-btn:disabled { opacity: .4; cursor: default; }
+
+        /* ── DRAWER ── */
+        .drawer-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.3); z-index: 900;
+        }
+        .drawer-overlay.open { display: block; }
+        .drawer {
+            position: fixed; top: 0; right: -520px; width: 500px; max-width: 95vw;
+            height: 100vh; background: white; z-index: 901;
+            box-shadow: -4px 0 24px rgba(0,0,0,.12);
+            display: flex; flex-direction: column;
+            transition: right .25s cubic-bezier(.4,0,.2,1);
+            overflow: hidden;
+        }
+        .drawer.open { right: 0; }
+        .drawer-header {
+            padding: 20px 24px 16px; border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: flex-start; gap: 12px; flex-shrink: 0;
+        }
+        .drawer-close {
+            margin-left: auto; background: none; border: none;
+            font-size: 20px; cursor: pointer; color: #9ca3af; line-height: 1;
+        }
+        .drawer-close:hover { color: #374151; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+        .drawer-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
+        .drawer-section { margin-bottom: 20px; }
+        .drawer-section-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; color: #9ca3af; margin-bottom: 10px;
+        }
+        .drawer-field { display: flex; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+        .drawer-field-label { color: #6b7280; width: 110px; flex-shrink: 0; }
+        .drawer-field-value { color: #111827; font-weight: 500; flex: 1; }
+        .drawer-title { font-size: 17px; font-weight: 700; color: #111827; line-height: 1.3; }
+        .drawer-sub   { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+
+        /* ── HISTORY ── */
+        .history-item {
+            display: flex; gap: 10px; padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6; font-size: 12px;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-dot  { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; margin-top: 4px; flex-shrink: 0; }
+        .history-text { flex: 1; color: #374151; }
+        .history-time { color: #9ca3af; white-space: nowrap; }
+
+        /* ── COMMENTS ── */
+        .comment-item {
+            background: #f9fafb; border-radius: 8px; padding: 10px 12px;
+            margin-bottom: 8px; font-size: 13px;
+        }
+        .comment-meta { font-size: 11px; color: #9ca3af; margin-top: 5px; }
+        .comment-input-row { display: flex; gap: 8px; margin-top: 8px; }
+        .comment-input {
+            flex: 1; padding: 8px 12px; border: 1px solid #e5e7eb;
+            border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;
+        }
+        .comment-input:focus { border-color: #6366f1; }
+        .btn-comment {
+            padding: 8px 14px; background: #6366f1; color: white;
+            border: none; border-radius: 8px; font-size: 12px;
+            cursor: pointer; font-weight: 600; white-space: nowrap;
+        }
+        .btn-comment:hover { background: #4f46e5; }
+
+        /* ── ROW CLICK ── */
+        tbody tr.clickable-row { cursor: pointer; }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 1100px) {
             .cards { grid-template-columns: repeat(2,1fr); }
@@ -608,25 +720,25 @@
             <div class="filters">
                 <input class="filter-input" id="busqueda" type="text"
                     placeholder="Buscar actividad o proyecto..."
-                    oninput="renderTabla()" />
-                <select class="filter-select" id="filtroEstado" onchange="renderTabla()">
+                    oninput="paginaTabla=1;renderTabla()" />
+                <select class="filter-select" id="filtroEstado" onchange="paginaTabla=1;renderTabla()">
                     <option value="">Todos los estados</option>
                     <option value="En proceso">En proceso</option>
                     <option value="No iniciado">No iniciado</option>
                     <option value="Terminado">Terminado</option>
                 </select>
-                <select class="filter-select" id="filtroAsignado" onchange="renderTabla()">
+                <select class="filter-select" id="filtroAsignado" onchange="paginaTabla=1;renderTabla()">
                     <option value="">Todos los asignados</option>
                     <option value="Hector">Hector</option>
                     <option value="Manuel">Manuel</option>
                 </select>
-                <select class="filter-select" id="filtroPrioridad" onchange="renderTabla()">
+                <select class="filter-select" id="filtroPrioridad" onchange="paginaTabla=1;renderTabla()">
                     <option value="">Todas las prioridades</option>
                     <option value="Alta">Alta</option>
                     <option value="Media">Media</option>
                     <option value="Baja">Baja</option>
                 </select>
-                <select class="filter-select" id="filtroArea" onchange="renderTabla()">
+                <select class="filter-select" id="filtroArea" onchange="paginaTabla=1;renderTabla()">
                     <option value="">Todas las áreas</option>
                 </select>
             </div>
@@ -636,11 +748,11 @@
                     <thead>
                         <tr>
                             <th>Actividad</th>
-                            <th>Área</th>
-                            <th>Prioridad</th>
-                            <th>Estado</th>
+                            <th class="sortable" data-col="area" onclick="sortTabla('area')">Área<span class="sort-icon"></span></th>
+                            <th class="sortable" data-col="prioridad" onclick="sortTabla('prioridad')">Prioridad<span class="sort-icon"></span></th>
+                            <th class="sortable" data-col="estado" onclick="sortTabla('estado')">Estado<span class="sort-icon"></span></th>
                             <th>Asignado</th>
-                            <th>Finalización</th>
+                            <th class="sortable" data-col="fecha_limite" onclick="sortTabla('fecha_limite')">Fecha límite<span class="sort-icon"></span></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -648,9 +760,53 @@
                         <tr class="loading-row"><td colspan="7">Cargando datos...</td></tr>
                     </tbody>
                 </table>
+                <div class="pagination" id="paginacion"></div>
             </div>
 
         </section>
+
+        <!-- DRAWER DETALLE -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="cerrarDrawer()"></div>
+        <div class="drawer" id="drawerDetalle">
+            <div class="drawer-header">
+                <div>
+                    <div class="drawer-title" id="drawerTitulo">—</div>
+                    <div class="drawer-sub"   id="drawerProyecto">—</div>
+                </div>
+                <button class="drawer-close" onclick="cerrarDrawer()">✕</button>
+            </div>
+            <div class="drawer-body">
+                <div class="drawer-section">
+                    <div class="drawer-section-title">Detalles</div>
+                    <div class="drawer-field"><span class="drawer-field-label">Área</span>       <span class="drawer-field-value" id="dArea">—</span></div>
+                    <div class="drawer-field"><span class="drawer-field-label">Prioridad</span>  <span class="drawer-field-value" id="dPrioridad">—</span></div>
+                    <div class="drawer-field"><span class="drawer-field-label">Estado</span>     <span class="drawer-field-value" id="dEstado">—</span></div>
+                    <div class="drawer-field"><span class="drawer-field-label">Asignado a</span> <span class="drawer-field-value" id="dAsignado">—</span></div>
+                    <div class="drawer-field"><span class="drawer-field-label">Fecha límite</span><span class="drawer-field-value" id="dFechaLimite">—</span></div>
+                    <div class="drawer-field"><span class="drawer-field-label">Finalización</span><span class="drawer-field-value" id="dFechaFin">—</span></div>
+                </div>
+                <div class="drawer-section" id="dNotasSection">
+                    <div class="drawer-section-title">Notas</div>
+                    <div style="font-size:13px;color:#374151;white-space:pre-wrap" id="dNotas"></div>
+                </div>
+                <div class="drawer-section">
+                    <div class="drawer-section-title">Historial de cambios</div>
+                    <div id="dHistorial"><div style="font-size:12px;color:#9ca3af">Sin historial registrado.</div></div>
+                </div>
+                <div class="drawer-section">
+                    <div class="drawer-section-title">Comentarios</div>
+                    <div id="dComentarios"></div>
+                    <div class="comment-input-row">
+                        <input class="comment-input" id="dCommentInput" placeholder="Escribe un comentario..." onkeydown="if(event.key==='Enter')agregarComentario()" />
+                        <button class="btn-comment" onclick="agregarComentario()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-footer" style="display:flex;gap:10px">
+                <button class="btn-primary" onclick="abrirEditarDesdeDrawer()">✏ Editar tarea</button>
+                <button class="btn-secondary" onclick="cerrarDrawer()">Cerrar</button>
+            </div>
+        </div>
 
 
         <!-- ══════════════════════════════════════
@@ -1080,6 +1236,7 @@
             if (filtroEstado) {
                 document.getElementById("filtroEstado").value = filtroEstado;
             }
+            paginaTabla = 1;
             renderTabla();
         }
 
@@ -1262,16 +1419,77 @@
     /* ═══════════════════════════════════════════
        ACTIVIDADES — FILTROS + TABLA
     ═══════════════════════════════════════════ */
+    let paginaTabla    = 1;
+    const POR_PAGINA   = 25;
+    let sortCol        = null;
+    let sortDir        = "asc";
+    // historial y comentarios — almacenados en localStorage
+    const HIST_KEY     = "alterna_historial";
+    const COMM_KEY     = "alterna_comentarios";
+
+    function getHistorial() {
+        try { return JSON.parse(localStorage.getItem(HIST_KEY) || "{}"); } catch { return {}; }
+    }
+    function saveHistorial(h) { localStorage.setItem(HIST_KEY, JSON.stringify(h)); }
+    function getComentarios() {
+        try { return JSON.parse(localStorage.getItem(COMM_KEY) || "{}"); } catch { return {}; }
+    }
+    function saveComentarios(c) { localStorage.setItem(COMM_KEY, JSON.stringify(c)); }
+
+    function registrarCambioEstado(id, estadoAnterior, estadoNuevo) {
+        const h = getHistorial();
+        if (!h[id]) h[id] = [];
+        h[id].unshift({
+            tipo: "estado",
+            de: estadoAnterior,
+            a: estadoNuevo,
+            quien: usuario?.nombre || "Usuario",
+            cuando: new Date().toISOString()
+        });
+        saveHistorial(h);
+    }
+
     function poblarFiltroArea() {
         const areas = [...new Set(todasActividades.map(a => a.area).filter(Boolean))].sort();
         const sel = document.getElementById("filtroArea");
-        // evitar duplicados en re-render
         sel.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
         areas.forEach(area => {
             const opt = document.createElement("option");
             opt.value = area; opt.textContent = area;
             sel.appendChild(opt);
         });
+    }
+
+    function sortTabla(col) {
+        if (sortCol === col) {
+            sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+            sortCol = col; sortDir = "asc";
+        }
+        // update header classes
+        document.querySelectorAll("thead th.sortable").forEach(th => {
+            th.classList.remove("sort-asc","sort-desc");
+            if (th.dataset.col === col) th.classList.add("sort-" + sortDir);
+        });
+        paginaTabla = 1;
+        renderTabla();
+    }
+
+    function fechaRelativa(isoFecha, estado) {
+        if (!isoFecha) return { texto: "—", clase: "" };
+        const hoy  = new Date(); hoy.setHours(0,0,0,0);
+        const d    = new Date(isoFecha + "T00:00:00");
+        const diff = Math.round((d - hoy) / 86400000); // días
+        const terminado = estado === "Terminado";
+
+        if (terminado) {
+            // Para terminados sólo mostrar fecha formateada
+            return { texto: formatFecha(isoFecha), clase: "" };
+        }
+        if (diff < 0)  return { texto: `Vencida hace ${Math.abs(diff)} día${Math.abs(diff)!==1?"s":""}`, clase: "fecha-vencida" };
+        if (diff === 0) return { texto: "Vence hoy",    clase: "fecha-proxima" };
+        if (diff <= 3)  return { texto: `Vence en ${diff} día${diff!==1?"s":""}`, clase: "fecha-proxima" };
+        return { texto: `Vence en ${diff} días`, clase: "fecha-ok" };
     }
 
     function renderTabla() {
@@ -1281,16 +1499,14 @@
         const prioridad = document.getElementById("filtroPrioridad").value;
         const area      = document.getElementById("filtroArea").value;
 
-        const orden       = { "Alta":0, "Media":1, "Baja":2 };
-        const estadoOrden = { "En proceso":0, "No iniciado":1, "Terminado":2 };
+        const ordenPrio  = { "Alta":0, "Media":1, "Baja":2 };
+        const ordenEstado = { "En proceso":0, "No iniciado":1, "Terminado":2 };
 
         let filtradas = todasActividades.filter(a => {
             if (estado    && a.estado    !== estado)    return false;
             if (prioridad && a.prioridad !== prioridad) return false;
             if (area      && a.area      !== area)      return false;
-            if (asignado) {
-                if (!(a.asignado||"").toLowerCase().includes(asignado.toLowerCase())) return false;
-            }
+            if (asignado && !(a.asignado||"").toLowerCase().includes(asignado.toLowerCase())) return false;
             if (busq) {
                 const h = `${a.actividad} ${a.proyecto_macro} ${a.area} ${a.asignado} ${a.notas}`.toLowerCase();
                 if (!h.includes(busq)) return false;
@@ -1298,11 +1514,28 @@
             return true;
         });
 
-        filtradas.sort((a,b) => {
-            const es = (estadoOrden[a.estado]??3) - (estadoOrden[b.estado]??3);
-            if (es !== 0) return es;
-            return (orden[a.prioridad]??3) - (orden[b.prioridad]??3);
-        });
+        // Si el filtro es "Terminado", ordenar de más reciente a más antiguo
+        if (estado === "Terminado") {
+            filtradas.sort((a,b) => {
+                const fa = a.fecha_finalizacion || a.updated_at || "";
+                const fb = b.fecha_finalizacion || b.updated_at || "";
+                return fb.localeCompare(fa);
+            });
+        } else if (sortCol) {
+            filtradas.sort((a,b) => {
+                let va = a[sortCol]||"", vb = b[sortCol]||"";
+                if (sortCol === "prioridad") { va = ordenPrio[va]??3; vb = ordenPrio[vb]??3; }
+                else if (sortCol === "estado") { va = ordenEstado[va]??3; vb = ordenEstado[vb]??3; }
+                const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+                return sortDir === "asc" ? cmp : -cmp;
+            });
+        } else {
+            filtradas.sort((a,b) => {
+                const es = (ordenEstado[a.estado]??3) - (ordenEstado[b.estado]??3);
+                if (es !== 0) return es;
+                return (ordenPrio[a.prioridad]??3) - (ordenPrio[b.prioridad]??3);
+            });
+        }
 
         document.getElementById("filterCount").textContent =
             `${filtradas.length} de ${todasActividades.length} actividades`;
@@ -1310,23 +1543,218 @@
         const tbody = document.getElementById("tablaBody");
 
         if (!filtradas.length) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No se encontraron actividades con los filtros aplicados.</div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No se encontraron actividades con los filtros aplicados.</div></td></tr>`;
+            document.getElementById("paginacion").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = filtradas.map(a => `
-            <tr>
+        // Paginación
+        const totalPags = Math.ceil(filtradas.length / POR_PAGINA);
+        if (paginaTabla > totalPags) paginaTabla = totalPags;
+        const inicio   = (paginaTabla - 1) * POR_PAGINA;
+        const pagina   = filtradas.slice(inicio, inicio + POR_PAGINA);
+
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+        tbody.innerHTML = pagina.map(a => {
+            const vencida = a.fecha_limite && new Date(a.fecha_limite+"T00:00:00") < hoy && a.estado !== "Terminado";
+            const rowClass = vencida ? "clickable-row row-vencida" : "clickable-row";
+
+            const estadoMap = { "Terminado":"badge-terminado","En proceso":"badge-en-proceso","No iniciado":"badge-no-iniciado" };
+            const eClass    = estadoMap[a.estado] || "badge-no-iniciado";
+
+            const { texto: fechaTxt, clase: fechaClass } = fechaRelativa(a.fecha_limite, a.estado);
+
+            return `<tr class="${rowClass}" onclick="abrirDrawer(${a.id})">
                 <td class="td-actividad">
                     <span class="td-actividad-text" title="${esc(a.actividad)}">${esc(a.actividad)}</span>
                     <div class="td-proyecto">${esc(a.proyecto_macro||"")}</div>
                 </td>
                 <td>${esc(a.area||"—")}</td>
                 <td>${badgePrioridad(a.prioridad)}</td>
-                <td>${badgeEstado(a.estado)}</td>
+                <td onclick="event.stopPropagation()">
+                    <select class="inline-estado ${eClass}" onchange="cambiarEstadoInline(${a.id}, this)">
+                        <option value="No iniciado" ${a.estado==="No iniciado"?"selected":""}>No iniciado</option>
+                        <option value="En proceso"  ${a.estado==="En proceso"?"selected":""}>En proceso</option>
+                        <option value="Terminado"   ${a.estado==="Terminado"?"selected":""}>Terminado</option>
+                    </select>
+                </td>
                 <td><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
-                <td style="white-space:nowrap;color:#6b7280">${formatFecha(a.fecha_finalizacion)}</td>
-                <td><button class="btn-edit" onclick="abrirEditarTarea(${a.id})">✏ Editar</button></td>
-            </tr>`).join("");
+                <td style="white-space:nowrap" class="${fechaClass}">${esc(fechaTxt)}</td>
+                <td onclick="event.stopPropagation()">
+                    <button class="btn-edit" onclick="abrirEditarTarea(${a.id})">✏</button>
+                </td>
+            </tr>`;
+        }).join("");
+
+        // Render paginación
+        renderPaginacion(filtradas.length, totalPags);
+    }
+
+    function renderPaginacion(total, totalPags) {
+        const div = document.getElementById("paginacion");
+        if (totalPags <= 1) { div.innerHTML = ""; return; }
+
+        const inicio = (paginaTabla - 1) * POR_PAGINA + 1;
+        const fin    = Math.min(paginaTabla * POR_PAGINA, total);
+
+        let btns = "";
+        btns += `<button class="pg-btn" onclick="irPagina(${paginaTabla-1})" ${paginaTabla===1?"disabled":""}>‹</button>`;
+
+        for (let i = 1; i <= totalPags; i++) {
+            if (totalPags > 7 && Math.abs(i - paginaTabla) > 2 && i !== 1 && i !== totalPags) {
+                if (i === 2 || i === totalPags - 1) btns += `<button class="pg-btn" disabled>…</button>`;
+                continue;
+            }
+            btns += `<button class="pg-btn ${i===paginaTabla?"active":""}" onclick="irPagina(${i})">${i}</button>`;
+        }
+        btns += `<button class="pg-btn" onclick="irPagina(${paginaTabla+1})" ${paginaTabla===totalPags?"disabled":""}>›</button>`;
+
+        div.innerHTML = `
+            <span class="pagination-info">Mostrando ${inicio}–${fin} de ${total}</span>
+            <div class="pagination-btns">${btns}</div>`;
+    }
+
+    function irPagina(n) {
+        paginaTabla = n;
+        renderTabla();
+        document.getElementById("page-actividades").scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+
+    async function cambiarEstadoInline(id, sel) {
+        const nuevoEstado = sel.value;
+        const a = todasActividades.find(x => x.id === id);
+        if (!a) return;
+        const estadoAnterior = a.estado;
+        if (estadoAnterior === nuevoEstado) return;
+
+        // Update clase visual inmediatamente
+        const eMap = {"Terminado":"badge-terminado","En proceso":"badge-en-proceso","No iniciado":"badge-no-iniciado"};
+        sel.className = `inline-estado ${eMap[nuevoEstado]||"badge-no-iniciado"}`;
+
+        const payload = { estado: nuevoEstado };
+        if (nuevoEstado === "Terminado" && !a.fecha_finalizacion) {
+            payload.fecha_finalizacion = new Date().toISOString().split("T")[0];
+        }
+
+        const { error } = await supabaseClient.from("actividades").update(payload).eq("id", id);
+        if (error) {
+            alert("Error al actualizar: " + error.message);
+            sel.value = estadoAnterior;
+            sel.className = `inline-estado ${eMap[estadoAnterior]||"badge-no-iniciado"}`;
+            return;
+        }
+
+        registrarCambioEstado(id, estadoAnterior, nuevoEstado);
+        await cargarActividades();
+    }
+
+
+    /* ═══════════════════════════════════════════
+       DRAWER DETALLE
+    ═══════════════════════════════════════════ */
+    let drawerIdActual = null;
+
+    function abrirDrawer(id) {
+        const a = todasActividades.find(x => x.id === id);
+        if (!a) return;
+        drawerIdActual = id;
+
+        document.getElementById("drawerTitulo").textContent  = a.actividad || "—";
+        document.getElementById("drawerProyecto").textContent = a.proyecto_macro || "";
+        document.getElementById("dArea").innerHTML     = esc(a.area || "—");
+        document.getElementById("dPrioridad").innerHTML = badgePrioridad(a.prioridad);
+        document.getElementById("dEstado").innerHTML    = badgeEstado(a.estado);
+        document.getElementById("dAsignado").innerHTML  = `<span class="asignado-chip">${esc(a.asignado||"—")}</span>`;
+
+        const { texto: ftxt, clase: fcls } = fechaRelativa(a.fecha_limite, a.estado);
+        document.getElementById("dFechaLimite").innerHTML = `<span class="${fcls}">${esc(ftxt)}</span>`;
+        document.getElementById("dFechaFin").textContent  = formatFecha(a.fecha_finalizacion);
+
+        const notasSec = document.getElementById("dNotasSection");
+        if (a.notas) {
+            notasSec.style.display = "";
+            document.getElementById("dNotas").textContent = a.notas;
+        } else {
+            notasSec.style.display = "none";
+        }
+
+        // Historial
+        const hist = getHistorial();
+        const items = hist[id] || [];
+        const dHist = document.getElementById("dHistorial");
+        if (!items.length) {
+            dHist.innerHTML = `<div style="font-size:12px;color:#9ca3af">Sin historial registrado.</div>`;
+        } else {
+            dHist.innerHTML = items.map(h => `
+                <div class="history-item">
+                    <div class="history-dot"></div>
+                    <div class="history-text">
+                        Estado cambiado de <strong>${esc(h.de)}</strong> a <strong>${esc(h.a)}</strong> por ${esc(h.quien)}
+                    </div>
+                    <div class="history-time">${formatFechaHora(h.cuando)}</div>
+                </div>`).join("");
+        }
+
+        // Comentarios
+        renderComentariosDrawer(id);
+
+        document.getElementById("drawerOverlay").classList.add("open");
+        document.getElementById("drawerDetalle").classList.add("open");
+    }
+
+    function cerrarDrawer() {
+        document.getElementById("drawerOverlay").classList.remove("open");
+        document.getElementById("drawerDetalle").classList.remove("open");
+        drawerIdActual = null;
+    }
+
+    function abrirEditarDesdeDrawer() {
+        if (drawerIdActual) {
+            cerrarDrawer();
+            abrirEditarTarea(drawerIdActual);
+        }
+    }
+
+    function renderComentariosDrawer(id) {
+        const comms = getComentarios();
+        const lista = comms[id] || [];
+        const dComm = document.getElementById("dComentarios");
+        if (!lista.length) {
+            dComm.innerHTML = `<div style="font-size:12px;color:#9ca3af;margin-bottom:8px">Sin comentarios aún.</div>`;
+        } else {
+            dComm.innerHTML = lista.map(c => `
+                <div class="comment-item">
+                    <div>${esc(c.texto)}</div>
+                    <div class="comment-meta">${esc(c.quien)} · ${formatFechaHora(c.cuando)}</div>
+                </div>`).join("");
+        }
+    }
+
+    function agregarComentario() {
+        if (!drawerIdActual) return;
+        const inp  = document.getElementById("dCommentInput");
+        const txt  = inp.value.trim();
+        if (!txt) return;
+        const comms = getComentarios();
+        if (!comms[drawerIdActual]) comms[drawerIdActual] = [];
+        comms[drawerIdActual].push({
+            texto: txt,
+            quien: usuario?.nombre || "Usuario",
+            cuando: new Date().toISOString()
+        });
+        saveComentarios(comms);
+        inp.value = "";
+        renderComentariosDrawer(drawerIdActual);
+    }
+
+    function formatFechaHora(iso) {
+        if (!iso) return "—";
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString("es-GT", { day:"2-digit", month:"short", year:"numeric" })
+                 + " " + d.toLocaleTimeString("es-GT", { hour:"2-digit", minute:"2-digit" });
+        } catch { return iso; }
     }
 
 
