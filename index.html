@@ -1,172 +1,393 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Alterna | Iniciar sesión</title>
 
-    <!-- Supabase -->
+
+    <!-- =========================================
+         SUPABASE
+    ========================================== -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
     <style>
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+
         body {
-            font-family: Arial, Helvetica, sans-serif;
             min-height: 100vh;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f4f6f8;
-            color: #1f2937;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #f8fafc,
+                    #eef1f5
+                );
+
+            color: #111827;
         }
+
+
+        /* =========================================
+           CONTENEDOR
+        ========================================== */
 
         .login-container {
             width: 100%;
-            max-width: 420px;
+            max-width: 430px;
             padding: 20px;
         }
 
+
+        /* =========================================
+           TARJETA
+        ========================================== */
+
         .login-card {
             background: white;
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+
             border: 1px solid #e5e7eb;
+
+            border-radius: 18px;
+
+            padding: 42px;
+
+            box-shadow:
+                0 20px 50px
+                rgba(0, 0, 0, .08);
         }
+
+
+        /* =========================================
+           LOGO
+        ========================================== */
 
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
 
+
         .logo-icon {
-            width: 58px;
-            height: 58px;
-            margin: 0 auto 15px;
-            border-radius: 14px;
+            width: 62px;
+            height: 62px;
+
+            margin: 0 auto 16px;
+
+            border-radius: 15px;
+
             background: #111827;
+
             color: white;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 25px;
+
+            font-size: 27px;
             font-weight: bold;
+
+            box-shadow:
+                0 8px 20px
+                rgba(17, 24, 39, .18);
         }
 
+
         .logo h1 {
-            font-size: 26px;
+            font-size: 27px;
             color: #111827;
+
             margin-bottom: 6px;
         }
 
+
         .logo p {
-            font-size: 14px;
             color: #6b7280;
+            font-size: 14px;
         }
 
+
+        /* =========================================
+           FORMULARIO
+        ========================================== */
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 21px;
         }
+
 
         label {
             display: block;
+
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 8px;
+
             color: #374151;
+
+            margin-bottom: 8px;
         }
+
 
         input {
             width: 100%;
-            padding: 13px 14px;
-            border: 1px solid #d1d5db;
+
+            padding: 14px;
+
+            border:
+                1px solid #d1d5db;
+
             border-radius: 9px;
+
             font-size: 15px;
+
+            color: #111827;
+
             outline: none;
-            transition: 0.2s;
+
+            transition:
+                border .2s,
+                box-shadow .2s;
         }
+
 
         input:focus {
             border-color: #111827;
-            box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+
+            box-shadow:
+                0 0 0 3px
+                rgba(17, 24, 39, .08);
         }
+
+
+        input::placeholder {
+            color: #9ca3af;
+        }
+
+
+        /* =========================================
+           CONTRASEÑA
+        ========================================== */
 
         .password-container {
             position: relative;
         }
 
+
         .password-container input {
-            padding-right: 45px;
+            padding-right: 80px;
         }
+
 
         .show-password {
             position: absolute;
+
             right: 13px;
             top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
+
+            transform:
+                translateY(-50%);
+
             color: #6b7280;
-            font-size: 13px;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            cursor: pointer;
+
             user-select: none;
         }
 
+
+        .show-password:hover {
+            color: #111827;
+        }
+
+
+        /* =========================================
+           ERROR
+        ========================================== */
+
+        .error {
+            display: none;
+
+            padding: 12px 14px;
+
+            margin-bottom: 20px;
+
+            border-radius: 8px;
+
+            background: #fef2f2;
+
+            border:
+                1px solid #fecaca;
+
+            color: #b91c1c;
+
+            font-size: 13px;
+
+            line-height: 1.4;
+        }
+
+
+        /* =========================================
+           BOTÓN
+        ========================================== */
+
         button {
             width: 100%;
+
             padding: 14px;
+
             border: none;
+
             border-radius: 9px;
+
             background: #111827;
+
             color: white;
+
             font-size: 15px;
+
             font-weight: 600;
+
             cursor: pointer;
-            transition: 0.2s;
+
+            transition:
+                background .2s,
+                transform .1s;
         }
+
 
         button:hover {
             background: #1f2937;
         }
 
+
+        button:active {
+            transform: scale(.99);
+        }
+
+
         button:disabled {
             background: #9ca3af;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .error {
-            display: none;
-            margin-bottom: 18px;
-            padding: 12px;
-            border-radius: 8px;
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            font-size: 14px;
-        }
+
+        /* =========================================
+           FOOTER
+        ========================================== */
 
         .footer {
             text-align: center;
-            margin-top: 25px;
-            font-size: 12px;
+
+            margin-top: 28px;
+
             color: #9ca3af;
+
+            font-size: 12px;
         }
+
+
+        /* =========================================
+           LOADING
+        ========================================== */
 
         .loading {
             display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
         }
+
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+
+            border:
+                2px solid
+                rgba(255,255,255,.4);
+
+            border-top-color: white;
+
+            border-radius: 50%;
+
+            animation:
+                spin .7s linear infinite;
+        }
+
+
+        @keyframes spin {
+
+            to {
+                transform: rotate(360deg);
+            }
+
+        }
+
+
+        /* =========================================
+           RESPONSIVE
+        ========================================== */
+
+        @media (max-width: 480px) {
+
+            .login-container {
+                padding: 15px;
+            }
+
+            .login-card {
+                padding: 30px 24px;
+            }
+
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
+
 <div class="login-container">
 
+
     <div class="login-card">
+
+
+        <!-- =====================================
+             LOGO
+        ====================================== -->
 
         <div class="logo">
 
@@ -174,17 +395,35 @@
                 A
             </div>
 
-            <h1>Alterna</h1>
+            <h1>
+                Alterna
+            </h1>
 
-            <p>Sistema de Gestión</p>
+            <p>
+                Sistema de Gestión
+            </p>
 
         </div>
 
 
-        <div id="errorMessage" class="error"></div>
+        <!-- =====================================
+             ERROR
+        ====================================== -->
 
+        <div
+            id="errorMessage"
+            class="error"
+        ></div>
+
+
+        <!-- =====================================
+             LOGIN
+        ====================================== -->
 
         <form id="loginForm">
+
+
+            <!-- CORREO -->
 
             <div class="form-group">
 
@@ -195,6 +434,7 @@
                 <input
                     type="email"
                     id="correo"
+                    name="correo"
                     placeholder="correo@alterna.pro"
                     autocomplete="username"
                     required
@@ -203,25 +443,30 @@
             </div>
 
 
+            <!-- CONTRASEÑA -->
+
             <div class="form-group">
 
                 <label for="contraseña">
                     Contraseña
                 </label>
 
+
                 <div class="password-container">
 
                     <input
                         type="password"
                         id="contraseña"
+                        name="contraseña"
                         placeholder="Ingresa tu contraseña"
                         autocomplete="current-password"
                         required
                     >
 
+
                     <span
                         class="show-password"
-                        onclick="mostrarContraseña()"
+                        id="showPassword"
                     >
                         Mostrar
                     </span>
@@ -231,125 +476,282 @@
             </div>
 
 
+            <!-- BOTÓN -->
+
             <button
                 type="submit"
                 id="loginButton"
             >
+
                 <span id="buttonText">
                     Iniciar sesión
                 </span>
 
+
                 <span
-                    id="loadingText"
+                    id="loading"
                     class="loading"
                 >
+
+                    <span class="spinner"></span>
+
                     Verificando...
+
                 </span>
+
             </button>
+
 
         </form>
 
 
+        <!-- FOOTER -->
+
         <div class="footer">
+
             Asociación Alterna ONG
+
         </div>
 
+
     </div>
+
 
 </div>
 
 
 <script>
 
-    /*
-    ============================================
-    CONFIGURACIÓN SUPABASE
-    ============================================
-    */
 
-    const SUPABASE_URL = "TU_PROJECT_URL";
+    /* =================================================
+       CONFIGURACIÓN SUPABASE
+    ================================================= */
+
+
+    const SUPABASE_URL =
+        "https://nxbncqixxlmdvepapuqe.supabase.co";
+
 
     const SUPABASE_KEY =
         "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
 
 
-    const supabaseClient = supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
+    const supabaseClient =
+        supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+
+
+
+    /* =================================================
+       ELEMENTOS
+    ================================================= */
+
+
+    const loginForm =
+        document.getElementById("loginForm");
+
+
+    const loginButton =
+        document.getElementById("loginButton");
+
+
+    const buttonText =
+        document.getElementById("buttonText");
+
+
+    const loading =
+        document.getElementById("loading");
+
+
+    const errorMessage =
+        document.getElementById("errorMessage");
+
+
+    const correoInput =
+        document.getElementById("correo");
+
+
+    const contraseñaInput =
+        document.getElementById("contraseña");
+
+
+    const showPassword =
+        document.getElementById("showPassword");
+
+
+
+    /* =================================================
+       MOSTRAR / OCULTAR CONTRASEÑA
+    ================================================= */
+
+
+    showPassword.addEventListener(
+        "click",
+        function() {
+
+            if (
+                contraseñaInput.type ===
+                "password"
+            ) {
+
+                contraseñaInput.type =
+                    "text";
+
+                showPassword.textContent =
+                    "Ocultar";
+
+            } else {
+
+                contraseñaInput.type =
+                    "password";
+
+                showPassword.textContent =
+                    "Mostrar";
+
+            }
+
+        }
     );
 
 
-    /*
-    ============================================
-    LOGIN
-    ============================================
-    */
 
-    document
-        .getElementById("loginForm")
-        .addEventListener("submit", async function(event) {
+    /* =================================================
+       MOSTRAR ERROR
+    ================================================= */
+
+
+    function mostrarError(mensaje) {
+
+        errorMessage.textContent =
+            mensaje;
+
+        errorMessage.style.display =
+            "block";
+
+    }
+
+
+
+    /* =================================================
+       OCULTAR ERROR
+    ================================================= */
+
+
+    function ocultarError() {
+
+        errorMessage.textContent =
+            "";
+
+        errorMessage.style.display =
+            "none";
+
+    }
+
+
+
+    /* =================================================
+       ESTADO DE CARGA
+    ================================================= */
+
+
+    function cambiarEstadoCarga(cargando) {
+
+        loginButton.disabled =
+            cargando;
+
+
+        if (cargando) {
+
+            buttonText.style.display =
+                "none";
+
+            loading.style.display =
+                "flex";
+
+        } else {
+
+            buttonText.style.display =
+                "inline";
+
+            loading.style.display =
+                "none";
+
+        }
+
+    }
+
+
+
+    /* =================================================
+       LOGIN
+    ================================================= */
+
+
+    loginForm.addEventListener(
+        "submit",
+        async function(event) {
 
             event.preventDefault();
 
+
+            ocultarError();
+
+
             const correo =
-                document
-                    .getElementById("correo")
-                    .value
+                correoInput.value
                     .trim();
 
+
             const contraseña =
-                document
-                    .getElementById("contraseña")
-                    .value;
+                contraseñaInput.value;
 
 
-            const errorMessage =
-                document.getElementById("errorMessage");
+            if (!correo || !contraseña) {
 
-            const loginButton =
-                document.getElementById("loginButton");
+                mostrarError(
+                    "Ingresa tu correo y contraseña."
+                );
 
-            const buttonText =
-                document.getElementById("buttonText");
+                return;
 
-            const loadingText =
-                document.getElementById("loadingText");
+            }
 
 
-            /*
-            Limpiar error
-            */
-
-            errorMessage.style.display = "none";
-            errorMessage.textContent = "";
-
-
-            /*
-            Estado de carga
-            */
-
-            loginButton.disabled = true;
-
-            buttonText.style.display = "none";
-            loadingText.style.display = "inline";
+            cambiarEstadoCarga(true);
 
 
             try {
 
-                /*
-                ============================================
-                CONSULTAR SUPABASE
-                ============================================
-                */
+
+                /* =====================================
+                   CONSULTA A SUPABASE
+                ====================================== */
+
 
                 const { data, error } =
                     await supabaseClient.rpc(
                         "login_usuario",
                         {
-                            p_correo: correo,
-                            p_contraseña: contraseña
+                            p_correo:
+                                correo,
+
+                            p_contraseña:
+                                contraseña
                         }
                     );
+
+
+                console.log(
+                    "Respuesta Supabase:",
+                    data
+                );
+
+
+                /* =====================================
+                   ERROR DE SUPABASE
+                ====================================== */
 
 
                 if (error) {
@@ -359,52 +761,69 @@
                         error
                     );
 
-                    throw new Error(
+
+                    mostrarError(
                         "No fue posible conectar con el servidor."
                     );
+
+
+                    return;
+
                 }
 
 
-                /*
-                ============================================
-                USUARIO NO ENCONTRADO
-                ============================================
-                */
+                /* =====================================
+                   USUARIO NO ENCONTRADO
+                ====================================== */
 
-                if (!data || data.length === 0) {
 
-                    throw new Error(
+                if (
+                    !data ||
+                    data.length === 0
+                ) {
+
+                    mostrarError(
                         "Correo o contraseña incorrectos."
                     );
+
+
+                    return;
+
                 }
 
 
-                /*
-                ============================================
-                USUARIO ENCONTRADO
-                ============================================
-                */
-
-                const usuario = data[0];
+                /* =====================================
+                   USUARIO
+                ====================================== */
 
 
-                /*
-                Verificar estado
-                */
+                const usuario =
+                    data[0];
 
-                if (!usuario.activo) {
 
-                    throw new Error(
+                /* =====================================
+                   VERIFICAR ACTIVO
+                ====================================== */
+
+
+                if (
+                    usuario.activo !== true
+                ) {
+
+                    mostrarError(
                         "Tu usuario se encuentra desactivado."
                     );
+
+
+                    return;
+
                 }
 
 
-                /*
-                ============================================
-                GUARDAR SESIÓN
-                ============================================
-                */
+                /* =====================================
+                   GUARDAR SESIÓN
+                ====================================== */
+
 
                 localStorage.setItem(
                     "usuario",
@@ -412,11 +831,10 @@
                 );
 
 
-                /*
-                ============================================
-                REDIRECCIÓN
-                ============================================
-                */
+                /* =====================================
+                   REDIRECCIÓN
+                ====================================== */
+
 
                 window.location.href =
                     "dashboard.html";
@@ -424,65 +842,31 @@
 
             } catch (error) {
 
-                console.error(error);
+                console.error(
+                    "Error inesperado:",
+                    error
+                );
 
 
-                errorMessage.textContent =
-                    error.message;
-
-
-                errorMessage.style.display =
-                    "block";
+                mostrarError(
+                    "Ocurrió un error inesperado."
+                );
 
 
             } finally {
 
-                loginButton.disabled = false;
-
-                buttonText.style.display =
-                    "inline";
-
-                loadingText.style.display =
-                    "none";
+                cambiarEstadoCarga(false);
 
             }
 
-        });
-
-
-    /*
-    ============================================
-    MOSTRAR / OCULTAR CONTRASEÑA
-    ============================================
-    */
-
-    function mostrarContraseña() {
-
-        const input =
-            document.getElementById("contraseña");
-
-        const boton =
-            document.querySelector(".show-password");
-
-
-        if (input.type === "password") {
-
-            input.type = "text";
-
-            boton.textContent = "Ocultar";
-
-        } else {
-
-            input.type = "password";
-
-            boton.textContent = "Mostrar";
-
         }
+    );
 
-    }
 
 </script>
 
+
 </body>
+
 </html>
-**Una cosa que sí cambiaría antes de poner esto en producción:** no dejaría `Cheetos-2025` almacenada en texto plano. Para la primera prueba está bien para comprobar que toda la conexión funciona; después podemos pasar la columna a contraseñas con hash sin cambiar el diseño del login.
+```
