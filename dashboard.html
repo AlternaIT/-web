@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alterna | Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; background: #f5f6f8; color: #1f2937; }
@@ -41,7 +42,7 @@
         }
         .menu-item:hover  { background: #2c2c2e; color: white; }
         .menu-item.active { background: #3a3a3c; color: white; }
-        .menu-icon { width: 20px; text-align: center; font-size: 15px; }
+        .menu-icon { width: 20px; display: flex; align-items: center; justify-content: center; } .menu-icon svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.75; }
 
         .sidebar-user { padding: 18px; border-top: 1px solid rgba(255,255,255,.08); }
         .sidebar-user-inner { display: flex; align-items: center; gap: 10px; }
@@ -233,7 +234,7 @@
         }
         .submenu-item:hover { background: #2c2c2e; color: #e5e7eb; }
         .submenu-item.active { color: #0a84ff; background: #2c2c2e; }
-        .submenu-icon { font-size: 12px; width: 16px; text-align: center; }
+        .submenu-icon { width: 16px; display: flex; align-items: center; justify-content: center; } .submenu-icon svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 1.75; }
         .menu-item .arrow {
             margin-left: auto; font-size: 10px; transition: transform .2s;
         }
@@ -454,48 +455,48 @@
             <div class="menu-title">Principal</div>
 
             <div class="menu-item active" data-page="dashboard" onclick="navegar('dashboard')">
-                <span class="menu-icon">⌂</span>
+                <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
                 <span class="menu-text">Dashboard</span>
             </div>
 
             <div class="menu-item" data-page="actividades" onclick="toggleSubmenu(this, 'actividades')">
-                <span class="menu-icon">✓</span>
+                <span class="menu-icon"><i data-lucide="check-square"></i></span>
                 <span class="menu-text">Actividades</span>
                 <span class="arrow">›</span>
             </div>
             <div class="submenu" id="submenu-actividades">
                 <div class="submenu-item" onclick="navegarSubmenu('nueva-tarea', null)" data-sub="nueva-tarea">
-                    <span class="submenu-icon">＋</span>
+                    <span class="submenu-icon"><i data-lucide="plus"></i></span>
                     <span>Nueva Tarea</span>
                 </div>
                 <div class="submenu-item" onclick="navegarSubmenu('actividades','No iniciado')" data-sub="No iniciado">
-                    <span class="submenu-icon">○</span>
+                    <span class="submenu-icon"><i data-lucide="circle"></i></span>
                     <span>No Iniciado</span>
                 </div>
                 <div class="submenu-item" onclick="navegarSubmenu('actividades','En proceso')" data-sub="En proceso">
-                    <span class="submenu-icon">◑</span>
+                    <span class="submenu-icon"><i data-lucide="clock"></i></span>
                     <span>En Proceso</span>
                 </div>
                 <div class="submenu-item" onclick="navegarSubmenu('actividades','Terminado')" data-sub="Terminado">
-                    <span class="submenu-icon">●</span>
+                    <span class="submenu-icon"><i data-lucide="check-circle-2"></i></span>
                     <span>Terminado</span>
                 </div>
             </div>
 
             <div class="menu-item" data-page="licencias" onclick="toggleSubmenu(this, 'licencias')">
-                <span class="menu-icon">🔑</span>
+                <span class="menu-icon"><i data-lucide="key-round"></i></span>
                 <span class="menu-text">Licencias</span>
                 <span class="arrow">›</span>
             </div>
             <div class="submenu" id="submenu-licencias">
                 <div class="submenu-item" onclick="navegarSubmenu('licencias-office', null)" data-sub="office">
-                    <span class="submenu-icon">📦</span>
+                    <span class="submenu-icon"><i data-lucide="package"></i></span>
                     <span>Office</span>
                 </div>
             </div>
 
             <div class="menu-item" data-page="usuarios" onclick="navegar('usuarios')">
-                <span class="menu-icon">◉</span>
+                <span class="menu-icon"><i data-lucide="users"></i></span>
                 <span class="menu-text">Usuarios</span>
             </div>
 
@@ -504,12 +505,12 @@
             <div class="menu-title">Gestión</div>
 
             <div class="menu-item" data-page="reportes" onclick="navegar('reportes')">
-                <span class="menu-icon">▥</span>
+                <span class="menu-icon"><i data-lucide="bar-chart-2"></i></span>
                 <span class="menu-text">Reportes</span>
             </div>
 
             <div class="menu-item" data-page="configuracion" onclick="navegar('configuracion')">
-                <span class="menu-icon">⚙</span>
+                <span class="menu-icon"><i data-lucide="settings"></i></span>
                 <span class="menu-text">Configuración</span>
             </div>
 
@@ -2597,6 +2598,7 @@
     }
 
     iniciarDashboard();
+    if (typeof lucide !== "undefined") lucide.createIcons();
 
 </script>
 </body>
