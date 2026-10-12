@@ -331,43 +331,195 @@
             .left { padding: 40px 28px; }
         }
 
-        /* ── PWA INSTALL BANNER ── */
-        .install-banner {
+        /* ══════════════════════════════════
+           MODAL DE INSTALACIÓN PWA
+        ══════════════════════════════════ */
+
+        /* Overlay oscuro */
+        .pwa-overlay {
             display: none;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.7);
+            z-index: 1000;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .pwa-overlay.open { display: flex; }
+
+        /* Sheet que sube desde abajo */
+        .pwa-sheet {
             background: #1c1c1e;
-            border-top: 1px solid rgba(255,255,255,.1);
-            padding: 16px 20px;
-            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-            z-index: 999;
-            animation: slideUp .3s ease;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 480px;
+            padding: 0 0 calc(28px + env(safe-area-inset-bottom, 0px));
+            transform: translateY(100%);
+            transition: transform .35s cubic-bezier(.32,0,.67,0);
+            border-top: 1px solid rgba(255,255,255,.08);
         }
-        .install-banner.visible { display: flex; align-items: center; gap: 14px; }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
+        .pwa-overlay.open .pwa-sheet {
+            transform: translateY(0);
+            transition: transform .38s cubic-bezier(.22,.68,0,1.2);
         }
 
-        .install-banner-icon {
-            width: 44px; height: 44px; border-radius: 10px;
-            background: #2c2c2e; display: flex; align-items: center;
-            justify-content: center; flex-shrink: 0; overflow: hidden;
+        /* Handle visual */
+        .pwa-handle {
+            width: 36px; height: 4px;
+            background: rgba(255,255,255,.15);
+            border-radius: 2px;
+            margin: 12px auto 0;
         }
-        .install-banner-icon img { width: 32px; height: auto; filter: brightness(0) invert(1); }
 
-        .install-banner-text { flex: 1; min-width: 0; }
-        .install-banner-title { font-size: 13px; font-weight: 600; color: #f5f5f7; }
-        .install-banner-sub   { font-size: 11px; color: #8e8e93; margin-top: 2px; }
-
-        .install-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
-        .install-btn {
-            padding: 8px 16px; border-radius: 8px; font-size: 13px;
-            font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+        /* Header del sheet */
+        .pwa-header {
+            display: flex; align-items: center;
+            padding: 20px 20px 0;
+            gap: 14px;
         }
-        .install-btn-primary { background: #f5f5f7; color: #0f0f0f; }
-        .install-btn-dismiss { background: transparent; color: #8e8e93; border: 1px solid rgba(255,255,255,.12); }
+        .pwa-app-icon {
+            width: 56px; height: 56px;
+            border-radius: 14px;
+            background: #0f0f0f;
+            border: 1px solid rgba(255,255,255,.1);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .pwa-app-icon svg {
+            width: 32px; height: 32px;
+        }
+        .pwa-app-info { flex: 1; }
+        .pwa-app-name {
+            font-size: 17px; font-weight: 600;
+            color: #f5f5f7; letter-spacing: -.2px;
+        }
+        .pwa-app-sub {
+            font-size: 12px; color: #8e8e93;
+            margin-top: 3px;
+        }
+        .pwa-close {
+            width: 28px; height: 28px;
+            border-radius: 50%; background: #3a3a3c;
+            border: none; color: #8e8e93;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px; flex-shrink: 0;
+            line-height: 1;
+        }
+        .pwa-close:hover { background: #48484a; color: #f5f5f7; }
+
+        /* Separador */
+        .pwa-divider {
+            height: 1px; background: rgba(255,255,255,.07);
+            margin: 18px 0 0;
+        }
+
+        /* Cuerpo Android — botón directo */
+        .pwa-body-android {
+            padding: 20px 20px 0;
+        }
+        .pwa-pitch {
+            font-size: 14px; color: #aeaeb2;
+            line-height: 1.55; margin-bottom: 6px;
+        }
+        .pwa-features {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 10px;
+            margin: 16px 0 22px;
+        }
+        .pwa-features li {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 13px; color: #aeaeb2;
+        }
+        .pwa-feat-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,.25); flex-shrink: 0;
+        }
+
+        .pwa-btn-install {
+            width: 100%; padding: 15px;
+            background: #f5f5f7; color: #0f0f0f;
+            border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 600;
+            font-family: inherit; cursor: pointer;
+            transition: opacity .15s, transform .1s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .pwa-btn-install:hover  { opacity: .9; }
+        .pwa-btn-install:active { transform: scale(.98); }
+
+        /* Cuerpo iOS — pasos */
+        .pwa-body-ios {
+            padding: 20px 20px 0;
+            display: none;
+        }
+        .pwa-steps-title {
+            font-size: 13px; font-weight: 600; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: .06em;
+            margin-bottom: 16px;
+        }
+        .pwa-steps {
+            display: flex; flex-direction: column; gap: 0;
+        }
+        .pwa-step {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .pwa-step:last-child { border-bottom: none; }
+        .pwa-step-num {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.08);
+            color: #f5f5f7; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px;
+        }
+        .pwa-step-text { flex: 1; }
+        .pwa-step-label {
+            font-size: 14px; color: #f5f5f7; font-weight: 500;
+            line-height: 1.3;
+        }
+        .pwa-step-desc {
+            font-size: 12px; color: #8e8e93;
+            margin-top: 3px; line-height: 1.4;
+        }
+        .pwa-step-icon {
+            font-size: 20px; flex-shrink: 0;
+            display: flex; align-items: center;
+        }
+
+        /* Chip de "Agregar a pantalla" para iOS */
+        .ios-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 6px; padding: 2px 8px;
+            font-size: 12px; color: #f5f5f7;
+            vertical-align: middle; margin: 0 2px;
+        }
+
+        /* Flecha apuntando a la barra de Safari (solo iOS) */
+        .pwa-safari-arrow {
+            display: none;
+            position: fixed; bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+            left: 50%; transform: translateX(-50%);
+            background: #f5f5f7; color: #0f0f0f;
+            font-size: 11px; font-weight: 600;
+            padding: 6px 14px; border-radius: 20px;
+            white-space: nowrap; z-index: 2000;
+            box-shadow: 0 4px 20px rgba(0,0,0,.4);
+            pointer-events: none;
+        }
+        .pwa-safari-arrow::after {
+            content: '';
+            position: absolute; bottom: -7px; left: 50%;
+            transform: translateX(-50%);
+            border: 7px solid transparent;
+            border-top-color: #f5f5f7;
+            border-bottom: none;
+        }
 
         /* ── UPDATE TOAST ── */
         .update-toast {
@@ -378,7 +530,7 @@
             color: #f5f5f7; font-size: 13px;
             box-shadow: 0 8px 30px rgba(0,0,0,.4);
             z-index: 9999; white-space: nowrap;
-            display: none; align-items: center; gap: 12px;
+            align-items: center; gap: 12px;
         }
         .update-toast.visible { display: flex; }
         .update-toast-btn {
@@ -431,22 +583,83 @@
 
 
 
-<!-- ── PWA INSTALL BANNER (solo móvil) ── -->
-<div class="install-banner" id="installBanner">
-    <div class="install-banner-icon">
-        <img src="data:image/png;base64,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" alt="Alterna" />
-    </div>
-    <div class="install-banner-text">
-        <div class="install-banner-title">Alterna Apps</div>
-        <div class="install-banner-sub">Instala la app para acceso rápido</div>
-    </div>
-    <div class="install-banner-actions">
-        <button class="install-btn install-btn-dismiss" onclick="dismissInstall()">Ahora no</button>
-        <button class="install-btn install-btn-primary" onclick="doInstall()">Instalar</button>
+<!-- ══════════════════════════════════════
+     MODAL PWA — INSTALAR APP
+══════════════════════════════════════ -->
+<div class="pwa-overlay" id="pwaOverlay" onclick="handleOverlayClick(event)">
+    <div class="pwa-sheet" id="pwaSheet">
+
+        <div class="pwa-handle"></div>
+
+        <div class="pwa-header">
+            <div class="pwa-app-icon">
+                <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="28,8 50,46 6,46" fill="white"/>
+                    <polygon points="28,20 42,44 14,44" fill="#0f0f0f"/>
+                </svg>
+            </div>
+            <div class="pwa-app-info">
+                <div class="pwa-app-name">Alterna Apps</div>
+                <div class="pwa-app-sub">Asociación Alterna ONG</div>
+            </div>
+            <button class="pwa-close" onclick="cerrarModal()" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="pwa-divider"></div>
+
+        <!-- Android: un clic para instalar -->
+        <div class="pwa-body-android" id="pwaAndroid">
+            <p class="pwa-pitch">Instala Alterna Apps en tu teléfono. Abre igual que cualquier app, sin barra de navegador.</p>
+            <ul class="pwa-features">
+                <li><span class="pwa-feat-dot"></span>Acceso directo desde tu pantalla de inicio</li>
+                <li><span class="pwa-feat-dot"></span>Se ve y funciona como una app nativa</li>
+                <li><span class="pwa-feat-dot"></span>Siempre carga la versión más reciente</li>
+                <li><span class="pwa-feat-dot"></span>Sin anuncios ni barra del navegador</li>
+            </ul>
+            <button class="pwa-btn-install" id="btnInstalarAndroid" onclick="doInstall()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Instalar aplicación
+            </button>
+        </div>
+
+        <!-- iOS: guía paso a paso -->
+        <div class="pwa-body-ios" id="pwaIos">
+            <div class="pwa-steps-title">Cómo instalarla en iOS</div>
+            <div class="pwa-steps">
+                <div class="pwa-step">
+                    <div class="pwa-step-num">1</div>
+                    <div class="pwa-step-text">
+                        <div class="pwa-step-label">Toca el botón Compartir de Safari</div>
+                        <div class="pwa-step-desc">El ícono con una flecha hacia arriba en la barra inferior.</div>
+                    </div>
+                    <div class="pwa-step-icon">⎙</div>
+                </div>
+                <div class="pwa-step">
+                    <div class="pwa-step-num">2</div>
+                    <div class="pwa-step-text">
+                        <div class="pwa-step-label">Elige <span class="ios-chip">+ Añadir a pantalla de inicio</span></div>
+                        <div class="pwa-step-desc">Desplázate hacia abajo en el menú de compartir.</div>
+                    </div>
+                    <div class="pwa-step-icon">📲</div>
+                </div>
+                <div class="pwa-step">
+                    <div class="pwa-step-num">3</div>
+                    <div class="pwa-step-text">
+                        <div class="pwa-step-label">Toca <strong style="color:#f5f5f7">Añadir</strong> en la esquina superior derecha</div>
+                        <div class="pwa-step-desc">La app aparecerá en tu pantalla de inicio como una app nativa.</div>
+                    </div>
+                    <div class="pwa-step-icon">✓</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<!-- ── UPDATE TOAST ── -->
+<!-- Flecha de ayuda visible sobre la barra de Safari (iOS) -->
+<div class="pwa-safari-arrow" id="safariArrow">Toca Compartir para instalar ↓</div>
+
+<!-- Update toast -->
 <div class="update-toast" id="updateToast">
     ✦ Nueva versión disponible
     <button class="update-toast-btn" onclick="applyUpdate()">Actualizar</button>
@@ -493,103 +706,139 @@
     }
 
     /* ═══════════════════════════════════════════
-       PWA — Service Worker + Install Banner
+       PWA — Detección de plataforma + Modal
     ═══════════════════════════════════════════ */
     let deferredPrompt = null;
     let newWorker = null;
 
-    // Registrar Service Worker
+    const isIos     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile  = isIos || isAndroid;
+
+    // Detecta si ya está instalada como PWA (modo standalone)
+    const yaInstalada = window.matchMedia("(display-mode: standalone)").matches
+                     || window.navigator.standalone === true;
+
+    // ── Service Worker ──
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("./sw.js").then((reg) => {
-
-            // Detectar si hay una actualización disponible
             reg.addEventListener("updatefound", () => {
                 newWorker = reg.installing;
                 newWorker.addEventListener("statechange", () => {
-                    // Solo mostramos el toast si ya había un SW activo (no la primera instalación)
                     if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
                         document.getElementById("updateToast").classList.add("visible");
                     }
                 });
             });
-
-            // Verificar actualización cada vez que la página se activa (usuario vuelve a la pestaña)
+            // Chequear actualización cada vez que el usuario vuelve a la pestaña
             document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === "visible") {
-                    reg.update();
-                }
+                if (document.visibilityState === "visible") reg.update();
             });
         });
-
-        // Cuando el nuevo SW toma control, recargar automáticamente
         navigator.serviceWorker.addEventListener("controllerchange", () => {
             window.location.reload();
         });
     }
 
-    // Capturar el evento de instalación del navegador
+    // ── Capturar prompt de instalación (Android/Chrome) ──
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-
-        // Solo mostrar el banner en móvil
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const dismissed = sessionStorage.getItem("installDismissed");
-
-        if (isMobile && !dismissed) {
-            setTimeout(() => {
-                document.getElementById("installBanner").classList.add("visible");
-            }, 1500);
+        // El modal de Android se muestra aquí (cuando el navegador confirma que la PWA es instalable)
+        if (isMobile && !yaInstalada) {
+            mostrarModalAndroid();
         }
     });
 
+    // ── Para iOS: mostrar modal con instrucciones (no hay evento nativo) ──
+    window.addEventListener("load", () => {
+        if (isIos && !yaInstalada) {
+            // Pequeño retraso para que no aparezca de golpe al cargar
+            setTimeout(mostrarModalIos, 1200);
+        }
+    });
+
+    // ── Abrir modal Android ──
+    function mostrarModalAndroid() {
+        document.getElementById("pwaAndroid").style.display = "block";
+        document.getElementById("pwaIos").style.display     = "none";
+        abrirModal();
+    }
+
+    // ── Abrir modal iOS ──
+    function mostrarModalIos() {
+        document.getElementById("pwaAndroid").style.display = "none";
+        document.getElementById("pwaIos").style.display     = "block";
+        abrirModal();
+        // Mostrar también la flecha apuntando a la barra de Safari
+        const arrow = document.getElementById("safariArrow");
+        arrow.style.display = "block";
+        setTimeout(() => { arrow.style.display = "none"; }, 6000);
+    }
+
+    function abrirModal() {
+        document.getElementById("pwaOverlay").classList.add("open");
+        document.body.style.overflow = "hidden";
+    }
+
+    function cerrarModal() {
+        document.getElementById("pwaOverlay").classList.remove("open");
+        document.body.style.overflow = "";
+        document.getElementById("safariArrow").style.display = "none";
+    }
+
+    // Cerrar al tocar el fondo oscuro (no el sheet)
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById("pwaOverlay")) cerrarModal();
+    }
+
+    // ── Instalar (Android) ──
     async function doInstall() {
         if (!deferredPrompt) return;
+        const btn = document.getElementById("btnInstalarAndroid");
+        btn.disabled = true;
+        btn.textContent = "Instalando...";
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         deferredPrompt = null;
-        document.getElementById("installBanner").classList.remove("visible");
-    }
-
-    function dismissInstall() {
-        sessionStorage.setItem("installDismissed", "1");
-        document.getElementById("installBanner").classList.remove("visible");
-    }
-
-    function applyUpdate() {
-        if (newWorker) {
-            newWorker.postMessage("SKIP_WAITING");
+        if (outcome === "accepted") {
+            cerrarModal();
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Instalar aplicación`;
         }
+    }
+
+    // ── Aplicar actualización ──
+    function applyUpdate() {
+        if (newWorker) newWorker.postMessage("SKIP_WAITING");
         document.getElementById("updateToast").classList.remove("visible");
     }
 
+    /* ═══════════════════════════════════════════
+       LOGIN
+    ═══════════════════════════════════════════ */
     async function handleLogin() {
         hideError();
-        const correo = document.getElementById("correo").value.trim();
+        const correo    = document.getElementById("correo").value.trim();
         const contrasena = document.getElementById("contrasena").value;
 
         if (!correo || !contrasena) {
             showError("Ingresa tu correo y contraseña.");
             return;
         }
-
         setLoading(true);
-
         try {
             const { data, error } = await sb.rpc("login_usuario", {
                 p_correo: correo,
                 p_contraseña: contrasena
             });
-
             if (error) { showError("No fue posible conectar con el servidor."); return; }
             if (!data || data.length === 0) { showError("Correo o contraseña incorrectos."); return; }
-
             const usuario = data[0];
             if (usuario.activo !== true) { showError("Tu usuario se encuentra desactivado."); return; }
-
             localStorage.setItem("usuario", JSON.stringify(usuario));
             window.location.href = "dashboard.html";
-
         } catch(e) {
             showError("Ocurrió un error inesperado.");
         } finally {
