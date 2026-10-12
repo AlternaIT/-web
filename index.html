@@ -2,8 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Alterna | Iniciar sesión</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f0f0f">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alterna">
+    <!-- Apple touch icon (usa el logo inline en base64 — reemplazar con icons/icon-192.png una vez generados) -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,6 +330,63 @@
             .right { display: none; }
             .left { padding: 40px 28px; }
         }
+
+        /* ── PWA INSTALL BANNER ── */
+        .install-banner {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #1c1c1e;
+            border-top: 1px solid rgba(255,255,255,.1);
+            padding: 16px 20px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            z-index: 999;
+            animation: slideUp .3s ease;
+        }
+        .install-banner.visible { display: flex; align-items: center; gap: 14px; }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .install-banner-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: #2c2c2e; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; overflow: hidden;
+        }
+        .install-banner-icon img { width: 32px; height: auto; filter: brightness(0) invert(1); }
+
+        .install-banner-text { flex: 1; min-width: 0; }
+        .install-banner-title { font-size: 13px; font-weight: 600; color: #f5f5f7; }
+        .install-banner-sub   { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+
+        .install-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .install-btn {
+            padding: 8px 16px; border-radius: 8px; font-size: 13px;
+            font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+        }
+        .install-btn-primary { background: #f5f5f7; color: #0f0f0f; }
+        .install-btn-dismiss { background: transparent; color: #8e8e93; border: 1px solid rgba(255,255,255,.12); }
+
+        /* ── UPDATE TOAST ── */
+        .update-toast {
+            display: none;
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            background: #1c1c1e; border: 1px solid rgba(255,255,255,.12);
+            border-radius: 10px; padding: 12px 18px;
+            color: #f5f5f7; font-size: 13px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.4);
+            z-index: 9999; white-space: nowrap;
+            display: none; align-items: center; gap: 12px;
+        }
+        .update-toast.visible { display: flex; }
+        .update-toast-btn {
+            background: #f5f5f7; color: #0f0f0f;
+            border: none; border-radius: 6px;
+            padding: 5px 12px; font-size: 12px;
+            font-weight: 600; cursor: pointer; font-family: inherit;
+        }
     </style>
 </head>
 <body>
@@ -364,6 +431,27 @@
 
 
 
+<!-- ── PWA INSTALL BANNER (solo móvil) ── -->
+<div class="install-banner" id="installBanner">
+    <div class="install-banner-icon">
+        <img src="data:image/png;base64,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" alt="Alterna" />
+    </div>
+    <div class="install-banner-text">
+        <div class="install-banner-title">Alterna Apps</div>
+        <div class="install-banner-sub">Instala la app para acceso rápido</div>
+    </div>
+    <div class="install-banner-actions">
+        <button class="install-btn install-btn-dismiss" onclick="dismissInstall()">Ahora no</button>
+        <button class="install-btn install-btn-primary" onclick="doInstall()">Instalar</button>
+    </div>
+</div>
+
+<!-- ── UPDATE TOAST ── -->
+<div class="update-toast" id="updateToast">
+    ✦ Nueva versión disponible
+    <button class="update-toast-btn" onclick="applyUpdate()">Actualizar</button>
+</div>
+
 <script>
     const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
@@ -402,6 +490,77 @@
 
     function hideError() {
         document.getElementById("errorBox").style.display = "none";
+    }
+
+    /* ═══════════════════════════════════════════
+       PWA — Service Worker + Install Banner
+    ═══════════════════════════════════════════ */
+    let deferredPrompt = null;
+    let newWorker = null;
+
+    // Registrar Service Worker
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").then((reg) => {
+
+            // Detectar si hay una actualización disponible
+            reg.addEventListener("updatefound", () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener("statechange", () => {
+                    // Solo mostramos el toast si ya había un SW activo (no la primera instalación)
+                    if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                        document.getElementById("updateToast").classList.add("visible");
+                    }
+                });
+            });
+
+            // Verificar actualización cada vez que la página se activa (usuario vuelve a la pestaña)
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") {
+                    reg.update();
+                }
+            });
+        });
+
+        // Cuando el nuevo SW toma control, recargar automáticamente
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+            window.location.reload();
+        });
+    }
+
+    // Capturar el evento de instalación del navegador
+    window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Solo mostrar el banner en móvil
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const dismissed = sessionStorage.getItem("installDismissed");
+
+        if (isMobile && !dismissed) {
+            setTimeout(() => {
+                document.getElementById("installBanner").classList.add("visible");
+            }, 1500);
+        }
+    });
+
+    async function doInstall() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        document.getElementById("installBanner").classList.remove("visible");
+    }
+
+    function dismissInstall() {
+        sessionStorage.setItem("installDismissed", "1");
+        document.getElementById("installBanner").classList.remove("visible");
+    }
+
+    function applyUpdate() {
+        if (newWorker) {
+            newWorker.postMessage("SKIP_WAITING");
+        }
+        document.getElementById("updateToast").classList.remove("visible");
     }
 
     async function handleLogin() {
