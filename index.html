@@ -738,6 +738,9 @@
         navigator.serviceWorker.addEventListener("controllerchange", () => {
             window.location.reload();
         });
+        navigator.serviceWorker.addEventListener("message", (event) => {
+            if (event.data === "SW_ACTIVATED") window.location.reload();
+        });
     }
 
     // ── Capturar prompt de instalación (Android/Chrome) ──
