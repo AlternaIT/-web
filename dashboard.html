@@ -650,6 +650,11 @@
                 <span class="menu-text">Usuarios</span>
             </div>
 
+            <div class="menu-item" data-page="equipos" onclick="navegar('equipos')">
+                <span class="menu-icon"><i data-lucide="monitor"></i></span>
+                <span class="menu-text">Equipos</span>
+            </div>
+
             <br>
 
             <div class="menu-title">Gestión</div>
@@ -1008,6 +1013,51 @@
                     </thead>
                     <tbody id="usuariosBody">
                         <tr class="loading-row"><td colspan="4">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: EQUIPOS
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-equipos">
+
+            <div class="page-section-header">
+                <div class="section-title">Inventario de Equipos</div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="filter-count" id="equiposCount"></div>
+                    <button class="btn-primary" onclick="abrirModalNuevoEquipo()">＋ Nuevo equipo</button>
+                </div>
+            </div>
+
+            <div class="filters">
+                <input class="filter-input" id="eqBusqueda" type="text" placeholder="Buscar serie, modelo, asignado..." oninput="renderTablaEquipos()" style="width:260px" />
+                <select class="filter-select" id="eqFiltroEstado" onchange="renderTablaEquipos()">
+                    <option value="">Todos los estados</option>
+                    <option value="Disponible">Disponible</option>
+                    <option value="Asignado">Asignado</option>
+                    <option value="En reparación">En reparación</option>
+                    <option value="De baja">De baja</option>
+                </select>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Marca / Modelo</th>
+                            <th>No. Serie</th>
+                            <th>Estado</th>
+                            <th>Asignado a</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="equiposBody">
+                        <tr class="loading-row"><td colspan="6">Cargando equipos...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1423,6 +1473,118 @@
     </div>
 </div>
 
+<!-- MODAL NUEVO EQUIPO -->
+<div class="modal-overlay" id="modalNuevoEquipo">
+    <div class="modal modal-wide">
+        <div class="modal-title">💻 Nuevo Equipo</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Tipo de Equipo *</label>
+                <input class="modal-input" id="neTipo" type="text" placeholder="Laptop, Monitor, etc." />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Número de Serie</label>
+                <input class="modal-input" id="neSerie" type="text" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Marca</label>
+                <input class="modal-input" id="neMarca" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Modelo</label>
+                <input class="modal-input" id="neModelo" type="text" />
+            </div>
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="neEstado">
+                    <option value="Disponible">Disponible</option>
+                    <option value="Asignado">Asignado</option>
+                    <option value="En reparación">En reparación</option>
+                    <option value="De baja">De baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Asignado a</label>
+                <input class="modal-input" id="neAsignado" type="text" placeholder="Nombre del usuario" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha de Compra</label>
+                <input class="modal-input" id="neFecha" type="date" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Notas</label>
+            <textarea class="modal-textarea" id="neNotas" placeholder="Especificaciones o detalles..."></textarea>
+        </div>
+        <div class="modal-msg" id="neMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalNuevoEquipo()">Cancelar</button>
+            <button class="btn-primary" id="neGuardar" onclick="guardarNuevoEquipo()">Guardar Equipo</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR EQUIPO -->
+<div class="modal-overlay" id="modalEditarEquipo">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Equipo</div>
+        <input type="hidden" id="eeId" />
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Tipo de Equipo *</label>
+                <input class="modal-input" id="eeTipo" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Número de Serie</label>
+                <input class="modal-input" id="eeSerie" type="text" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Marca</label>
+                <input class="modal-input" id="eeMarca" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Modelo</label>
+                <input class="modal-input" id="eeModelo" type="text" />
+            </div>
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="eeEstado">
+                    <option value="Disponible">Disponible</option>
+                    <option value="Asignado">Asignado</option>
+                    <option value="En reparación">En reparación</option>
+                    <option value="De baja">De baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Asignado a</label>
+                <input class="modal-input" id="eeAsignado" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha de Compra</label>
+                <input class="modal-input" id="eeFecha" type="date" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Notas</label>
+            <textarea class="modal-textarea" id="eeNotas"></textarea>
+        </div>
+        <div class="modal-msg" id="eeMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="eliminarEquipo()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalEditarEquipo()">Cancelar</button>
+            <button class="btn-primary" id="eeGuardar" onclick="guardarEditarEquipo()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
 <script>
 
     /* ═══════════════════════════════════════════
@@ -1464,6 +1626,7 @@
         "nueva-tarea":      { titulo: "Nueva Tarea",         subtitulo: "Registrar una nueva actividad" },
         actividades:        { titulo: "Actividades",         subtitulo: "Gestión de actividades del equipo" },
         usuarios:           { titulo: "Usuarios",            subtitulo: "Administración de accesos" },
+        equipos:            { titulo: "Equipos",             subtitulo: "Gestión de hardware e inventario" },
         reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
         configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
@@ -1490,8 +1653,6 @@
             if (sub) { sub.classList.add("open"); menuItem && menuItem.classList.add("open"); }
         }
 
-
-
         // Actualizar topbar
         const meta = metaPaginas[pagina] || {};
         document.getElementById("topbarTitle").textContent    = meta.titulo    || pagina;
@@ -1513,6 +1674,10 @@
 
         if (pagina === "usuarios") {
             cargarTablaUsuarios();
+        }
+
+        if (pagina === "equipos") {
+            cargarEquipos();
         }
 
         if (pagina === "reportes") {
@@ -3099,6 +3264,198 @@
 
 
     /* ═══════════════════════════════════════════
+       INVENTARIO DE EQUIPOS
+    ═══════════════════════════════════════════ */
+    let todosEquipos = [];
+
+    async function cargarEquipos() {
+        const tbody = document.getElementById("equiposBody");
+        if (!tbody) return;
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Cargando...</td></tr>`;
+
+        const { data, error } = await supabaseClient
+            .from("inventario_equipos")
+            .select("*")
+            .order("id", { ascending: false });
+
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
+            return;
+        }
+
+        todosEquipos = data || [];
+        renderTablaEquipos();
+    }
+
+    function renderTablaEquipos() {
+        const tbody = document.getElementById("equiposBody");
+        if (!tbody) return;
+        const q = (document.getElementById("eqBusqueda")?.value || "").toLowerCase();
+        const fEstado = document.getElementById("eqFiltroEstado")?.value || "";
+
+        let rows = todosEquipos.filter(r => {
+            const matchEstado = !fEstado || r.estado === fEstado;
+            const matchQ = !q ||
+                (r.tipo||"").toLowerCase().includes(q) ||
+                (r.numero_serie||"").toLowerCase().includes(q) ||
+                (r.modelo||"").toLowerCase().includes(q) ||
+                (r.asignado_a||"").toLowerCase().includes(q);
+            return matchEstado && matchQ;
+        });
+
+        document.getElementById("equiposCount").textContent = `${rows.length} equipo${rows.length !== 1 ? "s" : ""}`;
+
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No se encontraron equipos.</div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = rows.map(r => {
+            const estadoClase = r.estado === "Asignado" ? "badge-en-proceso" : 
+                                r.estado === "Disponible" ? "badge-terminado" : "badge-alta";
+                                
+            return `<tr>
+                <td data-label="Tipo"><strong>${esc(r.tipo||"—")}</strong></td>
+                <td data-label="Marca/Mod" style="font-size:12px;color:#374151">${esc(r.marca||"")} ${esc(r.modelo||"")}</td>
+                <td data-label="Serie" style="font-size:12px;color:#6b7280">${esc(r.numero_serie||"—")}</td>
+                <td data-label="Estado"><span class="badge ${estadoClase}">${esc(r.estado||"—")}</span></td>
+                <td data-label="Asignado a"><span class="asignado-chip">${esc(r.asignado_a||"—")}</span></td>
+                <td data-label=""><button class="btn-edit" onclick="abrirEditarEquipo(${r.id})">✏ Editar</button></td>
+            </tr>`;
+        }).join("");
+    }
+
+    /* ── CRUD NUEVO EQUIPO ── */
+    function abrirModalNuevoEquipo() {
+        document.getElementById("neTipo").value = "";
+        document.getElementById("neSerie").value = "";
+        document.getElementById("neMarca").value = "";
+        document.getElementById("neModelo").value = "";
+        document.getElementById("neEstado").value = "Disponible";
+        document.getElementById("neAsignado").value = "";
+        document.getElementById("neFecha").value = "";
+        document.getElementById("neNotas").value = "";
+        document.getElementById("neMsg").textContent = "";
+        document.getElementById("neGuardar").disabled = false;
+        document.getElementById("modalNuevoEquipo").classList.add("open");
+    }
+
+    function cerrarModalNuevoEquipo() {
+        document.getElementById("modalNuevoEquipo").classList.remove("open");
+    }
+
+    async function guardarNuevoEquipo() {
+        const tipo = document.getElementById("neTipo").value.trim();
+        if (!tipo) {
+            document.getElementById("neMsg").textContent = "⚠ El tipo de equipo es obligatorio.";
+            document.getElementById("neMsg").style.color = "#ef4444";
+            return;
+        }
+        const btn = document.getElementById("neGuardar");
+        btn.disabled = true;
+        document.getElementById("neMsg").textContent = "Guardando...";
+        document.getElementById("neMsg").style.color = "#6b7280";
+        
+        const payload = {
+            tipo,
+            numero_serie: document.getElementById("neSerie").value.trim() || null,
+            marca: document.getElementById("neMarca").value.trim() || null,
+            modelo: document.getElementById("neModelo").value.trim() || null,
+            estado: document.getElementById("neEstado").value,
+            asignado_a: document.getElementById("neAsignado").value.trim() || null,
+            fecha_compra: document.getElementById("neFecha").value || null,
+            notas: document.getElementById("neNotas").value.trim() || null
+        };
+
+        const { error } = await supabaseClient.from("inventario_equipos").insert([payload]);
+        if (error) {
+            document.getElementById("neMsg").textContent = "❌ " + error.message;
+            document.getElementById("neMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+        await cargarEquipos();
+        cerrarModalNuevoEquipo();
+        btn.disabled = false;
+    }
+
+    document.getElementById("modalNuevoEquipo").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalNuevoEquipo();
+    });
+
+    /* ── CRUD EDITAR EQUIPO ── */
+    function abrirEditarEquipo(id) {
+        const r = todosEquipos.find(x => x.id === id);
+        if (!r) return;
+        document.getElementById("eeId").value = r.id;
+        document.getElementById("eeTipo").value = r.tipo || "";
+        document.getElementById("eeSerie").value = r.numero_serie || "";
+        document.getElementById("eeMarca").value = r.marca || "";
+        document.getElementById("eeModelo").value = r.modelo || "";
+        document.getElementById("eeEstado").value = r.estado || "Disponible";
+        document.getElementById("eeAsignado").value = r.asignado_a || "";
+        document.getElementById("eeFecha").value = r.fecha_compra || "";
+        document.getElementById("eeNotas").value = r.notas || "";
+        document.getElementById("eeMsg").textContent = "";
+        document.getElementById("eeGuardar").disabled = false;
+        document.getElementById("modalEditarEquipo").classList.add("open");
+    }
+
+    function cerrarModalEditarEquipo() {
+        document.getElementById("modalEditarEquipo").classList.remove("open");
+    }
+
+    async function guardarEditarEquipo() {
+        const id = parseInt(document.getElementById("eeId").value);
+        const tipo = document.getElementById("eeTipo").value.trim();
+        if (!tipo) {
+            document.getElementById("eeMsg").textContent = "⚠ El tipo de equipo es obligatorio.";
+            document.getElementById("eeMsg").style.color = "#ef4444";
+            return;
+        }
+        
+        const btn = document.getElementById("eeGuardar");
+        btn.disabled = true;
+        document.getElementById("eeMsg").textContent = "Guardando...";
+        document.getElementById("eeMsg").style.color = "#6b7280";
+        
+        const payload = {
+            tipo,
+            numero_serie: document.getElementById("eeSerie").value.trim() || null,
+            marca: document.getElementById("eeMarca").value.trim() || null,
+            modelo: document.getElementById("eeModelo").value.trim() || null,
+            estado: document.getElementById("eeEstado").value,
+            asignado_a: document.getElementById("eeAsignado").value.trim() || null,
+            fecha_compra: document.getElementById("eeFecha").value || null,
+            notas: document.getElementById("eeNotas").value.trim() || null
+        };
+
+        const { error } = await supabaseClient.from("inventario_equipos").update(payload).eq("id", id);
+        if (error) {
+            document.getElementById("eeMsg").textContent = "❌ " + error.message;
+            document.getElementById("eeMsg").style.color = "#ef4444";
+            btn.disabled = false;
+            return;
+        }
+        await cargarEquipos();
+        cerrarModalEditarEquipo();
+    }
+
+    async function eliminarEquipo() {
+        const id = parseInt(document.getElementById("eeId").value);
+        if (!confirm("¿Eliminar este equipo del inventario? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("inventario_equipos").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalEditarEquipo();
+        await cargarEquipos();
+    }
+    
+    document.getElementById("modalEditarEquipo").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalEditarEquipo();
+    });
+
+
+    /* ═══════════════════════════════════════════
        CERRAR SESIÓN
     ═══════════════════════════════════════════ */
     function cerrarSesion() {
@@ -3190,3 +3547,4 @@ if ("serviceWorker" in navigator) {
 </script>
 </body>
 </html>
+```eof
