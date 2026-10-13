@@ -267,6 +267,80 @@
         .config-value  { font-size: 13px; color: #6b7280; }
         .config-badge  { display: inline-block; padding: 3px 10px; background: #d1fae5; color: #065f46; border-radius: 20px; font-size: 11px; font-weight: 600; }
 
+        /* ── VISTA KANBAN ── */
+        .kanban-wrap {
+            display: none; gap: 16px;
+            grid-template-columns: repeat(3, 1fr);
+            align-items: start;
+        }
+        .kanban-wrap.active { display: grid; }
+
+        .kanban-col {
+            background: #f9fafb; border: 1px solid #e5e7eb;
+            border-radius: 12px; overflow: hidden;
+        }
+        .kanban-col-header {
+            padding: 13px 16px; display: flex; align-items: center;
+            justify-content: space-between; border-bottom: 1px solid #e5e7eb;
+            font-size: 13px; font-weight: 700; color: #111827;
+        }
+        .kanban-col-header .kanban-count {
+            font-size: 11px; font-weight: 700; padding: 2px 8px;
+            border-radius: 20px; background: #e5e7eb; color: #374151;
+        }
+        .kanban-col.col-no-iniciado .kanban-col-header { border-top: 3px solid #9ca3af; }
+        .kanban-col.col-en-proceso  .kanban-col-header { border-top: 3px solid #f59e0b; }
+        .kanban-col.col-terminado   .kanban-col-header { border-top: 3px solid #10b981; }
+        .kanban-col.col-no-iniciado .kanban-count { background: #f3f4f6; color: #4b5563; }
+        .kanban-col.col-en-proceso  .kanban-count { background: #fef3c7; color: #92400e; }
+        .kanban-col.col-terminado   .kanban-count { background: #d1fae5; color: #065f46; }
+
+        .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
+        .kanban-card {
+            background: white; border: 1px solid #e5e7eb; border-radius: 9px;
+            padding: 13px 14px; cursor: pointer; transition: box-shadow .15s;
+        }
+        .kanban-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.08); border-color: #d1d5db; }
+        .kanban-card-title {
+            font-size: 13px; font-weight: 600; color: #111827;
+            margin-bottom: 6px; line-height: 1.4;
+        }
+        .kanban-card-meta {
+            font-size: 11px; color: #9ca3af; margin-bottom: 8px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .kanban-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+        .kanban-empty { padding: 24px 16px; text-align: center; font-size: 12px; color: #d1d5db; }
+
+        .vista-toggle-btn {
+            padding: 7px 13px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            cursor: pointer; border: 1.5px solid #e5e7eb; background: white;
+            color: #6b7280; transition: all .15s; display: flex; align-items: center; gap: 5px;
+        }
+        .vista-toggle-btn:hover  { border-color: #6366f1; color: #6366f1; }
+        .vista-toggle-btn.active { background: #ede9fe; color: #4f46e5; border-color: #c4b5fd; }
+
+        @media (max-width: 900px) {
+            .kanban-wrap.active { grid-template-columns: 1fr; }
+        }
+        @media (min-width: 901px) and (max-width: 1200px) {
+            .kanban-wrap.active { grid-template-columns: repeat(3,1fr); }
+        }
+
+        /* ── PERÍODO REPORTES ── */
+        .periodo-btn {
+            padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            cursor: pointer; border: 1.5px solid #e5e7eb; background: white;
+            color: #374151; transition: all .15s; user-select: none;
+        }
+        .periodo-btn:hover { border-color: #6366f1; color: #6366f1; background: #f5f3ff; }
+        .periodo-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .periodo-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; background: #ede9fe; color: #4f46e5;
+            margin-left: 10px; vertical-align: middle;
+        }
+
         /* ── SUBMENU ── */
         .submenu {
             display: none; flex-direction: column;
@@ -879,8 +953,10 @@
 
             <div class="page-section-header">
                 <div class="section-title">Todas las actividades</div>
-                <div style="display:flex;align-items:center;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                     <div class="filter-count" id="filterCount"></div>
+                    <button id="btnVistaTabla"  class="vista-toggle-btn" onclick="setVistaActividades('tabla')"  title="Vista tabla">☰ Tabla</button>
+                    <button id="btnVistaKanban" class="vista-toggle-btn" onclick="setVistaActividades('kanban')" title="Vista kanban">⊞ Kanban</button>
                     <button class="btn-secondary" onclick="exportarExcel()" style="font-size:12px;padding:7px 14px;display:flex;align-items:center;gap:6px">
                         📊 Excel
                     </button>
@@ -925,7 +1001,7 @@
                 <button class="btn-secondary" onclick="limpiarFiltrosFecha()" style="font-size:12px;padding:7px 12px">✕ Fechas</button>
             </div>
 
-            <div class="table-wrap">
+            <div class="table-wrap" id="actividadesTablaWrap">
                 <table>
                     <thead>
                         <tr>
@@ -943,6 +1019,31 @@
                     </tbody>
                 </table>
                 <div class="pagination" id="paginacion"></div>
+            </div>
+
+            <!-- Vista Kanban -->
+            <div class="kanban-wrap" id="actividadesKanbanWrap">
+                <div class="kanban-col col-no-iniciado">
+                    <div class="kanban-col-header">
+                        <span>No iniciado</span>
+                        <span class="kanban-count" id="kCntNoIniciado">0</span>
+                    </div>
+                    <div class="kanban-cards" id="kColNoIniciado"></div>
+                </div>
+                <div class="kanban-col col-en-proceso">
+                    <div class="kanban-col-header">
+                        <span>En proceso</span>
+                        <span class="kanban-count" id="kCntEnProceso">0</span>
+                    </div>
+                    <div class="kanban-cards" id="kColEnProceso"></div>
+                </div>
+                <div class="kanban-col col-terminado">
+                    <div class="kanban-col-header">
+                        <span>Terminado</span>
+                        <span class="kanban-count" id="kCntTerminado">0</span>
+                    </div>
+                    <div class="kanban-cards" id="kColTerminado"></div>
+                </div>
             </div>
 
         </section>
@@ -1106,6 +1207,20 @@
         ══════════════════════════════════════ -->
         <section class="page" id="page-reportes">
 
+            <div class="page-section-header" style="margin-bottom:20px">
+                <div>
+                    <span class="section-title">Reportes de Actividades</span>
+                    <span class="periodo-badge" id="reportePeriodoBadge">Todas</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap" id="reportePeriodoButtons">
+                    <button class="periodo-btn" data-periodo="7"   onclick="setPeriodo(7)"   title="Últimos 7 días">1 sem</button>
+                    <button class="periodo-btn" data-periodo="14"  onclick="setPeriodo(14)"  title="Últimos 14 días">2 sem</button>
+                    <button class="periodo-btn" data-periodo="30"  onclick="setPeriodo(30)"  title="Último mes">1 mes</button>
+                    <button class="periodo-btn" data-periodo="90"  onclick="setPeriodo(90)"  title="Últimos 3 meses">3 meses</button>
+                    <button class="periodo-btn" data-periodo="0"   onclick="setPeriodo(0)"   title="Sin filtro">Todas</button>
+                </div>
+            </div>
+
             <div class="report-grid">
 
                 <!-- Dona: estado -->
@@ -1179,6 +1294,55 @@
                 <div class="config-row">
                     <span class="config-label">Rol</span>
                     <span class="config-value" id="cfgRol">—</span>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-section-title">Vista de Actividades</div>
+                <div class="config-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+                    <div>
+                        <span class="config-label" style="display:block;margin-bottom:4px">Modo de visualización en la sección Actividades</span>
+                        <span class="config-value" style="font-size:11px;color:#9ca3af">Activo: <strong id="cfgVistaLabel">—</strong></span>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                        <button class="vista-cfg-btn" data-vista="tabla" onclick="setVistaActividades('tabla')"
+                            style="display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:all .15s">
+                            <span style="font-size:18px">☰</span>
+                            <span>
+                                <span style="display:block">Tabla</span>
+                                <span style="font-size:11px;font-weight:400;color:#9ca3af">Lista con filtros y paginación</span>
+                            </span>
+                        </button>
+                        <button class="vista-cfg-btn" data-vista="kanban" onclick="setVistaActividades('kanban')"
+                            style="display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:all .15s">
+                            <span style="font-size:18px">⊞</span>
+                            <span>
+                                <span style="display:block">Kanban</span>
+                                <span style="font-size:11px;font-weight:400;color:#9ca3af">3 columnas por estado</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-section-title">Visualización de Reportes — Actividades</div>
+                <div class="config-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+                    <div>
+                        <span class="config-label" style="display:block;margin-bottom:6px">Período de tiempo a mostrar en las gráficas de actividades</span>
+                        <span class="config-value" style="font-size:11px;color:#9ca3af">Activo: <strong id="cfgPeriodoLabel">—</strong></span>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap" id="periodoButtons">
+                        <button class="periodo-btn" data-periodo="7"   onclick="setPeriodo(7)"   title="Últimos 7 días">1 semana</button>
+                        <button class="periodo-btn" data-periodo="14"  onclick="setPeriodo(14)"  title="Últimos 14 días">2 semanas</button>
+                        <button class="periodo-btn" data-periodo="30"  onclick="setPeriodo(30)"  title="Últimos 30 días">1 mes</button>
+                        <button class="periodo-btn" data-periodo="90"  onclick="setPeriodo(90)"  title="Últimos 90 días">3 meses</button>
+                        <button class="periodo-btn" data-periodo="0"   onclick="setPeriodo(0)"   title="Sin filtro de fecha">Todas</button>
+                    </div>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Aplica a</span>
+                    <span class="config-value">Reportes → Estado, Prioridad, Por área, Por responsable</span>
                 </div>
             </div>
 
@@ -1705,7 +1869,10 @@
                 document.getElementById("filtroEstado").value = filtroEstado;
             }
             paginaTabla = 1;
-            renderTabla();
+            const vista = getVistaActividades();
+            aplicarVistaActividades(vista);
+            if (vista === "kanban") renderKanban();
+            else renderTabla();
         }
 
         if (pagina === "usuarios") {
@@ -1958,9 +2125,12 @@
     function renderReportes() {
         if (!todasActividades.length) return;
 
+        sincronizarBotonesPeriodo();
+        const actividades = filtrarActividadesPorPeriodo();
+
         // ── Estado ──
         const estados = { "En proceso": 0, "No iniciado": 0, "Terminado": 0 };
-        todasActividades.forEach(a => { if (estados[a.estado] !== undefined) estados[a.estado]++; });
+        actividades.forEach(a => { if (estados[a.estado] !== undefined) estados[a.estado]++; });
 
         if (chartEstadoInst) chartEstadoInst.destroy();
         chartEstadoInst = new Chart(document.getElementById("chartEstado"), {
@@ -1978,7 +2148,7 @@
 
         // ── Prioridad ──
         const prios = { "Alta": 0, "Media": 0, "Baja": 0 };
-        todasActividades.forEach(a => { if (prios[a.prioridad] !== undefined) prios[a.prioridad]++; });
+        actividades.forEach(a => { if (prios[a.prioridad] !== undefined) prios[a.prioridad]++; });
 
         if (chartPrioridadInst) chartPrioridadInst.destroy();
         chartPrioridadInst = new Chart(document.getElementById("chartPrioridad"), {
@@ -1996,7 +2166,7 @@
 
         // ── Por área ──
         const areas = {};
-        todasActividades.forEach(a => {
+        actividades.forEach(a => {
             if (!a.area) return;
             if (!areas[a.area]) areas[a.area] = { total: 0, terminado: 0 };
             areas[a.area].total++;
@@ -2023,7 +2193,7 @@
 
         // ── Por responsable ──
         const asigs = {};
-        todasActividades.forEach(a => {
+        actividades.forEach(a => {
             const nombre = a.asignado || "Sin asignar";
             if (!asigs[nombre]) asigs[nombre] = { total: 0, terminado: 0 };
             asigs[nombre].total++;
@@ -2325,6 +2495,7 @@
     }
 
     function renderTabla() {
+        if (getVistaActividades() === "kanban") { renderKanban(); return; }
         const busq      = document.getElementById("busqueda").value.toLowerCase();
         const estado    = document.getElementById("filtroEstado").value;
         const asignado  = document.getElementById("filtroAsignado").value;
@@ -2847,12 +3018,181 @@
     /* ═══════════════════════════════════════════
        CONFIGURACIÓN
     ═══════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════
+       VISTA DE ACTIVIDADES (tabla | kanban)
+    ═══════════════════════════════════════════ */
+    const VISTA_KEY = "alterna_vista_actividades";
+
+    function getVistaActividades() {
+        return localStorage.getItem(VISTA_KEY) || "tabla";
+    }
+
+    function setVistaActividades(modo) {
+        localStorage.setItem(VISTA_KEY, modo);
+        aplicarVistaActividades(modo);
+        if (modo === "kanban") renderKanban();
+        else { paginaTabla = 1; renderTabla(); }
+    }
+
+    function aplicarVistaActividades(modo) {
+        const tablaWrap  = document.getElementById("actividadesTablaWrap");
+        const kanbanWrap = document.getElementById("actividadesKanbanWrap");
+        if (!tablaWrap || !kanbanWrap) return;
+
+        if (modo === "kanban") {
+            tablaWrap.style.display  = "none";
+            kanbanWrap.classList.add("active");
+        } else {
+            tablaWrap.style.display  = "";
+            kanbanWrap.classList.remove("active");
+        }
+
+        // Botones toggle en el header de actividades
+        const btnTabla  = document.getElementById("btnVistaTabla");
+        const btnKanban = document.getElementById("btnVistaKanban");
+        if (btnTabla)  btnTabla.classList.toggle("active",  modo === "tabla");
+        if (btnKanban) btnKanban.classList.toggle("active", modo === "kanban");
+
+        // Botones en configuración
+        document.querySelectorAll(".vista-cfg-btn").forEach(btn => {
+            const activo = btn.dataset.vista === modo;
+            btn.style.borderColor = activo ? "#6366f1" : "#e5e7eb";
+            btn.style.background  = activo ? "#f5f3ff" : "white";
+            btn.style.color       = activo ? "#4f46e5" : "#374151";
+        });
+
+        // Label en configuración
+        const cfgLabel = document.getElementById("cfgVistaLabel");
+        if (cfgLabel) cfgLabel.textContent = modo === "kanban" ? "Kanban" : "Tabla";
+    }
+
+    function renderKanban() {
+        const busq      = (document.getElementById("busqueda")?.value || "").toLowerCase();
+        const asignado  = document.getElementById("filtroAsignado")?.value || "";
+        const prioridad = document.getElementById("filtroPrioridad")?.value || "";
+        const area      = document.getElementById("filtroArea")?.value || "";
+        const fechaDesde = document.getElementById("filtroFechaDesde")?.value || "";
+        const fechaHasta = document.getElementById("filtroFechaHasta")?.value || "";
+
+        const ordenPrio = { "Alta":0, "Media":1, "Baja":2 };
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+        let filtradas = todasActividades.filter(a => {
+            if (prioridad && a.prioridad !== prioridad) return false;
+            if (area      && a.area      !== area)      return false;
+            if (asignado && !(a.asignado||"").toLowerCase().includes(asignado.toLowerCase())) return false;
+            if (busq) {
+                const h = `${a.actividad} ${a.proyecto_macro} ${a.area} ${a.asignado} ${a.notas}`.toLowerCase();
+                if (!h.includes(busq)) return false;
+            }
+            if (fechaDesde && a.fecha_limite && a.fecha_limite < fechaDesde) return false;
+            if (fechaHasta && a.fecha_limite && a.fecha_limite > fechaHasta) return false;
+            return true;
+        });
+
+        filtradas.sort((a,b) => (ordenPrio[a.prioridad]??3) - (ordenPrio[b.prioridad]??3));
+
+        const cols = {
+            "No iniciado": { id: "kColNoIniciado", cnt: "kCntNoIniciado", items: [] },
+            "En proceso":  { id: "kColEnProceso",  cnt: "kCntEnProceso",  items: [] },
+            "Terminado":   { id: "kColTerminado",   cnt: "kCntTerminado",  items: [] },
+        };
+
+        filtradas.forEach(a => {
+            if (cols[a.estado]) cols[a.estado].items.push(a);
+        });
+
+        document.getElementById("filterCount").textContent =
+            `${filtradas.length} de ${todasActividades.length} actividades`;
+
+        Object.values(cols).forEach(col => {
+            document.getElementById(col.cnt).textContent = col.items.length;
+
+            if (!col.items.length) {
+                document.getElementById(col.id).innerHTML =
+                    `<div class="kanban-empty">Sin actividades</div>`;
+                return;
+            }
+
+            document.getElementById(col.id).innerHTML = col.items.map(a => {
+                const vencida = a.fecha_limite && new Date(a.fecha_limite+"T00:00:00") < hoy && a.estado !== "Terminado";
+                const { texto: fechaTxt, clase: fechaClass } = a.estado === "Terminado"
+                    ? { texto: formatFecha(a.fecha_finalizacion) || "—", clase: "" }
+                    : fechaRelativa(a.fecha_limite, a.estado);
+
+                return `<div class="kanban-card" onclick="abrirDrawer(${a.id})">
+                    <div class="kanban-card-title">${esc(a.actividad)}</div>
+                    <div class="kanban-card-meta">${esc(a.proyecto_macro || a.area || "")}</div>
+                    <div class="kanban-card-footer">
+                        ${badgePrioridad(a.prioridad)}
+                        <span class="asignado-chip" style="font-size:10px">${esc(a.asignado||"—")}</span>
+                        ${a.fecha_limite || a.fecha_finalizacion
+                            ? `<span style="font-size:10px;color:${vencida?"#ef4444":"#9ca3af"};white-space:nowrap">${esc(fechaTxt)}</span>`
+                            : ""}
+                    </div>
+                </div>`;
+            }).join("");
+        });
+    }
+
+    /* ═══════════════════════════════════════════
+       PERÍODO DE REPORTES
+    ═══════════════════════════════════════════ */
+    const PERIODO_KEY = "alterna_periodo_reportes";
+
+    function getPeriodo() {
+        const val = localStorage.getItem(PERIODO_KEY);
+        return val !== null ? parseInt(val) : 0; // 0 = todas
+    }
+
+    const PERIODO_LABELS = { 0: "Todas", 7: "1 semana", 14: "2 semanas", 30: "1 mes", 90: "3 meses" };
+
+    function setPeriodo(dias) {
+        localStorage.setItem(PERIODO_KEY, dias);
+        sincronizarBotonesPeriodo();
+        renderReportes();
+    }
+
+    function filtrarActividadesPorPeriodo() {
+        const dias = getPeriodo();
+        if (!dias) return todasActividades; // 0 = sin filtro
+        const corte = new Date();
+        corte.setDate(corte.getDate() - dias);
+        return todasActividades.filter(a => {
+            const fecha = a.fecha_inicio || a.created_at || a.fecha_limite;
+            if (!fecha) return true; // sin fecha: incluir siempre
+            return new Date(fecha) >= corte;
+        });
+    }
+
+    function sincronizarBotonesPeriodo() {
+        const periodo = getPeriodo();
+        const label   = PERIODO_LABELS[periodo] || "Todas";
+
+        // Botones en configuración
+        document.querySelectorAll("#periodoButtons .periodo-btn").forEach(btn => {
+            btn.classList.toggle("active", parseInt(btn.dataset.periodo) === periodo);
+        });
+        // Botones en reportes
+        document.querySelectorAll("#reportePeriodoButtons .periodo-btn").forEach(btn => {
+            btn.classList.toggle("active", parseInt(btn.dataset.periodo) === periodo);
+        });
+        // Badge en reportes
+        const badge = document.getElementById("reportePeriodoBadge");
+        if (badge) badge.textContent = label;
+        // Label en configuración
+        const cfgLabel = document.getElementById("cfgPeriodoLabel");
+        if (cfgLabel) cfgLabel.textContent = label;
+    }
+
     function renderConfiguracion() {
         document.getElementById("cfgUrl").textContent    = SUPABASE_URL;
         document.getElementById("cfgTotal").textContent  = todasActividades.length + " registros";
         document.getElementById("cfgNombre").textContent = usuario?.nombre  || "—";
         document.getElementById("cfgCorreo").textContent = usuario?.correo  || "—";
         document.getElementById("cfgRol").textContent    = usuario?.rol     || "—";
+        sincronizarBotonesPeriodo();
+        aplicarVistaActividades(getVistaActividades());
     }
 
 
@@ -3579,6 +3919,8 @@
     async function iniciarDashboard() {
         await cargarUsuario();
         await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects()]);
+        sincronizarBotonesPeriodo();
+        aplicarVistaActividades(getVistaActividades());
     }
 
     iniciarDashboard();
