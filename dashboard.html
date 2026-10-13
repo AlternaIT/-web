@@ -1025,6 +1025,42 @@
         ══════════════════════════════════════ -->
         <section class="page" id="page-equipos">
 
+            <!-- Cards resumen -->
+            <div class="cards" id="equiposCards" style="margin-bottom:22px">
+                <div class="card accent-blue">
+                    <div class="card-top">
+                        <div class="card-title">Total equipos</div>
+                        <div class="card-icon">💻</div>
+                    </div>
+                    <div class="card-number" id="eqCntTotal">—</div>
+                    <div class="card-description">Registrados en inventario</div>
+                </div>
+                <div class="card accent-green">
+                    <div class="card-top">
+                        <div class="card-title">Disponibles</div>
+                        <div class="card-icon">✓</div>
+                    </div>
+                    <div class="card-number" id="eqCntDisponibles">—</div>
+                    <div class="card-description">Libres para asignar</div>
+                </div>
+                <div class="card accent-purple">
+                    <div class="card-top">
+                        <div class="card-title">Asignados</div>
+                        <div class="card-icon">◉</div>
+                    </div>
+                    <div class="card-number" id="eqCntAsignados">—</div>
+                    <div class="card-description">En uso actualmente</div>
+                </div>
+                <div class="card accent-yellow">
+                    <div class="card-top">
+                        <div class="card-title">En mantenimiento</div>
+                        <div class="card-icon">⚙</div>
+                    </div>
+                    <div class="card-number" id="eqCntMantenimiento">—</div>
+                    <div class="card-description">En reparación o baja</div>
+                </div>
+            </div>
+
             <div class="page-section-header">
                 <div class="section-title">Inventario de Equipos</div>
                 <div style="display:flex;align-items:center;gap:10px">
@@ -1034,13 +1070,13 @@
             </div>
 
             <div class="filters">
-                <input class="filter-input" id="eqBusqueda" type="text" placeholder="Buscar serie, modelo, asignado..." oninput="renderTablaEquipos()" style="width:260px" />
+                <input class="filter-input" id="eqBusqueda" type="text" placeholder="Buscar tipo, serie, modelo, asignado..." oninput="renderTablaEquipos()" style="width:280px" />
                 <select class="filter-select" id="eqFiltroEstado" onchange="renderTablaEquipos()">
                     <option value="">Todos los estados</option>
                     <option value="Disponible">Disponible</option>
                     <option value="Asignado">Asignado</option>
-                    <option value="En reparación">En reparación</option>
-                    <option value="De baja">De baja</option>
+                    <option value="En mantenimiento">En mantenimiento</option>
+                    <option value="Dado de baja">Dado de baja</option>
                 </select>
             </div>
 
@@ -1503,8 +1539,8 @@
                 <select class="modal-select" id="neEstado">
                     <option value="Disponible">Disponible</option>
                     <option value="Asignado">Asignado</option>
-                    <option value="En reparación">En reparación</option>
-                    <option value="De baja">De baja</option>
+                    <option value="En mantenimiento">En mantenimiento</option>
+                    <option value="Dado de baja">Dado de baja</option>
                 </select>
             </div>
             <div class="modal-field">
@@ -1559,8 +1595,8 @@
                 <select class="modal-select" id="eeEstado">
                     <option value="Disponible">Disponible</option>
                     <option value="Asignado">Asignado</option>
-                    <option value="En reparación">En reparación</option>
-                    <option value="De baja">De baja</option>
+                    <option value="En mantenimiento">En mantenimiento</option>
+                    <option value="Dado de baja">Dado de baja</option>
                 </select>
             </div>
             <div class="modal-field">
@@ -3272,6 +3308,8 @@
         const tbody = document.getElementById("equiposBody");
         if (!tbody) return;
         tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Cargando...</td></tr>`;
+        ["eqCntTotal","eqCntDisponibles","eqCntAsignados","eqCntMantenimiento"]
+            .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = "—"; });
 
         const { data, error } = await supabaseClient
             .from("inventario_equipos")
@@ -3287,11 +3325,36 @@
         renderTablaEquipos();
     }
 
+    function badgeEquipoEstado(estado) {
+        switch (estado) {
+            case "Disponible":      return "badge-terminado";    // verde
+            case "Asignado":        return "badge-en-proceso";   // amarillo
+            case "En mantenimiento":return "badge-media";        // naranja/amarillo
+            case "Dado de baja":    return "badge-alta";         // rojo
+            default:                return "badge-no-iniciado";
+        }
+    }
+
+    function actualizarCardsEquipos() {
+        const total        = todosEquipos.length;
+        const disponibles  = todosEquipos.filter(r => r.estado === "Disponible").length;
+        const asignados    = todosEquipos.filter(r => r.estado === "Asignado").length;
+        const mantenimiento = todosEquipos.filter(r =>
+            r.estado === "En mantenimiento" || r.estado === "Dado de baja"
+        ).length;
+        document.getElementById("eqCntTotal").textContent         = total;
+        document.getElementById("eqCntDisponibles").textContent   = disponibles;
+        document.getElementById("eqCntAsignados").textContent     = asignados;
+        document.getElementById("eqCntMantenimiento").textContent = mantenimiento;
+    }
+
     function renderTablaEquipos() {
         const tbody = document.getElementById("equiposBody");
         if (!tbody) return;
         const q = (document.getElementById("eqBusqueda")?.value || "").toLowerCase();
         const fEstado = document.getElementById("eqFiltroEstado")?.value || "";
+
+        actualizarCardsEquipos();
 
         let rows = todosEquipos.filter(r => {
             const matchEstado = !fEstado || r.estado === fEstado;
@@ -3299,6 +3362,7 @@
                 (r.tipo||"").toLowerCase().includes(q) ||
                 (r.numero_serie||"").toLowerCase().includes(q) ||
                 (r.modelo||"").toLowerCase().includes(q) ||
+                (r.marca||"").toLowerCase().includes(q) ||
                 (r.asignado_a||"").toLowerCase().includes(q);
             return matchEstado && matchQ;
         });
@@ -3311,15 +3375,15 @@
         }
 
         tbody.innerHTML = rows.map(r => {
-            const estadoClase = r.estado === "Asignado" ? "badge-en-proceso" : 
-                                r.estado === "Disponible" ? "badge-terminado" : "badge-alta";
-                                
+            const asignadoHtml = r.asignado_a
+                ? `<span class="asignado-chip">${esc(r.asignado_a)}</span>`
+                : `<span style="color:#d1d5db;font-size:12px">—</span>`;
             return `<tr>
                 <td data-label="Tipo"><strong>${esc(r.tipo||"—")}</strong></td>
-                <td data-label="Marca/Mod" style="font-size:12px;color:#374151">${esc(r.marca||"")} ${esc(r.modelo||"")}</td>
-                <td data-label="Serie" style="font-size:12px;color:#6b7280">${esc(r.numero_serie||"—")}</td>
-                <td data-label="Estado"><span class="badge ${estadoClase}">${esc(r.estado||"—")}</span></td>
-                <td data-label="Asignado a"><span class="asignado-chip">${esc(r.asignado_a||"—")}</span></td>
+                <td data-label="Marca/Mod" style="font-size:12px;color:#374151">${esc([r.marca, r.modelo].filter(Boolean).join(" ") || "—")}</td>
+                <td data-label="Serie" style="font-size:12px;color:#6b7280;font-family:monospace">${esc(r.numero_serie||"—")}</td>
+                <td data-label="Estado"><span class="badge ${badgeEquipoEstado(r.estado)}">${esc(r.estado||"—")}</span></td>
+                <td data-label="Asignado a">${asignadoHtml}</td>
                 <td data-label=""><button class="btn-edit" onclick="abrirEditarEquipo(${r.id})">✏ Editar</button></td>
             </tr>`;
         }).join("");
