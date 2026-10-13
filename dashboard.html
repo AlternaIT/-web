@@ -459,38 +459,141 @@
         /* ── ROW CLICK ── */
         tbody tr.clickable-row { cursor: pointer; }
 
+        /* ── HAMBURGER BUTTON ── */
+        .hamburger {
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; width: 38px; height: 38px;
+            border: none; background: #f3f4f6; border-radius: 8px;
+            cursor: pointer; gap: 5px; flex-shrink: 0;
+        }
+        .hamburger span {
+            display: block; width: 18px; height: 2px;
+            background: #374151; border-radius: 2px; transition: .2s;
+        }
+
+        /* ── SIDEBAR OVERLAY (mobile) ── */
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.45); z-index: 998;
+        }
+        .sidebar-overlay.open { display: block; }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 1100px) {
             .cards { grid-template-columns: repeat(2,1fr); }
             .dashboard-grid { grid-template-columns: 1fr; }
             .report-grid { grid-template-columns: 1fr; }
         }
-        @media (max-width: 700px) {
-            .sidebar { width: 70px; }
-            .brand { justify-content: center; padding: 0; }
-            .brand-text, .menu-title, .menu-text, .user-info, .logout { display: none; }
-            .brand-icon { margin: 0; }
-            .menu-item { justify-content: center; }
-            .main { margin-left: 70px; width: calc(100% - 70px); }
-            .topbar { padding: 0 18px; }
-            .page { padding: 20px 15px; }
-            .cards { grid-template-columns: 1fr; }
-            .filters { flex-direction: column; }
-            .filter-input { width: 100%; }
+
+        @media (max-width: 768px) {
+            /* Sidebar becomes a slide-in drawer */
+            .sidebar {
+                position: fixed; left: -260px; top: 0; bottom: 0;
+                width: 260px; z-index: 999;
+                transition: left .25s cubic-bezier(.4,0,.2,1);
+            }
+            .sidebar.mobile-open { left: 0; }
+
+            /* Main takes full width */
+            .main { margin-left: 0; width: 100%; }
+
+            /* Topbar */
+            .topbar { padding: 0 16px; height: 60px; gap: 10px; }
+            .page-title  { font-size: 16px; }
+            .page-subtitle { display: none; }
+            .hamburger { display: flex; }
+
+            /* Pages */
+            .page { padding: 16px 14px; }
+
+            /* Metric cards: 2 columns on tablet-ish, 1 on tiny */
+            .cards { grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 18px; }
+            .card-number { font-size: 22px; }
+
+            /* Dashboard grid full width */
+            .dashboard-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 18px; }
+            .report-grid    { grid-template-columns: 1fr; gap: 14px; }
+
+            /* Section headers stack */
+            .page-section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .users-header         { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .users-header .btn-primary { width: 100%; text-align: center; }
+
+            /* Filters stack vertically */
+            .filters { flex-direction: column; gap: 8px; }
+            .filter-select { width: 100%; }
+            .filter-input  { width: 100%; }
+
+            /* Tables: card-style rows */
+            .table-wrap { border-radius: 10px; }
             table thead { display: none; }
-            td { display: block; padding: 6px 16px; }
-            td:first-child { padding-top: 14px; }
-            td:last-child  { padding-bottom: 14px; }
-            tbody tr { display: block; border-bottom: 4px solid #f3f4f6; }
+            tbody tr { display: block; border-bottom: 4px solid #f3f4f6; padding: 4px 0; }
+            td {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 7px 14px; font-size: 13px; border: none;
+            }
+            td::before {
+                content: attr(data-label);
+                font-size: 10px; font-weight: 700; text-transform: uppercase;
+                letter-spacing: .05em; color: #9ca3af;
+                flex-shrink: 0; margin-right: 10px; min-width: 80px;
+            }
+            td:empty { display: none; }
+            .td-actividad { max-width: 100%; }
+            .td-actividad-text { max-width: none; white-space: normal; }
+
+            /* Modals full-screen on mobile */
+            .modal, .modal-wide {
+                width: 100%; max-width: 100%;
+                max-height: 92vh; overflow-y: auto;
+                border-radius: 16px 16px 0 0;
+                padding: 20px 16px;
+                position: fixed; bottom: 0; left: 0; right: 0;
+                margin: 0;
+            }
+            .modal-overlay { align-items: flex-end; }
+            .modal-grid-2, .modal-grid-3 { grid-template-columns: 1fr; }
+
+            /* Drawer full-width on mobile */
+            .drawer { width: 100%; max-width: 100%; right: -100%; }
+            .drawer.open { right: 0; }
+
+            /* Notification dropdown fits screen */
+            .notif-dropdown { width: calc(100vw - 24px); right: -8px; }
+
+            /* Pagination */
+            .pagination { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .pagination-btns { flex-wrap: wrap; }
+
+            /* Welcome card */
+            .welcome { padding: 16px; }
+            .welcome h2 { font-size: 16px; }
+
+            /* Config rows stack */
+            .config-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+
+            /* Bar label wider */
+            .bar-label { width: 100px; font-size: 11px; }
+
+            /* Panel header */
+            .panel-header { padding: 14px 16px; }
+        }
+
+        @media (max-width: 420px) {
+            .cards { grid-template-columns: 1fr; }
+            .topbar-right { gap: 10px; }
+            .page { padding: 12px 10px; }
         }
     </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
 <div class="app">
 
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
 
         <div class="brand">
             <img src="data:image/png;base64,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" 
@@ -581,6 +684,9 @@
     <main class="main">
 
         <header class="topbar">
+            <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
             <div>
                 <div class="page-title"    id="topbarTitle">Dashboard</div>
                 <div class="page-subtitle" id="topbarSubtitle">Panel de control — Alterna TI</div>
@@ -2100,22 +2206,22 @@
                 : fechaRelativa(a.fecha_limite, a.estado);
 
             return `<tr class="${rowClass}" onclick="abrirDrawer(${a.id})">
-                <td class="td-actividad">
+                <td data-label="Actividad" class="td-actividad">
                     <span class="td-actividad-text" title="${esc(a.actividad)}">${esc(a.actividad)}</span>
                     <div class="td-proyecto">${esc(a.proyecto_macro||"")}</div>
                 </td>
-                <td>${esc(a.area||"—")}</td>
-                <td>${badgePrioridad(a.prioridad)}</td>
-                <td onclick="event.stopPropagation()">
+                <td data-label="Área">${esc(a.area||"—")}</td>
+                <td data-label="Prioridad">${badgePrioridad(a.prioridad)}</td>
+                <td data-label="Estado" onclick="event.stopPropagation()">
                     <select class="inline-estado ${eClass}" onchange="cambiarEstadoInline(${a.id}, this)">
                         <option value="No iniciado" ${a.estado==="No iniciado"?"selected":""}>No iniciado</option>
                         <option value="En proceso"  ${a.estado==="En proceso"?"selected":""}>En proceso</option>
                         <option value="Terminado"   ${a.estado==="Terminado"?"selected":""}>Terminado</option>
                     </select>
                 </td>
-                <td><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
-                <td style="white-space:nowrap" class="${fechaClass}">${esc(fechaTxt)}</td>
-                <td onclick="event.stopPropagation()">
+                <td data-label="Asignado"><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
+                <td data-label="Fecha" style="white-space:nowrap" class="${fechaClass}">${esc(fechaTxt)}</td>
+                <td data-label="" onclick="event.stopPropagation()">
                     <button class="btn-edit" onclick="abrirEditarTarea(${a.id})">✏</button>
                 </td>
             </tr>`;
@@ -2313,10 +2419,10 @@
 
         tbody.innerHTML = data.map(u => `
             <tr class="clickable-row" onclick="abrirFichaUsuario(${u.id})" style="cursor:pointer">
-                <td><strong>${esc(u.nombre||"—")}</strong></td>
-                <td style="color:#6b7280">${esc(u.correo||"—")}</td>
-                <td><span class="asignado-chip">${esc(u.rol||"—")}</span></td>
-                <td>
+                <td data-label="Nombre"><strong>${esc(u.nombre||"—")}</strong></td>
+                <td data-label="Correo" style="color:#6b7280">${esc(u.correo||"—")}</td>
+                <td data-label="Rol"><span class="asignado-chip">${esc(u.rol||"—")}</span></td>
+                <td data-label="Estado">
                     <span class="status-dot ${u.activo ? 'dot-active' : 'dot-inactive'}"></span>
                     ${u.activo ? "Activo" : "Inactivo"}
                 </td>
@@ -2665,16 +2771,16 @@
                 ? `<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600">${esc(r.fecha_expiracion)}</span>`
                 : `<span style="color:#9ca3af">—</span>`;
             return sep + `<tr>
-                <td style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
-                <td><strong>${esc(r.nombre||"—")}</strong></td>
-                <td><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
-                <td style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
-                <td style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
-                <td>${expBadge}</td>
-                <td style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
-                <td style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
-                <td style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
-                <td><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
+                <td data-label="Slot" style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
+                <td data-label="Nombre"><strong>${esc(r.nombre||"—")}</strong></td>
+                <td data-label="Tipo"><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
+                <td data-label="Correo" style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
+                <td data-label="Cuenta" style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
+                <td data-label="Expiración">${expBadge}</td>
+                <td data-label="País" style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
+                <td data-label="Contacto" style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
+                <td data-label="N° Lic." style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+                <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
             </tr>`;
         }).join("");
     }
@@ -3056,6 +3162,23 @@
 
     iniciarDashboard();
     if (typeof lucide !== "undefined") lucide.createIcons();
+
+    /* ── MOBILE SIDEBAR ── */
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        sidebar.classList.toggle("mobile-open");
+        overlay.classList.toggle("open");
+    }
+    // Close sidebar when a nav item is clicked on mobile
+    document.querySelectorAll(".menu-item, .submenu-item").forEach(el => {
+        el.addEventListener("click", () => {
+            if (window.innerWidth <= 768) {
+                document.getElementById("sidebar").classList.remove("mobile-open");
+                document.getElementById("sidebarOverlay").classList.remove("open");
+            }
+        });
+    });
 
 </script>
 </body>
