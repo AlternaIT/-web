@@ -2234,6 +2234,212 @@
     </div>
 </div>
 
+<!-- MODAL NUEVO TICKET DE MANTENIMIENTO -->
+<div class="modal-overlay" id="modalNuevoTicket">
+    <div class="modal modal-wide">
+        <div class="modal-title">🔧 Nuevo Ticket de Mantenimiento</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Usuario / Responsable *</label>
+                <select class="modal-select" id="ntmUsuario" onchange="cargarEquiposDelUsuario()">
+                    <option value="">— Seleccionar usuario —</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Equipo de cómputo</label>
+                <select class="modal-select" id="ntmEquipo">
+                    <option value="">— Primero selecciona usuario —</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Título del mantenimiento *</label>
+            <input class="modal-input" id="ntmTitulo" type="text" placeholder="Ej. Mantenimiento preventivo trimestral" />
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <select class="modal-select" id="ntmTipo">
+                    <option value="Preventivo">Preventivo</option>
+                    <option value="Correctivo">Correctivo</option>
+                    <option value="Actualización">Actualización</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Diagnóstico">Diagnóstico</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="ntmPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media" selected>Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Técnico asignado</label>
+                <input class="modal-input" id="ntmTecnico" type="text" placeholder="Nombre del técnico" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Fecha programada *</label>
+                <input class="modal-input" id="ntmFecha" type="date" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Hora estimada</label>
+                <input class="modal-input" id="ntmHora" type="time" placeholder="09:00" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción / Notas</label>
+            <textarea class="modal-textarea" id="ntmDescripcion" placeholder="Describe el trabajo a realizar..." style="min-height:70px"></textarea>
+        </div>
+        <!-- Componentes detectados -->
+        <div id="ntmComponentesWrap" style="display:none;margin-top:4px">
+            <label class="modal-label" style="margin-bottom:6px;display:block">Componentes del equipo (inventario)</label>
+            <div id="ntmComponentes" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;min-height:36px"></div>
+        </div>
+        <div class="modal-msg" id="ntmMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalNuevoTicket()">Cancelar</button>
+            <button class="btn-primary" id="ntmGuardar" onclick="guardarNuevoTicket()">🔖 Crear Ticket</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VER TICKET -->
+<div class="modal-overlay" id="modalVerTicket">
+    <div class="modal modal-wide" style="max-width:560px">
+        <div class="ticket-header">
+            <div>
+                <div class="ticket-num" id="vtNumero">MANT-0000</div>
+                <div class="ticket-title" id="vtTitulo" style="margin-top:8px">—</div>
+                <div class="ticket-meta" id="vtMeta">—</div>
+            </div>
+            <button style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af" onclick="cerrarModalVerTicket()">✕</button>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Información del mantenimiento</div>
+            <div class="ticket-field"><span class="ticket-field-label">Estado</span><span id="vtEstadoWrap">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Tipo</span><span class="ticket-field-value" id="vtTipo">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Prioridad</span><span class="ticket-field-value" id="vtPrioridad">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Técnico asignado</span><span class="ticket-field-value" id="vtTecnico">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Fecha programada</span><span class="ticket-field-value" id="vtFechaProg">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Creado por</span><span class="ticket-field-value" id="vtCreadoPor">—</span></div>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Usuario y equipo</div>
+            <div class="ticket-field"><span class="ticket-field-label">Usuario</span><span class="ticket-field-value" id="vtUsuario">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Correo</span><span class="ticket-field-value" id="vtCorreo" style="font-size:12px">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Equipo</span><span class="ticket-field-value" id="vtEquipo">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">No. Serie</span><span class="ticket-field-value" id="vtSerie">—</span></div>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Componentes del equipo</div>
+            <div id="vtComponentes" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+        </div>
+
+        <div class="ticket-section" id="vtDescripcionSec">
+            <div class="ticket-section-title">Descripción / Notas</div>
+            <div id="vtDescripcion" style="font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.5">—</div>
+        </div>
+
+        <!-- Cambiar estado -->
+        <div class="ticket-section">
+            <div class="ticket-section-title">Cambiar estado</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="cambiarEstadoTicket('Programado')">📋 Programado</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="cambiarEstadoTicket('En proceso')">⚡ En proceso</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#d1fae5;color:#065f46;border-color:#6ee7b7" onclick="cambiarEstadoTicket('Completado')">✅ Completado</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="cambiarEstadoTicket('Cancelado')">🚫 Cancelado</button>
+            </div>
+            <div id="vtMsgEstado" style="font-size:12px;margin-top:6px;height:16px"></div>
+        </div>
+
+        <!-- Link compartible -->
+        <div class="ticket-section">
+            <div class="ticket-section-title">🔗 Compartir ticket</div>
+            <div class="share-box">
+                <span class="share-box-link" id="vtLink">—</span>
+                <button class="share-box-btn" onclick="copiarLinkTicket()">📋 Copiar</button>
+            </div>
+            <div id="vtLinkMsg" style="font-size:11px;color:#10b981;margin-top:4px;height:14px"></div>
+        </div>
+
+        <div class="modal-footer" style="margin-top:10px">
+            <button class="btn-secondary" onclick="abrirEditarTicket()">✏ Editar</button>
+            <button class="btn-danger"    onclick="eliminarTicket()">🗑 Eliminar</button>
+            <button class="btn-primary"   onclick="cerrarModalVerTicket()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR TICKET -->
+<div class="modal-overlay" id="modalEditarTicket">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Ticket de Mantenimiento</div>
+        <input type="hidden" id="etmId" />
+        <div class="modal-field">
+            <label class="modal-label">Título *</label>
+            <input class="modal-input" id="etmTitulo" type="text" />
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <select class="modal-select" id="etmTipo">
+                    <option value="Preventivo">Preventivo</option>
+                    <option value="Correctivo">Correctivo</option>
+                    <option value="Actualización">Actualización</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Diagnóstico">Diagnóstico</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="etmPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="etmEstado">
+                    <option value="Programado">Programado</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Completado">Completado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Fecha programada</label>
+                <input class="modal-input" id="etmFecha" type="date" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Técnico asignado</label>
+                <input class="modal-input" id="etmTecnico" type="text" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción / Notas</label>
+            <textarea class="modal-textarea" id="etmDescripcion" style="min-height:70px"></textarea>
+        </div>
+        <div class="modal-msg" id="etmMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalEditarTicket()">Cancelar</button>
+            <button class="btn-primary" id="etmGuardar" onclick="guardarEditarTicket()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+
+
+
 <script>
 
     /* ═══════════════════════════════════════════
@@ -5185,209 +5391,6 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 
-<!-- MODAL NUEVO TICKET DE MANTENIMIENTO -->
-<div class="modal-overlay" id="modalNuevoTicket">
-    <div class="modal modal-wide">
-        <div class="modal-title">🔧 Nuevo Ticket de Mantenimiento</div>
-        <div class="modal-grid-2">
-            <div class="modal-field">
-                <label class="modal-label">Usuario / Responsable *</label>
-                <select class="modal-select" id="ntmUsuario" onchange="cargarEquiposDelUsuario()">
-                    <option value="">— Seleccionar usuario —</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Equipo de cómputo</label>
-                <select class="modal-select" id="ntmEquipo">
-                    <option value="">— Primero selecciona usuario —</option>
-                </select>
-            </div>
-        </div>
-        <div class="modal-field">
-            <label class="modal-label">Título del mantenimiento *</label>
-            <input class="modal-input" id="ntmTitulo" type="text" placeholder="Ej. Mantenimiento preventivo trimestral" />
-        </div>
-        <div class="modal-grid-3">
-            <div class="modal-field">
-                <label class="modal-label">Tipo</label>
-                <select class="modal-select" id="ntmTipo">
-                    <option value="Preventivo">Preventivo</option>
-                    <option value="Correctivo">Correctivo</option>
-                    <option value="Actualización">Actualización</option>
-                    <option value="Limpieza">Limpieza</option>
-                    <option value="Diagnóstico">Diagnóstico</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Prioridad</label>
-                <select class="modal-select" id="ntmPrioridad">
-                    <option value="Alta">Alta</option>
-                    <option value="Media" selected>Media</option>
-                    <option value="Baja">Baja</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Técnico asignado</label>
-                <input class="modal-input" id="ntmTecnico" type="text" placeholder="Nombre del técnico" />
-            </div>
-        </div>
-        <div class="modal-grid-2">
-            <div class="modal-field">
-                <label class="modal-label">Fecha programada *</label>
-                <input class="modal-input" id="ntmFecha" type="date" />
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Hora estimada</label>
-                <input class="modal-input" id="ntmHora" type="time" placeholder="09:00" />
-            </div>
-        </div>
-        <div class="modal-field">
-            <label class="modal-label">Descripción / Notas</label>
-            <textarea class="modal-textarea" id="ntmDescripcion" placeholder="Describe el trabajo a realizar..." style="min-height:70px"></textarea>
-        </div>
-        <!-- Componentes detectados -->
-        <div id="ntmComponentesWrap" style="display:none;margin-top:4px">
-            <label class="modal-label" style="margin-bottom:6px;display:block">Componentes del equipo (inventario)</label>
-            <div id="ntmComponentes" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;min-height:36px"></div>
-        </div>
-        <div class="modal-msg" id="ntmMsg"></div>
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="cerrarModalNuevoTicket()">Cancelar</button>
-            <button class="btn-primary" id="ntmGuardar" onclick="guardarNuevoTicket()">🔖 Crear Ticket</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL VER TICKET -->
-<div class="modal-overlay" id="modalVerTicket">
-    <div class="modal modal-wide" style="max-width:560px">
-        <div class="ticket-header">
-            <div>
-                <div class="ticket-num" id="vtNumero">MANT-0000</div>
-                <div class="ticket-title" id="vtTitulo" style="margin-top:8px">—</div>
-                <div class="ticket-meta" id="vtMeta">—</div>
-            </div>
-            <button style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af" onclick="cerrarModalVerTicket()">✕</button>
-        </div>
-
-        <div class="ticket-section">
-            <div class="ticket-section-title">Información del mantenimiento</div>
-            <div class="ticket-field"><span class="ticket-field-label">Estado</span><span id="vtEstadoWrap">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Tipo</span><span class="ticket-field-value" id="vtTipo">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Prioridad</span><span class="ticket-field-value" id="vtPrioridad">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Técnico asignado</span><span class="ticket-field-value" id="vtTecnico">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Fecha programada</span><span class="ticket-field-value" id="vtFechaProg">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Creado por</span><span class="ticket-field-value" id="vtCreadoPor">—</span></div>
-        </div>
-
-        <div class="ticket-section">
-            <div class="ticket-section-title">Usuario y equipo</div>
-            <div class="ticket-field"><span class="ticket-field-label">Usuario</span><span class="ticket-field-value" id="vtUsuario">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Correo</span><span class="ticket-field-value" id="vtCorreo" style="font-size:12px">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">Equipo</span><span class="ticket-field-value" id="vtEquipo">—</span></div>
-            <div class="ticket-field"><span class="ticket-field-label">No. Serie</span><span class="ticket-field-value" id="vtSerie">—</span></div>
-        </div>
-
-        <div class="ticket-section">
-            <div class="ticket-section-title">Componentes del equipo</div>
-            <div id="vtComponentes" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
-        </div>
-
-        <div class="ticket-section" id="vtDescripcionSec">
-            <div class="ticket-section-title">Descripción / Notas</div>
-            <div id="vtDescripcion" style="font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.5">—</div>
-        </div>
-
-        <!-- Cambiar estado -->
-        <div class="ticket-section">
-            <div class="ticket-section-title">Cambiar estado</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="cambiarEstadoTicket('Programado')">📋 Programado</button>
-                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="cambiarEstadoTicket('En proceso')">⚡ En proceso</button>
-                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#d1fae5;color:#065f46;border-color:#6ee7b7" onclick="cambiarEstadoTicket('Completado')">✅ Completado</button>
-                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="cambiarEstadoTicket('Cancelado')">🚫 Cancelado</button>
-            </div>
-            <div id="vtMsgEstado" style="font-size:12px;margin-top:6px;height:16px"></div>
-        </div>
-
-        <!-- Link compartible -->
-        <div class="ticket-section">
-            <div class="ticket-section-title">🔗 Compartir ticket</div>
-            <div class="share-box">
-                <span class="share-box-link" id="vtLink">—</span>
-                <button class="share-box-btn" onclick="copiarLinkTicket()">📋 Copiar</button>
-            </div>
-            <div id="vtLinkMsg" style="font-size:11px;color:#10b981;margin-top:4px;height:14px"></div>
-        </div>
-
-        <div class="modal-footer" style="margin-top:10px">
-            <button class="btn-secondary" onclick="abrirEditarTicket()">✏ Editar</button>
-            <button class="btn-danger"    onclick="eliminarTicket()">🗑 Eliminar</button>
-            <button class="btn-primary"   onclick="cerrarModalVerTicket()">Cerrar</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL EDITAR TICKET -->
-<div class="modal-overlay" id="modalEditarTicket">
-    <div class="modal modal-wide">
-        <div class="modal-title">✏ Editar Ticket de Mantenimiento</div>
-        <input type="hidden" id="etmId" />
-        <div class="modal-field">
-            <label class="modal-label">Título *</label>
-            <input class="modal-input" id="etmTitulo" type="text" />
-        </div>
-        <div class="modal-grid-3">
-            <div class="modal-field">
-                <label class="modal-label">Tipo</label>
-                <select class="modal-select" id="etmTipo">
-                    <option value="Preventivo">Preventivo</option>
-                    <option value="Correctivo">Correctivo</option>
-                    <option value="Actualización">Actualización</option>
-                    <option value="Limpieza">Limpieza</option>
-                    <option value="Diagnóstico">Diagnóstico</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Prioridad</label>
-                <select class="modal-select" id="etmPrioridad">
-                    <option value="Alta">Alta</option>
-                    <option value="Media">Media</option>
-                    <option value="Baja">Baja</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Estado</label>
-                <select class="modal-select" id="etmEstado">
-                    <option value="Programado">Programado</option>
-                    <option value="En proceso">En proceso</option>
-                    <option value="Completado">Completado</option>
-                    <option value="Cancelado">Cancelado</option>
-                </select>
-            </div>
-        </div>
-        <div class="modal-grid-2">
-            <div class="modal-field">
-                <label class="modal-label">Fecha programada</label>
-                <input class="modal-input" id="etmFecha" type="date" />
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Técnico asignado</label>
-                <input class="modal-input" id="etmTecnico" type="text" />
-            </div>
-        </div>
-        <div class="modal-field">
-            <label class="modal-label">Descripción / Notas</label>
-            <textarea class="modal-textarea" id="etmDescripcion" style="min-height:70px"></textarea>
-        </div>
-        <div class="modal-msg" id="etmMsg"></div>
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="cerrarModalEditarTicket()">Cancelar</button>
-            <button class="btn-primary" id="etmGuardar" onclick="guardarEditarTicket()">Guardar cambios</button>
-        </div>
-    </div>
-</div>
 
 </body>
 </html>
-```eof
