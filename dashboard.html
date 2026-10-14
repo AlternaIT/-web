@@ -4944,10 +4944,11 @@
         return todosMantenimientos.filter(t => {
             const matchEst = !est || t.estado === est;
             const matchTip = !tip || t.tipo   === tip;
+            const uSearch = todosUsuarios_mant.find(u => u.id === t.usuario_id);
             const matchQ   = !q  ||
                 (t.numero_ticket||"").toLowerCase().includes(q) ||
                 (t.titulo||"").toLowerCase().includes(q) ||
-                (t.nombre_usuario||"").toLowerCase().includes(q) ||
+                (uSearch?.nombre||"").toLowerCase().includes(q) ||
                 (t.tecnico||"").toLowerCase().includes(q);
             return matchEst && matchTip && matchQ;
         });
@@ -5025,17 +5026,23 @@
             tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No se encontraron tickets.</div></td></tr>`;
             return;
         }
-        tbody.innerHTML = rows.map(t => `
+        tbody.innerHTML = rows.map(t => {
+            const uN = todosUsuarios_mant.find(u => u.id === t.usuario_id);
+            const eN = t.equipo_id ? todosEquipos_mant.find(e => e.id === t.equipo_id) : null;
+            const nombreU = uN?.nombre || "—";
+            const nombreE = eN ? [eN.tipo,eN.marca,eN.modelo].filter(Boolean).join(" ") : "—";
+            return `
             <tr class="ticket-row" onclick="verTicket(${t.id})">
                 <td><span style="font-size:11px;font-weight:700;color:#6366f1">${esc(t.numero_ticket||"—")}</span><br><span style="font-size:11px;color:#9ca3af">${esc((t.titulo||"").substring(0,30))}</span></td>
-                <td><strong style="font-size:13px">${esc(t.nombre_usuario||"—")}</strong><br><span style="font-size:11px;color:#9ca3af">${esc(t.equipo_nombre||"—")}</span></td>
+                <td><strong style="font-size:13px">${esc(nombreU)}</strong><br><span style="font-size:11px;color:#9ca3af">${esc(nombreE)}</span></td>
                 <td><span class="asignado-chip" style="background:#f0fdf4;color:#166534">${esc(t.tipo||"—")}</span></td>
                 <td>${badgePrioridad(t.prioridad)}</td>
                 <td>${badgeMantEstado(t.estado)}</td>
                 <td style="font-size:12px;white-space:nowrap">${formatFecha(t.fecha_programada)}</td>
                 <td style="font-size:12px">${esc(t.tecnico||"—")}</td>
                 <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="verTicket(${t.id})">👁 Ver</button></td>
-            </tr>`).join("");
+            </tr>`;
+        }).join("");
     }
 
     function badgeMantEstado(est) {
@@ -5155,18 +5162,14 @@
         const payload = {
             numero_ticket:   numTkt,
             usuario_id:      parseInt(uid),
-            nombre_usuario:  usuObj?.nombre  || null,
             equipo_id:       eid ? parseInt(eid) : null,
-            equipo_nombre:   eqObj ? [eqObj.tipo,eqObj.marca,eqObj.modelo].filter(Boolean).join(" ") : null,
             titulo,
             tipo:            document.getElementById("ntmTipo").value,
             prioridad:       document.getElementById("ntmPrioridad").value,
             estado:          "Programado",
             tecnico:         document.getElementById("ntmTecnico").value.trim() || null,
             fecha_programada: fecha,
-            hora_programada: document.getElementById("ntmHora").value || null,
             descripcion:     document.getElementById("ntmDescripcion").value.trim() || null,
-            creado_por:      usuario?.nombre || null,
         };
 
         const { data, error } = await supabaseClient.from("mantenimientos").insert([payload]).select().single();
@@ -5192,31 +5195,29 @@
 
         document.getElementById("vtNumero").textContent   = t.numero_ticket || "—";
         document.getElementById("vtTitulo").textContent   = t.titulo || "—";
-        document.getElementById("vtMeta").textContent     = "Creado por: " + (t.creado_por||"Sistema") + " · " + (formatFecha(t.fecha_programada)||"—");
+        const uObjV = todosUsuarios_mant.find(u => u.id === t.usuario_id);
+        const eObjV = t.equipo_id ? todosEquipos_mant.find(e => e.id === t.equipo_id) : null;
+        document.getElementById("vtMeta").textContent     = formatFecha(t.fecha_programada) || "—";
         document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
         document.getElementById("vtTipo").textContent     = t.tipo || "—";
         document.getElementById("vtPrioridad").innerHTML  = badgePrioridad(t.prioridad);
         document.getElementById("vtTecnico").textContent  = t.tecnico || "Sin asignar";
         document.getElementById("vtFechaProg").textContent = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
         document.getElementById("vtCreadoPor").textContent = t.creado_por || "—";
-        document.getElementById("vtUsuario").textContent  = t.nombre_usuario || "—";
-        const uObj2 = todosUsuarios_mant.find(u => u.id === t.usuario_id);
-        document.getElementById("vtCorreo").textContent   = uObj2?.correo || "—";
-        document.getElementById("vtEquipo").textContent   = t.equipo_nombre  || "Sin equipo asignado";
+        document.getElementById("vtUsuario").textContent  = uObjV?.nombre || "—";
+        document.getElementById("vtCorreo").textContent   = uObjV?.correo || "—";
+        document.getElementById("vtEquipo").textContent   = eObjV ? [eObjV.tipo, eObjV.marca, eObjV.modelo].filter(Boolean).join(" ") : "Sin equipo asignado";
         document.getElementById("vtDescripcion").textContent = t.descripcion || "Sin descripción.";
         document.getElementById("vtMsgEstado").textContent = "";
-
-        // Serie
-        const eqObj = t.equipo_id ? todosEquipos_mant.find(e => e.id === t.equipo_id) : null;
-        document.getElementById("vtSerie").textContent = eqObj?.numero_serie || "—";
+        document.getElementById("vtSerie").textContent = eObjV?.numero_serie || "—";
 
         // Componentes (from snapshot or live)
         const vtComp = document.getElementById("vtComponentes");
         let compData = {};
-        if (eqObj) {
-            compData = { tipo:eqObj.tipo, marca:eqObj.marca, modelo:eqObj.modelo,
-                procesador:eqObj.procesador, ram:eqObj.ram, almacenamiento:eqObj.almacenamiento,
-                sistema_operativo:eqObj.sistema_operativo };
+        if (eObjV) {
+            compData = { tipo:eObjV.tipo, marca:eObjV.marca, modelo:eObjV.modelo,
+                procesador:eObjV.procesador, ram:eObjV.ram, almacenamiento:eObjV.almacenamiento,
+                sistema_operativo:eObjV.sistema_operativo };
         }
         const chipsCampos = [
             {k:"tipo",l:"Tipo"},{k:"marca",l:"Marca"},{k:"modelo",l:"Modelo"},
