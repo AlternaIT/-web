@@ -447,6 +447,76 @@
         .fecha-proxima { color: #f59e0b !important; font-weight: 600; }
         .fecha-ok      { color: #10b981 !important; }
 
+        /* ── KANBAN SUBMENU CARD (solo en Actividades) ── */
+        .submenu-item-kanban-card {
+            padding: 8px 10px !important;
+            background: transparent !important;
+        }
+        .submenu-item-kanban-card:hover .kanban-card-menu,
+        .submenu-item-kanban-card.active .kanban-card-menu {
+            background: linear-gradient(135deg, #3b3b3d 0%, #4f4f52 100%) !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,.35);
+            transform: translateY(-1px);
+        }
+        .kanban-card-menu {
+            background: linear-gradient(135deg, #27272a 0%, #3f3f46 100%);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px; padding: 10px 13px;
+            transition: all .2s cubic-bezier(.4,0,.2,1);
+            cursor: pointer; width: 100%;
+        }
+        .kanban-card-menu-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 7px;
+        }
+        .kanban-col-dots { display: flex; gap: 5px; align-items: center; }
+        .kcol-dot {
+            width: 10px; height: 10px; border-radius: 3px;
+        }
+        .kanban-card-menu-badge {
+            font-size: 8px; font-weight: 800; background: rgba(255,255,255,.15);
+            color: rgba(255,255,255,.7); border-radius: 4px; padding: 2px 5px; letter-spacing: .07em;
+        }
+        .kanban-card-menu-name {
+            font-size: 12px; font-weight: 700; color: white; line-height: 1.2;
+        }
+        .kanban-card-menu-desc {
+            font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px;
+        }
+
+        /* ── EXPIRING TICKETS PANEL (dashboard) ── */
+        .expiring-panel {
+            background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+            overflow: hidden; margin-bottom: 25px;
+        }
+        .expiring-panel .panel-header {
+            background: linear-gradient(90deg,#fef3c7,#fff7ed);
+            border-bottom: 1px solid #fde68a;
+        }
+        .expiring-panel .panel-title { color: #92400e; }
+        .expiring-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 20px; border-bottom: 1px solid #fef9ee;
+            transition: background .12s; cursor: pointer;
+        }
+        .expiring-item:last-child { border-bottom: none; }
+        .expiring-item:hover { background: #fffbeb; }
+        .expiring-item-left { flex: 1; min-width: 0; }
+        .expiring-item-name {
+            font-size: 13px; font-weight: 600; color: #111827;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .expiring-item-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .expiring-days {
+            font-size: 11px; font-weight: 700; padding: 3px 9px;
+            border-radius: 20px; white-space: nowrap; flex-shrink: 0; margin-left: 10px;
+        }
+        .expiring-days.today   { background:#fee2e2;color:#991b1b; }
+        .expiring-days.day1    { background:#fee2e2;color:#b91c1c; }
+        .expiring-days.day2-3  { background:#fef3c7;color:#92400e; }
+        .expiring-days.day4-7  { background:#fef9c3;color:#a16207; }
+        .expiring-empty { padding: 20px; text-align: center; font-size: 13px; color: #9ca3af; }
+
         /* ── PAGINATION ── */
         .pagination {
             display: flex; align-items: center; justify-content: space-between;
@@ -705,6 +775,21 @@
                     <span class="submenu-icon"><i data-lucide="check-circle-2"></i></span>
                     <span>Terminado</span>
                 </div>
+                <!-- Kanban: diseño especial tipo card -->
+                <div class="submenu-item submenu-item-kanban-card" onclick="setVistaActividades('kanban');navegarSubmenu('actividades', null)" data-sub="kanban">
+                    <div class="kanban-card-menu">
+                        <div class="kanban-card-menu-top">
+                            <div class="kanban-col-dots">
+                                <span class="kcol-dot" style="background:#9ca3af"></span>
+                                <span class="kcol-dot" style="background:#f59e0b"></span>
+                                <span class="kcol-dot" style="background:#10b981"></span>
+                            </div>
+                            <span class="kanban-card-menu-badge">KANBAN</span>
+                        </div>
+                        <div class="kanban-card-menu-name">Vista Kanban</div>
+                        <div class="kanban-card-menu-desc">3 columnas por estado</div>
+                    </div>
+                </div>
             </div>
 
             <div class="menu-item" data-page="licencias" onclick="toggleSubmenu(this, 'licencias')">
@@ -716,6 +801,10 @@
                 <div class="submenu-item" onclick="navegarSubmenu('licencias-office', null)" data-sub="office">
                     <span class="submenu-icon"><i data-lucide="package"></i></span>
                     <span>Office</span>
+                </div>
+                <div class="submenu-item" onclick="navegarSubmenu('licencias-kanva', null)" data-sub="kanva">
+                    <span class="submenu-icon"><i data-lucide="palette"></i></span>
+                    <span>Canva</span>
                 </div>
             </div>
 
@@ -831,6 +920,15 @@
                     <div class="card-number" id="totalUsuarios">—</div>
                     <div class="card-description">Usuarios registrados</div>
                 </div>
+            </div>
+
+            <!-- Panel: Licencias próximas a vencer (7 días) -->
+            <div class="expiring-panel" id="expiringPanel" style="display:none">
+                <div class="panel-header">
+                    <div class="panel-title">⚠️ Licencias por vencer esta semana</div>
+                    <div class="panel-action" onclick="navegar('licencias-office')">Ver todas →</div>
+                </div>
+                <div id="expiringList"></div>
             </div>
 
             <div class="dashboard-grid">
@@ -1402,8 +1500,175 @@
 
         </section>
 
+        <!-- ══════════════════════════════════════
+             PÁGINA: LICENCIAS — CANVA
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-licencias-kanva">
+
+            <!-- Header con branding Canva -->
+            <div style="background:linear-gradient(135deg,#6d28d9 0%,#9333ea 50%,#db2777 100%);border-radius:14px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:18px">
+                <div style="width:52px;height:52px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px">🎨</div>
+                <div>
+                    <div style="font-size:20px;font-weight:800;color:white">Canva</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:3px">Gestión de licencias de diseño</div>
+                </div>
+                <div style="margin-left:auto">
+                    <button class="btn-primary" onclick="abrirModalNuevaLicenciaKanva()"
+                        style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);color:white;backdrop-filter:blur(4px)">
+                        ＋ Nueva licencia
+                    </button>
+                </div>
+            </div>
+
+            <div class="filters">
+                <input class="filter-input" id="kanvaBusqueda" type="text"
+                    placeholder="Buscar por nombre, correo..."
+                    oninput="renderTablaKanva()" style="width:300px" />
+                <select class="filter-select" id="kanvaFiltroEstado" onchange="renderTablaKanva()">
+                    <option value="">Todos los estados</option>
+                    <option value="Activa">Activa</option>
+                    <option value="Vencida">Vencida</option>
+                    <option value="Por vencer">Por vencer</option>
+                </select>
+                <div class="filter-count" id="kanvaCount"></div>
+            </div>
+
+            <!-- Cards resumen Kanva -->
+            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:22px" id="kanvaCards">
+                <div class="card" style="border-top:3px solid #9333ea">
+                    <div class="card-top">
+                        <div class="card-title">Total licencias</div>
+                        <div class="card-icon" style="background:#f5f3ff">🎨</div>
+                    </div>
+                    <div class="card-number" id="kanvaCntTotal">—</div>
+                    <div class="card-description">Registradas</div>
+                </div>
+                <div class="card" style="border-top:3px solid #10b981">
+                    <div class="card-top">
+                        <div class="card-title">Activas</div>
+                        <div class="card-icon" style="background:#d1fae5">✓</div>
+                    </div>
+                    <div class="card-number" id="kanvaCntActiva">—</div>
+                    <div class="card-description">Vigentes</div>
+                </div>
+                <div class="card" style="border-top:3px solid #ef4444">
+                    <div class="card-top">
+                        <div class="card-title">Por vencer / Vencidas</div>
+                        <div class="card-icon" style="background:#fee2e2">⚠</div>
+                    </div>
+                    <div class="card-number" id="kanvaCntAlerta">—</div>
+                    <div class="card-description">Requieren atención</div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Plan</th>
+                            <th>Expiración</th>
+                            <th>Estado</th>
+                            <th>Notas</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="kanvaBody">
+                        <tr class="loading-row"><td colspan="8">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
     </main>
 
+</div>
+
+<!-- MODAL NUEVA LICENCIA CANVA -->
+<div class="modal-overlay" id="modalNuevaLicenciaKanva">
+    <div class="modal modal-wide">
+        <div class="modal-title" style="background:linear-gradient(135deg,#6d28d9,#db2777);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🎨 Nueva Licencia Canva</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Nombre *</label>
+                <input class="modal-input" id="nkNombre" type="text" placeholder="Nombre completo" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Correo *</label>
+                <input class="modal-input" id="nkCorreo" type="email" placeholder="correo@dominio.com" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Plan</label>
+                <select class="modal-select" id="nkPlan">
+                    <option value="Pro">Pro</option>
+                    <option value="Teams">Teams</option>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="Free">Free</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha de expiración</label>
+                <input class="modal-input" id="nkExpiracion" type="date" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Notas</label>
+            <textarea class="modal-textarea" id="nkNotas" placeholder="Observaciones..." style="min-height:60px"></textarea>
+        </div>
+        <div class="modal-msg" id="nkMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalNuevaLicenciaKanva()">Cancelar</button>
+            <button class="btn-primary" id="nkGuardar" onclick="guardarNuevaLicenciaKanva()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR LICENCIA CANVA -->
+<div class="modal-overlay" id="modalEditarKanva">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Licencia Canva</div>
+        <input type="hidden" id="ekId" />
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Nombre *</label>
+                <input class="modal-input" id="ekNombre" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Correo</label>
+                <input class="modal-input" id="ekCorreo" type="email" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Plan</label>
+                <select class="modal-select" id="ekPlan">
+                    <option value="Pro">Pro</option>
+                    <option value="Teams">Teams</option>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="Free">Free</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Fecha de expiración</label>
+                <input class="modal-input" id="ekExpiracion" type="date" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Notas</label>
+            <textarea class="modal-textarea" id="ekNotas" style="min-height:60px"></textarea>
+        </div>
+        <div class="modal-msg" id="ekMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" onclick="eliminarLicenciaKanva()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalEditarKanva()">Cancelar</button>
+            <button class="btn-primary" id="ekGuardar" onclick="guardarEditarKanva()">Guardar cambios</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL NUEVO USUARIO -->
@@ -1860,6 +2125,7 @@
         reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
         configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
+        "licencias-kanva":  { titulo: "Licencias — Canva",  subtitulo: "Gestión de licencias de diseño Canva" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -1923,6 +2189,10 @@
 
         if (pagina === "licencias-office") {
             cargarLicenciasOffice();
+        }
+
+        if (pagina === "licencias-kanva") {
+            cargarLicenciasKanva();
         }
     }
 
@@ -3944,11 +4214,311 @@
 
 
     /* ═══════════════════════════════════════════
+       DASHBOARD — LICENCIAS PRÓXIMAS A VENCER (7 días)
+    ═══════════════════════════════════════════ */
+    async function renderExpiringTickets() {
+        const panel = document.getElementById("expiringPanel");
+        const list  = document.getElementById("expiringList");
+        if (!panel || !list) return;
+
+        // Cargar licencias Office
+        const { data, error } = await supabaseClient
+            .from("licencias_office")
+            .select("id, nombre, tipo, correo, expiracion, nombre_cuenta")
+            .order("expiracion", { ascending: true });
+
+        if (error || !data) { panel.style.display = "none"; return; }
+
+        const hoy      = new Date(); hoy.setHours(0,0,0,0);
+        const en7Dias  = new Date(hoy); en7Dias.setDate(en7Dias.getDate() + 7);
+
+        // Función para parsear fecha en formato dd/mm/aa o dd/mm/yyyy
+        function parsearFecha(str) {
+            if (!str) return null;
+            // Intentar ISO primero
+            const iso = new Date(str);
+            if (!isNaN(iso)) return iso;
+            // Formato dd/mm/aa o dd/mm/yyyy
+            const p = str.split("/");
+            if (p.length === 3) {
+                let yr = parseInt(p[2]);
+                if (yr < 100) yr += 2000;
+                return new Date(yr, parseInt(p[1]) - 1, parseInt(p[0]));
+            }
+            return null;
+        }
+
+        const proximas = data.filter(lic => {
+            const f = parsearFecha(lic.expiracion);
+            if (!f || isNaN(f)) return false;
+            f.setHours(0,0,0,0);
+            return f >= hoy && f <= en7Dias;
+        });
+
+        if (!proximas.length) { panel.style.display = "none"; return; }
+
+        panel.style.display = "";
+
+        list.innerHTML = proximas.map(lic => {
+            const f    = parsearFecha(lic.expiracion);
+            f.setHours(0,0,0,0);
+            const diff = Math.round((f - hoy) / 86400000);
+            let daysLabel, daysClass;
+            if (diff === 0)      { daysLabel = "Vence hoy";        daysClass = "today"; }
+            else if (diff === 1) { daysLabel = "Mañana";           daysClass = "day1"; }
+            else if (diff <= 3)  { daysLabel = `${diff} días`;     daysClass = "day2-3"; }
+            else                 { daysLabel = `${diff} días`;     daysClass = "day4-7"; }
+
+            return `<div class="expiring-item" onclick="navegar('licencias-office')">
+                <div class="expiring-item-left">
+                    <div class="expiring-item-name">${esc(lic.nombre || lic.nombre_cuenta || "—")}</div>
+                    <div class="expiring-item-meta">${esc(lic.tipo||"")} ${lic.correo ? "· " + esc(lic.correo) : ""} · Exp: ${esc(lic.expiracion||"")}</div>
+                </div>
+                <span class="expiring-days ${daysClass}">${daysLabel}</span>
+            </div>`;
+        }).join("");
+    }
+
+
+    /* ═══════════════════════════════════════════
+       LICENCIAS — CANVA
+    ═══════════════════════════════════════════ */
+    let todasLicenciasKanva = [];
+
+    async function cargarLicenciasKanva() {
+        const tbody = document.getElementById("kanvaBody");
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="8">Cargando...</td></tr>`;
+
+        const { data, error } = await supabaseClient
+            .from("licencias_canva")
+            .select("*")
+            .order("id", { ascending: true });
+
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:20px">Error: ${esc(error.message)}</td></tr>`;
+            return;
+        }
+
+        todasLicenciasKanva = data || [];
+        renderTablaKanva();
+        actualizarCardsKanva();
+    }
+
+    function actualizarCardsKanva() {
+        const hoy     = new Date(); hoy.setHours(0,0,0,0);
+        const en7dias = new Date(hoy); en7dias.setDate(en7dias.getDate() + 7);
+
+        function parsearFechaKanva(str) {
+            if (!str) return null;
+            const iso = new Date(str);
+            if (!isNaN(iso)) return iso;
+            const p = str.split("/");
+            if (p.length === 3) {
+                let yr = parseInt(p[2]); if (yr < 100) yr += 2000;
+                return new Date(yr, parseInt(p[1])-1, parseInt(p[0]));
+            }
+            return null;
+        }
+
+        let activas = 0, alertas = 0;
+        todasLicenciasKanva.forEach(l => {
+            const f = parsearFechaKanva(l.expiracion);
+            if (!f || isNaN(f)) { activas++; return; }
+            f.setHours(0,0,0,0);
+            if (f < hoy || f <= en7dias) alertas++;
+            else activas++;
+        });
+
+        const total = todasLicenciasKanva.length;
+        const cntT = document.getElementById("kanvaCntTotal");
+        const cntA = document.getElementById("kanvaCntActiva");
+        const cntR = document.getElementById("kanvaCntAlerta");
+        if (cntT) cntT.textContent = total;
+        if (cntA) cntA.textContent = total - alertas;
+        if (cntR) cntR.textContent = alertas;
+    }
+
+    function renderTablaKanva() {
+        const tbody = document.getElementById("kanvaBody");
+        const busq  = (document.getElementById("kanvaBusqueda")?.value || "").toLowerCase();
+        const fEstado = document.getElementById("kanvaFiltroEstado")?.value || "";
+        const hoy   = new Date(); hoy.setHours(0,0,0,0);
+        const en7   = new Date(hoy); en7.setDate(en7.getDate() + 7);
+
+        function parsearFechaKanva(str) {
+            if (!str) return null;
+            const iso = new Date(str);
+            if (!isNaN(iso)) return iso;
+            const p = str.split("/");
+            if (p.length === 3) {
+                let yr = parseInt(p[2]); if (yr < 100) yr += 2000;
+                return new Date(yr, parseInt(p[1])-1, parseInt(p[0]));
+            }
+            return null;
+        }
+
+        function estadoKanva(lic) {
+            const f = parsearFechaKanva(lic.expiracion);
+            if (!f || isNaN(f)) return "Activa";
+            f.setHours(0,0,0,0);
+            if (f < hoy) return "Vencida";
+            if (f <= en7) return "Por vencer";
+            return "Activa";
+        }
+
+        let filtradas = todasLicenciasKanva.filter(l => {
+            const estado = estadoKanva(l);
+            if (fEstado && estado !== fEstado) return false;
+            if (busq) {
+                const h = `${l.nombre||""} ${l.correo||""} ${l.plan||""}`.toLowerCase();
+                if (!h.includes(busq)) return false;
+            }
+            return true;
+        });
+
+        const cnt = document.getElementById("kanvaCount");
+        if (cnt) cnt.textContent = `${filtradas.length} de ${todasLicenciasKanva.length}`;
+
+        if (!filtradas.length) {
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No hay licencias Canva registradas.</div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtradas.map((l, i) => {
+            const estado = estadoKanva(l);
+            const estadoBadge = {
+                "Activa":     `<span class="badge badge-terminado">Activa</span>`,
+                "Por vencer": `<span class="badge badge-en-proceso">Por vencer</span>`,
+                "Vencida":    `<span class="badge badge-alta">Vencida</span>`,
+            }[estado] || "";
+
+            return `<tr class="clickable-row" onclick="abrirEditarKanva(${l.id})">
+                <td data-label="#">${i + 1}</td>
+                <td data-label="Nombre"><strong>${esc(l.nombre||"—")}</strong></td>
+                <td data-label="Correo" style="color:#6b7280">${esc(l.correo||"—")}</td>
+                <td data-label="Plan"><span class="asignado-chip" style="background:#f5f3ff;color:#6d28d9">${esc(l.plan||"—")}</span></td>
+                <td data-label="Expiración">${esc(l.expiracion||"—")}</td>
+                <td data-label="Estado">${estadoBadge}</td>
+                <td data-label="Notas" style="color:#9ca3af;font-size:11px">${esc((l.notas||"").substring(0,50))}</td>
+                <td data-label=""><button class="btn-edit" onclick="event.stopPropagation();abrirEditarKanva(${l.id})">✏</button></td>
+            </tr>`;
+        }).join("");
+    }
+
+    function abrirModalNuevaLicenciaKanva() {
+        ["nkNombre","nkCorreo","nkNotas"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        const plan = document.getElementById("nkPlan"); if (plan) plan.value = "Pro";
+        const exp  = document.getElementById("nkExpiracion"); if (exp) exp.value = "";
+        const msg  = document.getElementById("nkMsg"); if (msg) msg.textContent = "";
+        const btn  = document.getElementById("nkGuardar"); if (btn) btn.disabled = false;
+        document.getElementById("modalNuevaLicenciaKanva").classList.add("open");
+    }
+
+    function cerrarModalNuevaLicenciaKanva() {
+        document.getElementById("modalNuevaLicenciaKanva").classList.remove("open");
+    }
+
+    async function guardarNuevaLicenciaKanva() {
+        const nombre = document.getElementById("nkNombre").value.trim();
+        const correo = document.getElementById("nkCorreo").value.trim();
+        if (!nombre || !correo) {
+            document.getElementById("nkMsg").textContent = "⚠ Nombre y correo son obligatorios.";
+            document.getElementById("nkMsg").style.color = "#ef4444"; return;
+        }
+        const btn = document.getElementById("nkGuardar"); btn.disabled = true;
+        document.getElementById("nkMsg").textContent = "Guardando...";
+        document.getElementById("nkMsg").style.color = "#6b7280";
+
+        const payload = {
+            nombre, correo,
+            plan:       document.getElementById("nkPlan").value,
+            expiracion: document.getElementById("nkExpiracion").value || null,
+            notas:      document.getElementById("nkNotas").value.trim() || null,
+        };
+
+        const { error } = await supabaseClient.from("licencias_canva").insert([payload]);
+        if (error) {
+            document.getElementById("nkMsg").textContent = "❌ " + error.message;
+            document.getElementById("nkMsg").style.color = "#ef4444";
+            btn.disabled = false; return;
+        }
+        document.getElementById("nkMsg").textContent = "✅ Licencia creada.";
+        document.getElementById("nkMsg").style.color = "#10b981";
+        await cargarLicenciasKanva();
+        setTimeout(() => cerrarModalNuevaLicenciaKanva(), 600);
+    }
+
+    document.getElementById("modalNuevaLicenciaKanva").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalNuevaLicenciaKanva();
+    });
+
+    function abrirEditarKanva(id) {
+        const l = todasLicenciasKanva.find(x => x.id === id);
+        if (!l) return;
+        document.getElementById("ekId").value          = l.id;
+        document.getElementById("ekNombre").value      = l.nombre     || "";
+        document.getElementById("ekCorreo").value      = l.correo     || "";
+        document.getElementById("ekPlan").value        = l.plan       || "Pro";
+        document.getElementById("ekExpiracion").value  = l.expiracion || "";
+        document.getElementById("ekNotas").value       = l.notas      || "";
+        document.getElementById("ekMsg").textContent   = "";
+        document.getElementById("ekGuardar").disabled  = false;
+        document.getElementById("modalEditarKanva").classList.add("open");
+    }
+
+    function cerrarModalEditarKanva() {
+        document.getElementById("modalEditarKanva").classList.remove("open");
+    }
+
+    async function guardarEditarKanva() {
+        const id     = parseInt(document.getElementById("ekId").value);
+        const nombre = document.getElementById("ekNombre").value.trim();
+        if (!nombre) {
+            document.getElementById("ekMsg").textContent = "⚠ El nombre es obligatorio.";
+            document.getElementById("ekMsg").style.color = "#ef4444"; return;
+        }
+        const btn = document.getElementById("ekGuardar"); btn.disabled = true;
+        document.getElementById("ekMsg").textContent = "Guardando...";
+        document.getElementById("ekMsg").style.color = "#6b7280";
+
+        const payload = {
+            nombre,
+            correo:     document.getElementById("ekCorreo").value.trim() || null,
+            plan:       document.getElementById("ekPlan").value,
+            expiracion: document.getElementById("ekExpiracion").value || null,
+            notas:      document.getElementById("ekNotas").value.trim() || null,
+        };
+
+        const { error } = await supabaseClient.from("licencias_canva").update(payload).eq("id", id);
+        if (error) {
+            document.getElementById("ekMsg").textContent = "❌ " + error.message;
+            document.getElementById("ekMsg").style.color = "#ef4444";
+            btn.disabled = false; return;
+        }
+        await cargarLicenciasKanva();
+        cerrarModalEditarKanva();
+    }
+
+    async function eliminarLicenciaKanva() {
+        const id = parseInt(document.getElementById("ekId").value);
+        if (!confirm("¿Eliminar esta licencia Canva? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("licencias_canva").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalEditarKanva();
+        await cargarLicenciasKanva();
+    }
+
+    document.getElementById("modalEditarKanva").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalEditarKanva();
+    });
+
+
+    /* ═══════════════════════════════════════════
        INIT
     ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
         await cargarUsuario();
-        await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects()]);
+        await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
         sincronizarBotonesPeriodo();
         aplicarVistaActividades(getVistaActividades());
     }
