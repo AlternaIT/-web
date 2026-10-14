@@ -4961,7 +4961,6 @@
             fecha_programada: fecha,
             hora_programada: document.getElementById("ntmHora").value || null,
             descripcion:     document.getElementById("ntmDescripcion").value.trim() || null,
-            componentes:     Object.keys(compSnap).length ? JSON.stringify(compSnap) : null,
             creado_por:      usuario?.nombre || null,
         };
 
@@ -5008,8 +5007,7 @@
         // Componentes (from snapshot or live)
         const vtComp = document.getElementById("vtComponentes");
         let compData = {};
-        try { if (t.componentes) compData = JSON.parse(t.componentes); } catch{}
-        if (!Object.keys(compData).length && eqObj) {
+        if (eqObj) {
             compData = { tipo:eqObj.tipo, marca:eqObj.marca, modelo:eqObj.modelo,
                 procesador:eqObj.procesador, ram:eqObj.ram, almacenamiento:eqObj.almacenamiento,
                 sistema_operativo:eqObj.sistema_operativo };
