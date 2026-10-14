@@ -728,6 +728,82 @@
             .topbar-right { gap: 10px; }
             .page { padding: 12px 10px; }
         }
+
+        /* ══════════════════════════════════════
+           MANTENIMIENTOS — CSS
+        ══════════════════════════════════════ */
+        .mant-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:22px; }
+        .mant-stat-card { background:white; border:1px solid #e5e7eb; border-radius:12px; padding:18px 20px; }
+        .mant-stat-label { font-size:12px; color:#6b7280; }
+        .mant-stat-num { font-size:26px; font-weight:700; color:#111827; margin-top:8px; }
+        .mant-stat-sub  { font-size:11px; color:#9ca3af; margin-top:4px; }
+
+        /* Calendar */
+        .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+        .cal-nav-btn { border:1px solid #e5e7eb; background:white; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:600; transition:.15s; }
+        .cal-nav-btn:hover { background:#f3f4f6; }
+        .cal-month-label { font-size:16px; font-weight:700; color:#111827; }
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+        .cal-weekday { text-align:center; font-size:10px; font-weight:700; text-transform:uppercase; color:#9ca3af; padding:6px 0; }
+        .cal-day { min-height:76px; border-radius:8px; border:1px solid #f3f4f6; padding:4px; background:white; transition:.15s; }
+        .cal-day:hover { background:#f9fafb; }
+        .cal-day.today { border-color:#6366f1; background:#eef2ff; }
+        .cal-day.other-month { opacity:.35; }
+        .cal-day-num { font-size:11px; font-weight:600; color:#374151; margin-bottom:3px; }
+        .cal-day.today .cal-day-num { color:#6366f1; }
+        .cal-event { font-size:10px; border-radius:4px; padding:2px 5px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+        .cal-event.programado { background:#e0e7ff; color:#3730a3; }
+        .cal-event.en-proceso { background:#fef3c7; color:#92400e; }
+        .cal-event.completado { background:#d1fae5; color:#065f46; }
+        .cal-event.cancelado  { background:#fee2e2; color:#991b1b; }
+        .cal-event.urgente    { background:#fee2e2; color:#991b1b; }
+
+        /* Ticket badge estados */
+        .badge-programado { background:#e0e7ff; color:#3730a3; }
+        .badge-en-proceso { background:#fef3c7; color:#92400e; }
+        .badge-completado { background:#d1fae5; color:#065f46; }
+        .badge-cancelado  { background:#fee2e2; color:#991b1b; }
+
+        /* Ticket card para vista modal */
+        .ticket-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+        .ticket-num { font-size:12px; font-weight:700; color:#6366f1; background:#eef2ff; padding:4px 10px; border-radius:20px; }
+        .ticket-title { font-size:17px; font-weight:700; color:#111827; margin-bottom:4px; }
+        .ticket-meta  { font-size:12px; color:#6b7280; }
+        .ticket-section { margin-top:16px; padding-top:14px; border-top:1px solid #f3f4f6; }
+        .ticket-section-title { font-size:11px; font-weight:700; text-transform:uppercase; color:#9ca3af; letter-spacing:.06em; margin-bottom:10px; }
+        .ticket-field { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid #f9fafb; font-size:13px; }
+        .ticket-field:last-child { border-bottom:none; }
+        .ticket-field-label { color:#6b7280; }
+        .ticket-field-value { font-weight:600; color:#111827; text-align:right; max-width:60%; }
+        .comp-chip { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; background:#f3f4f6; color:#374151; margin:2px; }
+
+        /* Share link box */
+        .share-box { display:flex; align-items:center; gap:8px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; margin-top:10px; }
+        .share-box-link { flex:1; font-size:12px; color:#6366f1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .share-box-btn { padding:5px 12px; background:#6366f1; color:white; border:none; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; white-space:nowrap; }
+        .share-box-btn:hover { background:#4f46e5; }
+
+        /* Inline status select for tickets */
+        .inline-mant-estado { border:none; border-radius:5px; padding:3px 7px; font-size:11px; font-weight:600; cursor:pointer; appearance:none; -webkit-appearance:none; }
+
+        /* List view toggle */
+        .view-toggle { display:flex; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+        .view-toggle-btn { padding:7px 14px; background:white; border:none; cursor:pointer; font-size:12px; color:#6b7280; transition:.15s; }
+        .view-toggle-btn.active { background:#6366f1; color:white; font-weight:600; }
+
+        /* Ticket row hover */
+        .ticket-row { cursor:pointer; }
+        .ticket-row:hover { background:#f9fafb; }
+
+        @media(max-width:768px){
+            .mant-stats { grid-template-columns:repeat(2,1fr); }
+            .cal-grid { gap:2px; }
+            .cal-day { min-height:50px; }
+            .cal-event { font-size:9px; }
+        }
+        @media(max-width:420px){
+            .mant-stats { grid-template-columns:1fr; }
+        }
     </style>
 </head>
 <body>
@@ -811,6 +887,12 @@
             <div class="menu-item" data-page="usuarios" onclick="navegar('usuarios')">
                 <span class="menu-icon"><i data-lucide="users"></i></span>
                 <span class="menu-text">Usuarios</span>
+            </div>
+
+
+            <div class="menu-item" data-page="mantenimientos" onclick="navegar('mantenimientos')">
+                <span class="menu-icon"><i data-lucide="wrench"></i></span>
+                <span class="menu-text">Mantenimientos</span>
             </div>
 
             <div class="menu-item" data-page="equipos" onclick="navegar('equipos')">
@@ -1554,6 +1636,107 @@
 
         </section>
 
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: MANTENIMIENTOS
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-mantenimientos">
+
+            <!-- Stat cards -->
+            <div class="mant-stats" id="mantStats">
+                <div class="mant-stat-card" style="border-top:3px solid #6366f1">
+                    <div class="mant-stat-label">Total tickets</div>
+                    <div class="mant-stat-num" id="mantCntTotal">—</div>
+                    <div class="mant-stat-sub">Registrados</div>
+                </div>
+                <div class="mant-stat-card" style="border-top:3px solid #f59e0b">
+                    <div class="mant-stat-label">Programados</div>
+                    <div class="mant-stat-num" id="mantCntProgramado">—</div>
+                    <div class="mant-stat-sub">Pendientes de iniciar</div>
+                </div>
+                <div class="mant-stat-card" style="border-top:3px solid #3b82f6">
+                    <div class="mant-stat-label">En proceso</div>
+                    <div class="mant-stat-num" id="mantCntProceso">—</div>
+                    <div class="mant-stat-sub">En ejecución ahora</div>
+                </div>
+                <div class="mant-stat-card" style="border-top:3px solid #10b981">
+                    <div class="mant-stat-label">Completados</div>
+                    <div class="mant-stat-num" id="mantCntCompletado">—</div>
+                    <div class="mant-stat-sub">Finalizados exitosamente</div>
+                </div>
+            </div>
+
+            <!-- Top toolbar -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="mantBtnCal" onclick="switchMantView('cal')">📅 Calendario</button>
+                        <button class="view-toggle-btn" id="mantBtnList" onclick="switchMantView('list')">📋 Lista</button>
+                    </div>
+                    <select class="filter-select" id="mantFiltroEstado" onchange="renderMantCurrentView()" style="width:auto">
+                        <option value="">Todos los estados</option>
+                        <option value="Programado">Programado</option>
+                        <option value="En proceso">En proceso</option>
+                        <option value="Completado">Completado</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                    <select class="filter-select" id="mantFiltroTipo" onchange="renderMantCurrentView()" style="width:auto">
+                        <option value="">Todos los tipos</option>
+                        <option value="Preventivo">Preventivo</option>
+                        <option value="Correctivo">Correctivo</option>
+                        <option value="Actualización">Actualización</option>
+                        <option value="Limpieza">Limpieza</option>
+                        <option value="Diagnóstico">Diagnóstico</option>
+                    </select>
+                    <input class="filter-input" id="mantBusqueda" type="text" placeholder="Buscar ticket, usuario..." oninput="renderMantCurrentView()" style="width:220px" />
+                </div>
+                <button class="btn-primary" onclick="abrirModalNuevoTicket()">＋ Nuevo ticket</button>
+            </div>
+
+            <!-- Vista Calendario -->
+            <div id="mantViewCal">
+                <div class="panel" style="padding:20px">
+                    <div class="cal-nav">
+                        <button class="cal-nav-btn" onclick="calMes(-1)">‹ Anterior</button>
+                        <span class="cal-month-label" id="calMonthLabel">—</span>
+                        <button class="cal-nav-btn" onclick="calMes(1)">Siguiente ›</button>
+                    </div>
+                    <div class="cal-grid" id="calGrid"></div>
+                    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+                        <span style="font-size:11px;display:flex;align-items:center;gap:5px"><span class="cal-event programado" style="pointer-events:none">●</span> Programado</span>
+                        <span style="font-size:11px;display:flex;align-items:center;gap:5px"><span class="cal-event en-proceso" style="pointer-events:none">●</span> En proceso</span>
+                        <span style="font-size:11px;display:flex;align-items:center;gap:5px"><span class="cal-event completado" style="pointer-events:none">●</span> Completado</span>
+                        <span style="font-size:11px;display:flex;align-items:center;gap:5px"><span class="cal-event cancelado" style="pointer-events:none">●</span> Cancelado</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista Lista -->
+            <div id="mantViewList" style="display:none">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Usuario / Equipo</th>
+                                <th>Tipo</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Fecha programada</th>
+                                <th>Técnico</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantTablaBody">
+                            <tr class="loading-row"><td colspan="8">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
     </main>
 
 </div>
@@ -2097,6 +2280,7 @@
         configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
         "licencias-kanva":  { titulo: "Licencias — Canva",  subtitulo: "Gestión de licencias de diseño Canva" },
+        mantenimientos:     { titulo: "Mantenimientos",        subtitulo: "Calendario y tickets de mantenimiento de equipos" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -2164,6 +2348,10 @@
 
         if (pagina === "licencias-kanva") {
             cargarLicenciasKanva();
+        }
+
+        if (pagina === "mantenimientos") {
+            cargarMantenimientos();
         }
     }
 
@@ -4484,6 +4672,482 @@
     });
 
 
+
+    /* ═══════════════════════════════════════════
+       MANTENIMIENTOS
+    ═══════════════════════════════════════════ */
+    let todosMantenimientos = [];
+    let todosEquipos_mant   = [];
+    let todosUsuarios_mant  = [];
+    let calFechaActual      = new Date();
+    let mantVistaActual     = "cal";   // "cal" | "list"
+    let ticketActualId      = null;
+
+    // ── Load all ──────────────────────────────
+    async function cargarMantenimientos() {
+        // parallel loads
+        const [mRes, eRes, uRes] = await Promise.all([
+            supabaseClient.from("mantenimientos").select("*").order("fecha_programada"),
+            supabaseClient.from("equipos").select("*").order("asignado_a"),
+            supabaseClient.from("usuarios").select("id,nombre,correo").order("nombre"),
+        ]);
+        todosMantenimientos = mRes.data || [];
+        todosEquipos_mant   = eRes.data || [];
+        todosUsuarios_mant  = uRes.data || [];
+
+        // populate usuario selects in modal
+        poblarSelectUsuariosMant();
+
+        // stats
+        actualizarStatsMant();
+
+        // render current view
+        renderMantCurrentView();
+
+        // check URL hash for direct ticket link
+        checkHashTicket();
+    }
+
+    function actualizarStatsMant() {
+        const d = todosMantenimientos;
+        const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+        set("mantCntTotal",     d.length);
+        set("mantCntProgramado",d.filter(t=>t.estado==="Programado").length);
+        set("mantCntProceso",   d.filter(t=>t.estado==="En proceso").length);
+        set("mantCntCompletado",d.filter(t=>t.estado==="Completado").length);
+    }
+
+    function switchMantView(v) {
+        mantVistaActual = v;
+        document.getElementById("mantBtnCal").classList.toggle("active", v==="cal");
+        document.getElementById("mantBtnList").classList.toggle("active", v==="list");
+        document.getElementById("mantViewCal").style.display  = v==="cal"  ? "" : "none";
+        document.getElementById("mantViewList").style.display = v==="list" ? "" : "none";
+        renderMantCurrentView();
+    }
+
+    function renderMantCurrentView() {
+        if (mantVistaActual === "cal") renderCalendario();
+        else renderTablaMantenimientos();
+    }
+
+    function filteredMantenimientos() {
+        const q   = (document.getElementById("mantBusqueda")?.value   || "").toLowerCase();
+        const est = document.getElementById("mantFiltroEstado")?.value || "";
+        const tip = document.getElementById("mantFiltroTipo")?.value   || "";
+        return todosMantenimientos.filter(t => {
+            const matchEst = !est || t.estado === est;
+            const matchTip = !tip || t.tipo   === tip;
+            const matchQ   = !q  ||
+                (t.numero_ticket||"").toLowerCase().includes(q) ||
+                (t.titulo||"").toLowerCase().includes(q) ||
+                (t.nombre_usuario||"").toLowerCase().includes(q) ||
+                (t.tecnico||"").toLowerCase().includes(q);
+            return matchEst && matchTip && matchQ;
+        });
+    }
+
+    // ── CALENDARIO ─────────────────────────────
+    function calMes(delta) {
+        calFechaActual = new Date(calFechaActual.getFullYear(), calFechaActual.getMonth() + delta, 1);
+        renderCalendario();
+    }
+
+    function renderCalendario() {
+        const hoy    = new Date(); hoy.setHours(0,0,0,0);
+        const año    = calFechaActual.getFullYear();
+        const mes    = calFechaActual.getMonth();
+        const label  = document.getElementById("calMonthLabel");
+        const grid   = document.getElementById("calGrid");
+        if (!label || !grid) return;
+
+        label.textContent = new Date(año, mes, 1)
+            .toLocaleDateString("es-GT", { month:"long", year:"numeric" })
+            .replace(/^\w/, c => c.toUpperCase());
+
+        // Weekday headers (Dom-Sab)
+        const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+        let html = dias.map(d => `<div class="cal-weekday">${d}</div>`).join("");
+
+        // First day of month, last day
+        const primero   = new Date(año, mes, 1).getDay();  // 0=Dom
+        const diasMes   = new Date(año, mes+1, 0).getDate();
+        const mesFiltrados = filteredMantenimientos();
+
+        // Group tickets by date
+        const byDate = {};
+        mesFiltrados.forEach(t => {
+            if (!t.fecha_programada) return;
+            byDate[t.fecha_programada] = byDate[t.fecha_programada] || [];
+            byDate[t.fecha_programada].push(t);
+        });
+
+        // Blank cells before 1st
+        for (let i = 0; i < primero; i++) html += `<div class="cal-day other-month"></div>`;
+
+        for (let d = 1; d <= diasMes; d++) {
+            const fecha = `${año}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+            const isHoy = (new Date(año, mes, d)).getTime() === hoy.getTime();
+            const events = byDate[fecha] || [];
+            const maxShow = 3;
+            const eventHtml = events.slice(0, maxShow).map(t => {
+                const cls = estCalCls(t.estado);
+                return `<div class="cal-event ${cls}" title="${esc(t.titulo||t.numero_ticket)}" onclick="event.stopPropagation();verTicket(${t.id})">${esc((t.titulo||t.numero_ticket||"").substring(0,22))}</div>`;
+            }).join("") + (events.length > maxShow ? `<div style="font-size:9px;color:#9ca3af;padding:1px 4px">+${events.length-maxShow} más</div>` : "");
+
+            html += `<div class="cal-day${isHoy?" today":""}"  onclick=""><div class="cal-day-num">${d}</div>${eventHtml}</div>`;
+        }
+
+        // Fill remaining cells
+        const totalCells = primero + diasMes;
+        const resto = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+        for (let i = 0; i < resto; i++) html += `<div class="cal-day other-month"></div>`;
+
+        grid.innerHTML = html;
+    }
+
+    function estCalCls(estado) {
+        return { "Programado":"programado","En proceso":"en-proceso","Completado":"completado","Cancelado":"cancelado" }[estado] || "programado";
+    }
+
+    // ── TABLA LISTA ─────────────────────────────
+    function renderTablaMantenimientos() {
+        const tbody = document.getElementById("mantTablaBody");
+        if (!tbody) return;
+        const rows = filteredMantenimientos().sort((a,b) => (a.fecha_programada||"").localeCompare(b.fecha_programada||""));
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No se encontraron tickets.</div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = rows.map(t => `
+            <tr class="ticket-row" onclick="verTicket(${t.id})">
+                <td><span style="font-size:11px;font-weight:700;color:#6366f1">${esc(t.numero_ticket||"—")}</span><br><span style="font-size:11px;color:#9ca3af">${esc((t.titulo||"").substring(0,30))}</span></td>
+                <td><strong style="font-size:13px">${esc(t.nombre_usuario||"—")}</strong><br><span style="font-size:11px;color:#9ca3af">${esc(t.equipo_nombre||"—")}</span></td>
+                <td><span class="asignado-chip" style="background:#f0fdf4;color:#166534">${esc(t.tipo||"—")}</span></td>
+                <td>${badgePrioridad(t.prioridad)}</td>
+                <td>${badgeMantEstado(t.estado)}</td>
+                <td style="font-size:12px;white-space:nowrap">${formatFecha(t.fecha_programada)}</td>
+                <td style="font-size:12px">${esc(t.tecnico||"—")}</td>
+                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="verTicket(${t.id})">👁 Ver</button></td>
+            </tr>`).join("");
+    }
+
+    function badgeMantEstado(est) {
+        const map = { "Programado":"badge-programado","En proceso":"badge-en-proceso","Completado":"badge-completado","Cancelado":"badge-cancelado" };
+        return `<span class="badge ${map[est]||"badge-programado"}">${esc(est||"—")}</span>`;
+    }
+
+    // ── MODAL NUEVO TICKET ────────────────────────
+    function poblarSelectUsuariosMant() {
+        const sel = document.getElementById("ntmUsuario");
+        if (!sel) return;
+        sel.innerHTML = `<option value="">— Seleccionar usuario —</option>` +
+            todosUsuarios_mant.map(u => `<option value="${u.id}" data-nombre="${esc(u.nombre)}" data-correo="${esc(u.correo||"")}">${esc(u.nombre)}</option>`).join("");
+    }
+
+    function cargarEquiposDelUsuario() {
+        const uid  = document.getElementById("ntmUsuario").value;
+        const sel  = document.getElementById("ntmEquipo");
+        const wrap = document.getElementById("ntmComponentesWrap");
+        const comp = document.getElementById("ntmComponentes");
+        if (!sel) return;
+        if (!uid) {
+            sel.innerHTML = `<option value="">— Primero selecciona usuario —</option>`;
+            wrap.style.display = "none"; return;
+        }
+        // Get user name to match equipos by asignado_a
+        const usuObj = todosUsuarios_mant.find(u => String(u.id) === uid);
+        const nombre = usuObj?.nombre || "";
+        const equipos = todosEquipos_mant.filter(e => (e.asignado_a||"").toLowerCase() === nombre.toLowerCase() || e.usuario_id == uid);
+        if (!equipos.length) {
+            sel.innerHTML = `<option value="">— Sin equipos asignados —</option>`;
+            wrap.style.display = "none"; return;
+        }
+        sel.innerHTML = `<option value="">— Sin equipo específico —</option>` +
+            equipos.map(e => `<option value="${e.id}">${esc([e.tipo,e.marca,e.modelo].filter(Boolean).join(" - "))} (S/N: ${esc(e.numero_serie||"N/A")})</option>`).join("");
+
+        sel.onchange = () => mostrarComponentesEquipo();
+    }
+
+    function mostrarComponentesEquipo() {
+        const eid  = document.getElementById("ntmEquipo").value;
+        const wrap = document.getElementById("ntmComponentesWrap");
+        const comp = document.getElementById("ntmComponentes");
+        if (!eid) { wrap.style.display="none"; return; }
+        const eq = todosEquipos_mant.find(e => String(e.id) === eid);
+        if (!eq) { wrap.style.display="none"; return; }
+        const chips = buildComponentChips(eq);
+        comp.innerHTML = chips || '<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>';
+        wrap.style.display = "";
+    }
+
+    function buildComponentChips(eq) {
+        const campos = [
+            {k:"procesador",   l:"CPU"},
+            {k:"ram",          l:"RAM"},
+            {k:"almacenamiento",l:"Disco"},
+            {k:"sistema_operativo",l:"SO"},
+            {k:"tipo",         l:"Tipo"},
+            {k:"marca",        l:"Marca"},
+            {k:"modelo",       l:"Modelo"},
+        ];
+        return campos.filter(c => eq[c.k])
+            .map(c => `<span class="comp-chip" title="${esc(c.l)}">${esc(c.l)}: <strong>${esc(String(eq[c.k]))}</strong></span>`)
+            .join("");
+    }
+
+    function abrirModalNuevoTicket() {
+        document.getElementById("ntmTitulo").value      = "";
+        document.getElementById("ntmTipo").value        = "Preventivo";
+        document.getElementById("ntmPrioridad").value   = "Media";
+        document.getElementById("ntmTecnico").value     = "";
+        document.getElementById("ntmFecha").value       = new Date().toISOString().split("T")[0];
+        document.getElementById("ntmHora").value        = "09:00";
+        document.getElementById("ntmDescripcion").value = "";
+        document.getElementById("ntmMsg").textContent   = "";
+        document.getElementById("ntmGuardar").disabled  = false;
+        document.getElementById("ntmComponentesWrap").style.display = "none";
+        poblarSelectUsuariosMant();
+        document.getElementById("ntmUsuario").value = "";
+        document.getElementById("ntmEquipo").innerHTML = `<option value="">— Primero selecciona usuario —</option>`;
+        document.getElementById("modalNuevoTicket").classList.add("open");
+    }
+
+    function cerrarModalNuevoTicket() {
+        document.getElementById("modalNuevoTicket").classList.remove("open");
+    }
+
+    async function guardarNuevoTicket() {
+        const titulo = document.getElementById("ntmTitulo").value.trim();
+        const uid    = document.getElementById("ntmUsuario").value;
+        const fecha  = document.getElementById("ntmFecha").value;
+        if (!titulo || !uid || !fecha) {
+            document.getElementById("ntmMsg").textContent = "⚠ Usuario, título y fecha son obligatorios.";
+            document.getElementById("ntmMsg").style.color = "#ef4444"; return;
+        }
+        const btn = document.getElementById("ntmGuardar"); btn.disabled = true;
+        document.getElementById("ntmMsg").textContent = "Creando ticket...";
+        document.getElementById("ntmMsg").style.color = "#6b7280";
+
+        const usuObj = todosUsuarios_mant.find(u => String(u.id) === uid);
+        const eid    = document.getElementById("ntmEquipo").value || null;
+        const eqObj  = eid ? todosEquipos_mant.find(e => String(e.id) === eid) : null;
+
+        // Generar numero_ticket
+        const año   = new Date().getFullYear();
+        const { count } = await supabaseClient.from("mantenimientos").select("id", { count:"exact",head:true });
+        const seq   = String((count||0)+1).padStart(4,"0");
+        const numTkt = `MANT-${año}-${seq}`;
+
+        // Build componentes snapshot
+        const compSnap = eqObj ? {
+            tipo: eqObj.tipo, marca: eqObj.marca, modelo: eqObj.modelo,
+            procesador: eqObj.procesador, ram: eqObj.ram, almacenamiento: eqObj.almacenamiento,
+            sistema_operativo: eqObj.sistema_operativo, numero_serie: eqObj.numero_serie
+        } : {};
+
+        const payload = {
+            numero_ticket:   numTkt,
+            usuario_id:      parseInt(uid),
+            nombre_usuario:  usuObj?.nombre  || null,
+            correo_usuario:  usuObj?.correo  || null,
+            equipo_id:       eid ? parseInt(eid) : null,
+            equipo_nombre:   eqObj ? [eqObj.tipo,eqObj.marca,eqObj.modelo].filter(Boolean).join(" ") : null,
+            titulo,
+            tipo:            document.getElementById("ntmTipo").value,
+            prioridad:       document.getElementById("ntmPrioridad").value,
+            estado:          "Programado",
+            tecnico:         document.getElementById("ntmTecnico").value.trim() || null,
+            fecha_programada: fecha,
+            hora_programada: document.getElementById("ntmHora").value || null,
+            descripcion:     document.getElementById("ntmDescripcion").value.trim() || null,
+            componentes:     Object.keys(compSnap).length ? JSON.stringify(compSnap) : null,
+            creado_por:      usuario?.nombre || null,
+        };
+
+        const { data, error } = await supabaseClient.from("mantenimientos").insert([payload]).select().single();
+        if (error) {
+            document.getElementById("ntmMsg").textContent = "❌ " + error.message;
+            document.getElementById("ntmMsg").style.color = "#ef4444";
+            btn.disabled = false; return;
+        }
+
+        document.getElementById("ntmMsg").textContent = "✅ Ticket " + numTkt + " creado.";
+        document.getElementById("ntmMsg").style.color = "#10b981";
+        await cargarMantenimientos();
+        setTimeout(() => { cerrarModalNuevoTicket(); verTicket(data.id); }, 800);
+    }
+
+    document.getElementById("modalNuevoTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalNuevoTicket(); });
+
+    // ── VER TICKET ───────────────────────────────
+    function verTicket(id) {
+        const t = todosMantenimientos.find(x => x.id === id);
+        if (!t) return;
+        ticketActualId = id;
+
+        document.getElementById("vtNumero").textContent   = t.numero_ticket || "—";
+        document.getElementById("vtTitulo").textContent   = t.titulo || "—";
+        document.getElementById("vtMeta").textContent     = "Creado por: " + (t.creado_por||"Sistema") + " · " + (formatFecha(t.fecha_programada)||"—");
+        document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
+        document.getElementById("vtTipo").textContent     = t.tipo || "—";
+        document.getElementById("vtPrioridad").innerHTML  = badgePrioridad(t.prioridad);
+        document.getElementById("vtTecnico").textContent  = t.tecnico || "Sin asignar";
+        document.getElementById("vtFechaProg").textContent = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
+        document.getElementById("vtCreadoPor").textContent = t.creado_por || "—";
+        document.getElementById("vtUsuario").textContent  = t.nombre_usuario || "—";
+        document.getElementById("vtCorreo").textContent   = t.correo_usuario || "—";
+        document.getElementById("vtEquipo").textContent   = t.equipo_nombre  || "Sin equipo asignado";
+        document.getElementById("vtDescripcion").textContent = t.descripcion || "Sin descripción.";
+        document.getElementById("vtMsgEstado").textContent = "";
+
+        // Serie
+        const eqObj = t.equipo_id ? todosEquipos_mant.find(e => e.id === t.equipo_id) : null;
+        document.getElementById("vtSerie").textContent = eqObj?.numero_serie || "—";
+
+        // Componentes (from snapshot or live)
+        const vtComp = document.getElementById("vtComponentes");
+        let compData = {};
+        try { if (t.componentes) compData = JSON.parse(t.componentes); } catch{}
+        if (!Object.keys(compData).length && eqObj) {
+            compData = { tipo:eqObj.tipo, marca:eqObj.marca, modelo:eqObj.modelo,
+                procesador:eqObj.procesador, ram:eqObj.ram, almacenamiento:eqObj.almacenamiento,
+                sistema_operativo:eqObj.sistema_operativo };
+        }
+        const chipsCampos = [
+            {k:"tipo",l:"Tipo"},{k:"marca",l:"Marca"},{k:"modelo",l:"Modelo"},
+            {k:"procesador",l:"CPU"},{k:"ram",l:"RAM"},{k:"almacenamiento",l:"Disco"},
+            {k:"sistema_operativo",l:"SO"},
+        ];
+        const chips = chipsCampos.filter(c=>compData[c.k]).map(c=>`<span class="comp-chip">${esc(c.l)}: <strong>${esc(String(compData[c.k]))}</strong></span>`).join("");
+        vtComp.innerHTML = chips || `<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>`;
+
+        // Link
+        const link = window.location.href.split("#")[0] + "#ticket=" + encodeURIComponent(t.numero_ticket||id);
+        document.getElementById("vtLink").textContent = link;
+        document.getElementById("vtLinkMsg").textContent = "";
+
+        document.getElementById("modalVerTicket").classList.add("open");
+    }
+
+    function cerrarModalVerTicket() {
+        document.getElementById("modalVerTicket").classList.remove("open");
+        ticketActualId = null;
+        // Remove hash without reload
+        history.replaceState(null,"", window.location.pathname + window.location.search);
+    }
+
+    document.getElementById("modalVerTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalVerTicket(); });
+
+    function copiarLinkTicket() {
+        const link = document.getElementById("vtLink").textContent;
+        navigator.clipboard.writeText(link).then(() => {
+            document.getElementById("vtLinkMsg").textContent = "✅ Link copiado al portapapeles";
+            setTimeout(() => { document.getElementById("vtLinkMsg").textContent = ""; }, 2000);
+        }).catch(() => {
+            document.getElementById("vtLinkMsg").textContent = "⚠ No se pudo copiar automáticamente";
+        });
+    }
+
+    async function cambiarEstadoTicket(nuevoEstado) {
+        if (!ticketActualId) return;
+        const { error } = await supabaseClient.from("mantenimientos").update({ estado: nuevoEstado }).eq("id", ticketActualId);
+        const msg = document.getElementById("vtMsgEstado");
+        if (error) { msg.textContent = "❌ Error: " + error.message; msg.style.color="#ef4444"; return; }
+        msg.textContent = "✅ Estado actualizado a: " + nuevoEstado; msg.style.color = "#10b981";
+        await cargarMantenimientos();
+        // Refresh modal
+        const t = todosMantenimientos.find(x => x.id === ticketActualId);
+        if (t) document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
+    }
+
+    // ── EDITAR TICKET ────────────────────────────
+    function abrirEditarTicket() {
+        if (!ticketActualId) return;
+        const t = todosMantenimientos.find(x => x.id === ticketActualId);
+        if (!t) return;
+        document.getElementById("etmId").value          = t.id;
+        document.getElementById("etmTitulo").value      = t.titulo        || "";
+        document.getElementById("etmTipo").value        = t.tipo          || "Preventivo";
+        document.getElementById("etmPrioridad").value   = t.prioridad     || "Media";
+        document.getElementById("etmEstado").value      = t.estado        || "Programado";
+        document.getElementById("etmFecha").value       = t.fecha_programada || "";
+        document.getElementById("etmTecnico").value     = t.tecnico       || "";
+        document.getElementById("etmDescripcion").value = t.descripcion   || "";
+        document.getElementById("etmMsg").textContent   = "";
+        document.getElementById("etmGuardar").disabled  = false;
+        cerrarModalVerTicket();
+        document.getElementById("modalEditarTicket").classList.add("open");
+    }
+
+    function cerrarModalEditarTicket() {
+        document.getElementById("modalEditarTicket").classList.remove("open");
+    }
+
+    async function guardarEditarTicket() {
+        const id     = parseInt(document.getElementById("etmId").value);
+        const titulo = document.getElementById("etmTitulo").value.trim();
+        if (!titulo) {
+            document.getElementById("etmMsg").textContent = "⚠ El título es obligatorio.";
+            document.getElementById("etmMsg").style.color = "#ef4444"; return;
+        }
+        const btn = document.getElementById("etmGuardar"); btn.disabled = true;
+        document.getElementById("etmMsg").textContent = "Guardando...";
+        document.getElementById("etmMsg").style.color = "#6b7280";
+
+        const payload = {
+            titulo,
+            tipo:             document.getElementById("etmTipo").value,
+            prioridad:        document.getElementById("etmPrioridad").value,
+            estado:           document.getElementById("etmEstado").value,
+            fecha_programada: document.getElementById("etmFecha").value || null,
+            tecnico:          document.getElementById("etmTecnico").value.trim() || null,
+            descripcion:      document.getElementById("etmDescripcion").value.trim() || null,
+        };
+
+        const { error } = await supabaseClient.from("mantenimientos").update(payload).eq("id", id);
+        if (error) {
+            document.getElementById("etmMsg").textContent = "❌ " + error.message;
+            document.getElementById("etmMsg").style.color = "#ef4444";
+            btn.disabled = false; return;
+        }
+        document.getElementById("etmMsg").textContent = "✅ Ticket actualizado.";
+        document.getElementById("etmMsg").style.color = "#10b981";
+        await cargarMantenimientos();
+        ticketActualId = id;
+        setTimeout(() => { cerrarModalEditarTicket(); verTicket(id); }, 700);
+    }
+
+    document.getElementById("modalEditarTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalEditarTicket(); });
+
+    async function eliminarTicket() {
+        if (!ticketActualId) return;
+        const t = todosMantenimientos.find(x => x.id === ticketActualId);
+        if (!confirm(`¿Eliminar el ticket ${t?.numero_ticket||""}? Esta acción no se puede deshacer.`)) return;
+        const { error } = await supabaseClient.from("mantenimientos").delete().eq("id", ticketActualId);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalVerTicket();
+        await cargarMantenimientos();
+    }
+
+    // ── HASH LINK ───────────────────────────────
+    function checkHashTicket() {
+        const hash = window.location.hash;
+        if (!hash.startsWith("#ticket=")) return;
+        const numOrId = decodeURIComponent(hash.replace("#ticket=",""));
+        const t = todosMantenimientos.find(x => x.numero_ticket === numOrId || String(x.id) === numOrId);
+        if (t) {
+            navegar("mantenimientos");
+            setTimeout(() => verTicket(t.id), 300);
+        }
+    }
+
+    window.addEventListener("hashchange", () => {
+        const hash = window.location.hash;
+        if (hash.startsWith("#ticket=")) checkHashTicket();
+    });
+
+
     /* ═══════════════════════════════════════════
        INIT
     ═══════════════════════════════════════════ */
@@ -4522,6 +5186,210 @@ if ("serviceWorker" in navigator) {
     });
 }
 </script>
+
+<!-- MODAL NUEVO TICKET DE MANTENIMIENTO -->
+<div class="modal-overlay" id="modalNuevoTicket">
+    <div class="modal modal-wide">
+        <div class="modal-title">🔧 Nuevo Ticket de Mantenimiento</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Usuario / Responsable *</label>
+                <select class="modal-select" id="ntmUsuario" onchange="cargarEquiposDelUsuario()">
+                    <option value="">— Seleccionar usuario —</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Equipo de cómputo</label>
+                <select class="modal-select" id="ntmEquipo">
+                    <option value="">— Primero selecciona usuario —</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Título del mantenimiento *</label>
+            <input class="modal-input" id="ntmTitulo" type="text" placeholder="Ej. Mantenimiento preventivo trimestral" />
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <select class="modal-select" id="ntmTipo">
+                    <option value="Preventivo">Preventivo</option>
+                    <option value="Correctivo">Correctivo</option>
+                    <option value="Actualización">Actualización</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Diagnóstico">Diagnóstico</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="ntmPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media" selected>Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Técnico asignado</label>
+                <input class="modal-input" id="ntmTecnico" type="text" placeholder="Nombre del técnico" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Fecha programada *</label>
+                <input class="modal-input" id="ntmFecha" type="date" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Hora estimada</label>
+                <input class="modal-input" id="ntmHora" type="time" placeholder="09:00" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción / Notas</label>
+            <textarea class="modal-textarea" id="ntmDescripcion" placeholder="Describe el trabajo a realizar..." style="min-height:70px"></textarea>
+        </div>
+        <!-- Componentes detectados -->
+        <div id="ntmComponentesWrap" style="display:none;margin-top:4px">
+            <label class="modal-label" style="margin-bottom:6px;display:block">Componentes del equipo (inventario)</label>
+            <div id="ntmComponentes" style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;min-height:36px"></div>
+        </div>
+        <div class="modal-msg" id="ntmMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalNuevoTicket()">Cancelar</button>
+            <button class="btn-primary" id="ntmGuardar" onclick="guardarNuevoTicket()">🔖 Crear Ticket</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VER TICKET -->
+<div class="modal-overlay" id="modalVerTicket">
+    <div class="modal modal-wide" style="max-width:560px">
+        <div class="ticket-header">
+            <div>
+                <div class="ticket-num" id="vtNumero">MANT-0000</div>
+                <div class="ticket-title" id="vtTitulo" style="margin-top:8px">—</div>
+                <div class="ticket-meta" id="vtMeta">—</div>
+            </div>
+            <button style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af" onclick="cerrarModalVerTicket()">✕</button>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Información del mantenimiento</div>
+            <div class="ticket-field"><span class="ticket-field-label">Estado</span><span id="vtEstadoWrap">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Tipo</span><span class="ticket-field-value" id="vtTipo">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Prioridad</span><span class="ticket-field-value" id="vtPrioridad">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Técnico asignado</span><span class="ticket-field-value" id="vtTecnico">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Fecha programada</span><span class="ticket-field-value" id="vtFechaProg">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Creado por</span><span class="ticket-field-value" id="vtCreadoPor">—</span></div>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Usuario y equipo</div>
+            <div class="ticket-field"><span class="ticket-field-label">Usuario</span><span class="ticket-field-value" id="vtUsuario">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Correo</span><span class="ticket-field-value" id="vtCorreo" style="font-size:12px">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">Equipo</span><span class="ticket-field-value" id="vtEquipo">—</span></div>
+            <div class="ticket-field"><span class="ticket-field-label">No. Serie</span><span class="ticket-field-value" id="vtSerie">—</span></div>
+        </div>
+
+        <div class="ticket-section">
+            <div class="ticket-section-title">Componentes del equipo</div>
+            <div id="vtComponentes" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+        </div>
+
+        <div class="ticket-section" id="vtDescripcionSec">
+            <div class="ticket-section-title">Descripción / Notas</div>
+            <div id="vtDescripcion" style="font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.5">—</div>
+        </div>
+
+        <!-- Cambiar estado -->
+        <div class="ticket-section">
+            <div class="ticket-section-title">Cambiar estado</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="cambiarEstadoTicket('Programado')">📋 Programado</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fef3c7;color:#92400e;border-color:#fcd34d" onclick="cambiarEstadoTicket('En proceso')">⚡ En proceso</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#d1fae5;color:#065f46;border-color:#6ee7b7" onclick="cambiarEstadoTicket('Completado')">✅ Completado</button>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 14px;background:#fee2e2;color:#991b1b;border-color:#fca5a5" onclick="cambiarEstadoTicket('Cancelado')">🚫 Cancelado</button>
+            </div>
+            <div id="vtMsgEstado" style="font-size:12px;margin-top:6px;height:16px"></div>
+        </div>
+
+        <!-- Link compartible -->
+        <div class="ticket-section">
+            <div class="ticket-section-title">🔗 Compartir ticket</div>
+            <div class="share-box">
+                <span class="share-box-link" id="vtLink">—</span>
+                <button class="share-box-btn" onclick="copiarLinkTicket()">📋 Copiar</button>
+            </div>
+            <div id="vtLinkMsg" style="font-size:11px;color:#10b981;margin-top:4px;height:14px"></div>
+        </div>
+
+        <div class="modal-footer" style="margin-top:10px">
+            <button class="btn-secondary" onclick="abrirEditarTicket()">✏ Editar</button>
+            <button class="btn-danger"    onclick="eliminarTicket()">🗑 Eliminar</button>
+            <button class="btn-primary"   onclick="cerrarModalVerTicket()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR TICKET -->
+<div class="modal-overlay" id="modalEditarTicket">
+    <div class="modal modal-wide">
+        <div class="modal-title">✏ Editar Ticket de Mantenimiento</div>
+        <input type="hidden" id="etmId" />
+        <div class="modal-field">
+            <label class="modal-label">Título *</label>
+            <input class="modal-input" id="etmTitulo" type="text" />
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <select class="modal-select" id="etmTipo">
+                    <option value="Preventivo">Preventivo</option>
+                    <option value="Correctivo">Correctivo</option>
+                    <option value="Actualización">Actualización</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Diagnóstico">Diagnóstico</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Prioridad</label>
+                <select class="modal-select" id="etmPrioridad">
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="etmEstado">
+                    <option value="Programado">Programado</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Completado">Completado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Fecha programada</label>
+                <input class="modal-input" id="etmFecha" type="date" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Técnico asignado</label>
+                <input class="modal-input" id="etmTecnico" type="text" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción / Notas</label>
+            <textarea class="modal-textarea" id="etmDescripcion" style="min-height:70px"></textarea>
+        </div>
+        <div class="modal-msg" id="etmMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarModalEditarTicket()">Cancelar</button>
+            <button class="btn-primary" id="etmGuardar" onclick="guardarEditarTicket()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
 ```eof
