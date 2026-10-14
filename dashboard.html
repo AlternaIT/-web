@@ -5156,7 +5156,6 @@
             numero_ticket:   numTkt,
             usuario_id:      parseInt(uid),
             nombre_usuario:  usuObj?.nombre  || null,
-            correo_usuario:  usuObj?.correo  || null,
             equipo_id:       eid ? parseInt(eid) : null,
             equipo_nombre:   eqObj ? [eqObj.tipo,eqObj.marca,eqObj.modelo].filter(Boolean).join(" ") : null,
             titulo,
@@ -5201,7 +5200,8 @@
         document.getElementById("vtFechaProg").textContent = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
         document.getElementById("vtCreadoPor").textContent = t.creado_por || "—";
         document.getElementById("vtUsuario").textContent  = t.nombre_usuario || "—";
-        document.getElementById("vtCorreo").textContent   = t.correo_usuario || "—";
+        const uObj2 = todosUsuarios_mant.find(u => u.id === t.usuario_id);
+        document.getElementById("vtCorreo").textContent   = uObj2?.correo || "—";
         document.getElementById("vtEquipo").textContent   = t.equipo_nombre  || "Sin equipo asignado";
         document.getElementById("vtDescripcion").textContent = t.descripcion || "Sin descripción.";
         document.getElementById("vtMsgEstado").textContent = "";
