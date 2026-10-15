@@ -349,6 +349,7 @@
 
             <div class="page-section-header">
                 <div class="section-title">Todas las actividades</div>
+                                        <button class="btn-primary" onclick="exportarPredeterminado()" style="font-size:12px;padding:7px 14px">⬇ Exportar</button>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                     <div class="filter-count" id="filterCount"></div>
 
@@ -658,6 +659,9 @@
         <!-- ══════════════════════════════════════
              PÁGINA: CONFIGURACIÓN
         ══════════════════════════════════════ -->
+                <!-- ══════════════════════════════════════
+             PÁGINA: CONFIGURACIÓN
+        ══════════════════════════════════════ -->
         <section class="page" id="page-configuracion">
             <div class="cfg-page">
 
@@ -668,6 +672,18 @@
                     <div class="cfg-nav-item active" onclick="cfgNavegar('general')" data-panel="general">
                         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
                         General
+                    </div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('actividades')" data-panel="actividades">
+                        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+                        Actividades
+                    </div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('mantenimientos')" data-panel="mantenimientos">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>
+                        Mantenimientos
+                    </div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('exportacion')" data-panel="exportacion">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v3h16v-3"/></svg>
+                        Exportación
                     </div>
                     <div class="cfg-nav-item" onclick="cfgNavegar('usuarios')" data-panel="usuarios">
                         <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -689,7 +705,7 @@
                         Sistema
                     </div>
                     <div class="cfg-nav-item" onclick="cfgNavegar('auditoria')" data-panel="auditoria">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         Auditoría
                     </div>
                 </aside>
@@ -701,10 +717,9 @@
                     <div class="cfg-panel active" id="cfg-panel-general">
                         <div class="cfg-panel-header">
                             <div class="cfg-panel-title">General</div>
-                            <div class="cfg-panel-desc">Preferencias personales y apariencia.</div>
+                            <div class="cfg-panel-desc">Apariencia y punto de inicio de la aplicación.</div>
                         </div>
 
-                        <!-- Perfil del usuario -->
                         <div class="cfg-profile-hero">
                             <div class="cfg-avatar" id="cfgAvatarInitial">—</div>
                             <div>
@@ -716,72 +731,127 @@
 
                         <div class="cfg-section">
                             <div class="cfg-section-title">Apariencia</div>
-
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#eef0f4">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
                                     <div class="cfg-row-label">Tema de la interfaz</div>
-                                    <div class="cfg-row-desc">Claro, oscuro o automático</div>
+                                    <div class="cfg-row-desc">Claro, oscuro o según el dispositivo</div>
                                 </div>
                                 <div class="cfg-row-control">
-                                    <select id="cfgTemaSelect" class="cfg-select" onchange="cambiarTemaDesdeAjustes(this.value)">
+                                    <select class="cfg-select" data-pref="tema" onchange="cfgCambio(this); setPref('tema', this.value)">
                                         <option value="claro">Claro</option>
                                         <option value="oscuro">Oscuro</option>
                                         <option value="sistema">Según dispositivo</option>
                                     </select>
                                 </div>
                             </div>
-
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#eef0f4">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Formato de fecha</div>
-                                    <div class="cfg-row-desc">DD/MM/AAAA</div>
+                                    <div class="cfg-row-label">Tamaño de texto</div>
+                                    <div class="cfg-row-desc">Escala de toda la interfaz</div>
                                 </div>
                                 <div class="cfg-row-control">
-                                    <select id="cfgZonaSelect" class="cfg-select" onchange="actualizarPreferencia('zona_horaria',this.value)">
-                                        <option value="America/Guatemala">Guatemala (UTC−06:00)</option>
-                                        <option value="America/Mexico_City">Ciudad de México</option>
-                                        <option value="America/New_York">Nueva York</option>
-                                        <option value="UTC">UTC</option>
+                                    <select class="cfg-select" data-pref="tamano_texto" onchange="cfgCambio(this); setPref('tamano_texto', this.value)">
+                                        <option value="compacto">Compacto</option>
+                                        <option value="normal">Normal</option>
+                                        <option value="grande">Grande</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Densidad de tablas</div>
+                                    <div class="cfg-row-desc">Espacio entre filas de las tablas</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="densidad" onchange="cfgCambio(this); setPref('densidad', this.value)">
+                                        <option value="comoda">Cómoda</option>
+                                        <option value="compacta">Compacta</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
                         <div class="cfg-section">
-                            <div class="cfg-section-title">Actividades</div>
-
+                            <div class="cfg-section-title">Inicio</div>
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#eef0f4">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Vista predeterminada</div>
-                                    <div class="cfg-row-desc">Cómo se muestra la lista de actividades</div>
+                                    <div class="cfg-row-label">Página de inicio</div>
+                                    <div class="cfg-row-desc">Qué se abre al entrar al sistema</div>
                                 </div>
                                 <div class="cfg-row-control">
-                                    <select id="cfgVistaSelect" class="cfg-select" onchange="cambiarVistaDesdeAjustes(this.value)">
+                                    <select class="cfg-select" data-pref="pagina_inicio" onchange="cfgCambio(this); setPref('pagina_inicio', this.value)">
+                                        <option value="dashboard">Dashboard</option>
+                                        <option value="actividades">Actividades</option>
+                                        <option value="mantenimientos">Mantenimientos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cfg-save-bar">
+                            <span class="cfg-save-status" id="cfgSaveStatus-general" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-general" onclick="guardarSeccion('general')" disabled>Guardar preferencias</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Actividades -->
+                    <div class="cfg-panel" id="cfg-panel-actividades">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Actividades</div>
+                            <div class="cfg-panel-desc">Cómo se muestran las actividades y el dashboard.</div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Lista</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Vista predeterminada</div>
+                                    <div class="cfg-row-desc">Tabla o tablero Kanban</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="vista_actividades" onchange="cfgCambio(this); setPref('vista_actividades', this.value)">
                                         <option value="tabla">Tabla</option>
                                         <option value="kanban">Kanban</option>
                                     </select>
                                 </div>
                             </div>
-
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#eef0f4">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Período de reportes</div>
-                                    <div class="cfg-row-desc">Rango de fechas para gráficas. Activo: <span id="cfgPeriodoLabel" style="color:#3b5bdb;font-weight:600">—</span></div>
+                                    <div class="cfg-row-label">Registros por página</div>
+                                    <div class="cfg-row-desc">Filas visibles en la tabla</div>
                                 </div>
                                 <div class="cfg-row-control">
-                                    <select id="cfgPeriodoSelect" class="cfg-select" onchange="cambiarPeriodoDesdeAjustes(this.value)">
+                                    <select class="cfg-select" data-pref="registros_pagina" onchange="cfgCambio(this); setPref('registros_pagina', +this.value)">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Dashboard y reportes</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Completadas en el dashboard</div>
+                                    <div class="cfg-row-desc">Cuántas mostrar en "Completadas recientemente"</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="completadas_dashboard" onchange="cfgCambio(this); setPref('completadas_dashboard', +this.value)">
+                                        <option value="0">Ocultar panel</option>
+                                        <option value="3">3</option>
+                                        <option value="6">6</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Período de reportes</div>
+                                    <div class="cfg-row-desc">Rango de fechas para las gráficas. Activo: <span id="cfgPeriodoLabel" style="color:#3b5bdb;font-weight:600">—</span></div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="periodo_reportes" onchange="cfgCambio(this); setPref('periodo_reportes', +this.value)">
                                         <option value="0">Todas las fechas</option>
                                         <option value="7">Últimos 7 días</option>
                                         <option value="14">Últimos 14 días</option>
@@ -791,10 +861,107 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="cfg-save-bar">
-                            <span id="cfgSaveStatus" role="status">Cambios guardados localmente.</span>
-                            <button class="btn-primary" onclick="guardarConfiguracionUsuario(true)">Guardar preferencias</button>
+                            <span class="cfg-save-status" id="cfgSaveStatus-actividades" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-actividades" onclick="guardarSeccion('actividades')" disabled>Guardar preferencias</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Mantenimientos -->
+                    <div class="cfg-panel" id="cfg-panel-mantenimientos">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Mantenimientos</div>
+                            <div class="cfg-panel-desc">Calendario y lista de tickets.</div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Vista inicial</div>
+                                    <div class="cfg-row-desc">Calendario o lista al abrir el módulo</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="mant_vista" onchange="cfgCambio(this); setPref('mant_vista', this.value)">
+                                        <option value="cal">Calendario</option>
+                                        <option value="list">Lista</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Primer día de la semana</div>
+                                    <div class="cfg-row-desc">Orden de columnas en el calendario</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="mant_primer_dia" onchange="cfgCambio(this); setPref('mant_primer_dia', +this.value)">
+                                        <option value="0">Domingo</option>
+                                        <option value="1">Lunes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Ocultar tickets cancelados</div>
+                                    <div class="cfg-row-desc">No mostrarlos en calendario ni lista</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" data-pref="mant_ocultar_cancelados" onchange="cfgCambio(this); setPref('mant_ocultar_cancelados', this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-save-bar">
+                            <span class="cfg-save-status" id="cfgSaveStatus-mantenimientos" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-mantenimientos" onclick="guardarSeccion('mantenimientos')" disabled>Guardar preferencias</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Exportación -->
+                    <div class="cfg-panel" id="cfg-panel-exportacion">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Exportación</div>
+                            <div class="cfg-panel-desc">Valores por defecto para los archivos que descargas.</div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Formato predeterminado</div>
+                                    <div class="cfg-row-desc">Lo que hace el botón "Exportar" en Actividades</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="export_formato" onchange="cfgCambio(this); setPref('export_formato', this.value)">
+                                        <option value="xlsx">Excel (.xlsx)</option>
+                                        <option value="pdf">PDF</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Incluir columna de notas</div>
+                                    <div class="cfg-row-desc">Agrega las notas en Excel y PDF</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" data-pref="export_notas" onchange="cfgCambio(this); setPref('export_notas', this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Prefijo del nombre de archivo</div>
+                                    <div class="cfg-row-desc">Ejemplo: <em>actividades_2026-10-15.xlsx</em></div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <input class="modal-input" data-pref="export_prefijo" type="text" maxlength="40" style="width:200px"
+                                        onchange="cfgCambio(this); setPref('export_prefijo', this.value.trim() || 'actividades')">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-save-bar">
+                            <span class="cfg-save-status" id="cfgSaveStatus-exportacion" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-exportacion" onclick="guardarSeccion('exportacion')" disabled>Guardar preferencias</button>
                         </div>
                     </div>
 
@@ -825,22 +992,39 @@
                     <div class="cfg-panel" id="cfg-panel-seguridad">
                         <div class="cfg-panel-header">
                             <div class="cfg-panel-title">Seguridad</div>
-                            <div class="cfg-panel-desc">Contraseña y acceso a la cuenta.</div>
+                            <div class="cfg-panel-desc">Contraseña y tiempo de sesión.</div>
                         </div>
                         <div class="cfg-section">
-                            <div class="cfg-section-title">Acceso</div>
+                            <div class="cfg-section-title">Cambiar contraseña</div>
+                            <div style="padding:14px 0 18px;display:grid;gap:10px;max-width:300px">
+                                <input class="modal-input" id="cpActual"    type="password" placeholder="Contraseña actual">
+                                <input class="modal-input" id="cpNueva"     type="password" placeholder="Nueva contraseña (mínimo 8)">
+                                <input class="modal-input" id="cpConfirmar" type="password" placeholder="Confirmar nueva contraseña">
+                                <div><button class="btn-primary" onclick="cambiarContrasena()">Actualizar contraseña</button></div>
+                                <div id="cpMsg" style="font-size:12px;min-height:16px"></div>
+                            </div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Sesión</div>
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#eef0f4">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Contraseña</div>
-                                    <div class="cfg-row-desc">Última actualización desconocida</div>
+                                    <div class="cfg-row-label">Cerrar sesión por inactividad</div>
+                                    <div class="cfg-row-desc">Tiempo sin actividad antes de salir automáticamente</div>
                                 </div>
                                 <div class="cfg-row-control">
-                                    <button class="btn-secondary">Cambiar</button>
+                                    <select class="cfg-select" data-pref="inactividad_min" onchange="cfgCambio(this); setPref('inactividad_min', +this.value)">
+                                        <option value="0">Desactivado</option>
+                                        <option value="15">15 minutos</option>
+                                        <option value="30">30 minutos</option>
+                                        <option value="60">1 hora</option>
+                                        <option value="120">2 horas</option>
+                                    </select>
                                 </div>
                             </div>
+                        </div>
+                        <div class="cfg-save-bar">
+                            <span class="cfg-save-status" id="cfgSaveStatus-seguridad" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-seguridad" onclick="guardarSeccion('seguridad')" disabled>Guardar preferencias</button>
                         </div>
                     </div>
 
@@ -848,58 +1032,105 @@
                     <div class="cfg-panel" id="cfg-panel-notificaciones">
                         <div class="cfg-panel-header">
                             <div class="cfg-panel-title">Notificaciones</div>
-                            <div class="cfg-panel-desc">Preferencias de avisos dentro del dashboard.</div>
+                            <div class="cfg-panel-desc">Avisos sobre actividades vencidas o por vencer.</div>
                         </div>
                         <div class="cfg-section">
-                            <div class="cfg-section-title">Alertas de actividades</div>
-
+                            <div class="cfg-section-title">Qué avisar</div>
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#fff5e6">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
                                     <div class="cfg-row-label">Actividades vencidas</div>
                                     <div class="cfg-row-desc">Mostrar avisos de tareas fuera de fecha</div>
                                 </div>
                                 <div class="cfg-row-control">
                                     <label class="cfg-toggle">
-                                        <input type="checkbox" id="cfgNotifVencidas" checked onchange="actualizarPreferencia('notif_vencidas',this.checked)">
+                                        <input type="checkbox" data-pref="notif_vencidas" onchange="cfgCambio(this); setPref('notif_vencidas', this.checked)">
                                         <span class="cfg-toggle-track"></span>
                                     </label>
                                 </div>
                             </div>
-
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#fffbeb">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
                                     <div class="cfg-row-label">Próximas a vencer</div>
                                     <div class="cfg-row-desc">Alertas de fechas límite cercanas</div>
                                 </div>
                                 <div class="cfg-row-control">
                                     <label class="cfg-toggle">
-                                        <input type="checkbox" id="cfgNotifProximas" checked onchange="actualizarPreferencia('notif_proximas',this.checked)">
+                                        <input type="checkbox" data-pref="notif_proximas" onchange="cfgCambio(this); setPref('notif_proximas', this.checked)">
                                         <span class="cfg-toggle-track"></span>
                                     </label>
                                 </div>
                             </div>
-
                             <div class="cfg-row">
-                                <div class="cfg-row-icon" style="background:#f0f4ff">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                                </div>
                                 <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Resumen al iniciar</div>
-                                    <div class="cfg-row-desc">Mostrar resumen al abrir el dashboard</div>
+                                    <div class="cfg-row-label">Días de anticipación</div>
+                                    <div class="cfg-row-desc">Cuántos días antes se considera "próxima a vencer"</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="dias_alerta" onchange="cfgCambio(this); setPref('dias_alerta', +this.value)">
+                                        <option value="1">1 día</option>
+                                        <option value="3">3 días</option>
+                                        <option value="5">5 días</option>
+                                        <option value="7">7 días</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Cómo avisar</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Notificaciones del navegador</div>
+                                    <div class="cfg-row-desc">Ventanas emergentes del sistema operativo</div>
                                 </div>
                                 <div class="cfg-row-control">
                                     <label class="cfg-toggle">
-                                        <input type="checkbox" id="cfgNotifResumen" checked onchange="actualizarPreferencia('notif_resumen',this.checked)">
+                                        <input type="checkbox" data-pref="notif_navegador" onchange="cfgCambio(this); setPref('notif_navegador', this.checked)">
                                         <span class="cfg-toggle-track"></span>
                                     </label>
                                 </div>
                             </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Resumen al iniciar</div>
+                                    <div class="cfg-row-desc">Mostrar resumen al abrir el dashboard (solo si la frecuencia es "Solo al abrir")</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" data-pref="notif_resumen" onchange="cfgCambio(this); setPref('notif_resumen', this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Frecuencia de recordatorios</div>
+                                    <div class="cfg-row-desc">Con intervalo, se recuerda mientras la página esté abierta</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select class="cfg-select" data-pref="notif_frecuencia" onchange="cfgCambio(this); setPref('notif_frecuencia', +this.value)">
+                                        <option value="0">Solo al abrir</option>
+                                        <option value="15">Cada 15 minutos</option>
+                                        <option value="30">Cada 30 minutos</option>
+                                        <option value="60">Cada hora</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Sonido</div>
+                                    <div class="cfg-row-desc">Reproducir un tono al mostrar un aviso</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" data-pref="notif_sonido" onchange="cfgCambio(this); setPref('notif_sonido', this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-save-bar">
+                            <span class="cfg-save-status" id="cfgSaveStatus-notificaciones" role="status">Sin cambios pendientes.</span>
+                            <button class="btn-primary cfg-save-btn" id="cfgSaveBtn-notificaciones" onclick="guardarSeccion('notificaciones')" disabled>Guardar preferencias</button>
                         </div>
                     </div>
 
@@ -930,15 +1161,11 @@
                                 <span class="cfg-item-val" id="cfgTotal">—</span>
                             </div>
                             <div class="cfg-row">
-                                <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Última comprobación</div>
-                                </div>
+                                <div class="cfg-row-info"><div class="cfg-row-label">Última comprobación</div></div>
                                 <span id="cfgUltimaPrueba" class="cfg-item-val">Pendiente</span>
                             </div>
                             <div class="cfg-row">
-                                <div class="cfg-row-info">
-                                    <div class="cfg-row-label">Sincronización de preferencias</div>
-                                </div>
+                                <div class="cfg-row-info"><div class="cfg-row-label">Sincronización de preferencias</div></div>
                                 <span id="cfgSyncEstado" class="cfg-item-val">Comprobando…</span>
                             </div>
                         </div>
@@ -968,7 +1195,6 @@
                 </div><!-- /cfg-content -->
             </div><!-- /cfg-page -->
         </section>
-
 
         <!-- ══════════════════════════════════════
              PÁGINA: LICENCIAS — OFFICE
