@@ -258,138 +258,243 @@
         .dot-active   { background: #10b981; }
         .dot-inactive { background: #d1d5db; }
 
-        /* ── CONFIGURACIÓN ── */
-        /* ── CONFIGURACIÓN — diseño nuevo ── */
-        .cfg-page { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .cfg-page .cfg-full { grid-column: 1 / -1; }
+        /* ── CONFIGURACIÓN — estilo Zoho Desk ── */
 
-        /* Hero de perfil */
+        /* Layout principal: sidebar izquierda + contenido derecha */
+        .cfg-page {
+            display: flex; gap: 0; background: white;
+            border: 1px solid #e3e6ea; border-radius: 10px;
+            overflow: hidden; min-height: 560px;
+        }
+
+        /* Sidebar de categorías */
+        .cfg-sidebar {
+            width: 220px; flex-shrink: 0;
+            background: #f8f9fb; border-right: 1px solid #e3e6ea;
+        }
+        .cfg-sidebar-header {
+            padding: 20px 18px 12px;
+            font-size: 11px; font-weight: 700; letter-spacing: .06em;
+            color: #8a93a2; text-transform: uppercase;
+        }
+        .cfg-nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 18px; margin: 1px 8px; border-radius: 6px;
+            font-size: 13px; color: #4a5568; cursor: pointer;
+            transition: background .12s, color .12s; user-select: none;
+        }
+        .cfg-nav-item:hover { background: #eef0f4; color: #1a202c; }
+        .cfg-nav-item.active {
+            background: #e8eeff; color: #3b5bdb; font-weight: 600;
+        }
+        .cfg-nav-item svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.8; flex-shrink: 0; }
+        .cfg-nav-divider { height: 1px; background: #e3e6ea; margin: 10px 18px; }
+
+        /* Área de contenido */
+        .cfg-content { flex: 1; min-width: 0; overflow: hidden; }
+        .cfg-panel { display: none; }
+        .cfg-panel.active { display: block; }
+
+        /* Header del panel */
+        .cfg-panel-header {
+            padding: 22px 28px 18px;
+            border-bottom: 1px solid #e3e6ea;
+        }
+        .cfg-panel-title {
+            font-size: 16px; font-weight: 700; color: #1a202c;
+        }
+        .cfg-panel-desc { font-size: 12px; color: #8a93a2; margin-top: 3px; }
+
+        /* Sección dentro del panel */
+        .cfg-section {
+            padding: 0 28px;
+            border-bottom: 1px solid #f0f2f5;
+        }
+        .cfg-section:last-child { border-bottom: none; }
+        .cfg-section-title {
+            font-size: 11px; font-weight: 700; letter-spacing: .06em;
+            color: #8a93a2; text-transform: uppercase;
+            padding: 18px 0 10px;
+        }
+
+        /* Fila de ajuste */
+        .cfg-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 13px 0; border-bottom: 1px solid #f0f2f5; gap: 20px;
+        }
+        .cfg-row:last-child { border-bottom: none; }
+        .cfg-row-icon {
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 15px;
+        }
+        .cfg-row-info { flex: 1; min-width: 0; }
+        .cfg-row-label { font-size: 13px; font-weight: 500; color: #2d3748; }
+        .cfg-row-desc { font-size: 11px; color: #8a93a2; margin-top: 2px; }
+        .cfg-row-control { flex-shrink: 0; }
+
+        /* Select estilo Zoho */
+        .cfg-select {
+            appearance: none; -webkit-appearance: none;
+            padding: 7px 30px 7px 11px; font-size: 12px;
+            border: 1px solid #d8dce3; border-radius: 6px;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a93a2' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 9px center;
+            color: #2d3748; cursor: pointer; min-width: 160px;
+            transition: border-color .12s;
+        }
+        .cfg-select:focus { outline: none; border-color: #3b5bdb; box-shadow: 0 0 0 3px rgba(59,91,219,.08); }
+        .cfg-select:hover { border-color: #b0b8c8; }
+
+        /* Toggle switch */
+        .cfg-toggle { position: relative; width: 38px; height: 22px; }
+        .cfg-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .cfg-toggle-track {
+            position: absolute; inset: 0; background: #d8dce3;
+            border-radius: 11px; cursor: pointer; transition: background .15s;
+        }
+        .cfg-toggle-track::after {
+            content: ''; position: absolute; width: 16px; height: 16px;
+            background: white; border-radius: 50%; top: 3px; left: 3px;
+            transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        }
+        .cfg-toggle input:checked + .cfg-toggle-track { background: #3b5bdb; }
+        .cfg-toggle input:checked + .cfg-toggle-track::after { transform: translateX(16px); }
+
+        /* Badge de estado */
+        .cfg-badge-ok {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px;
+            background: #e6f9f0; color: #1a7a4a; font-size: 11px; font-weight: 600;
+        }
+        .cfg-badge-ok::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+        .cfg-badge-err {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px;
+            background: #fff0f0; color: #c0392b; font-size: 11px; font-weight: 600;
+        }
+        .cfg-badge-err::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
+
+        /* URL chip */
+        .cfg-url-chip {
+            font-size: 11px; font-family: monospace; background: #f4f5f7;
+            padding: 4px 10px; border-radius: 5px; color: #4a5568;
+            max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* Botones de período */
+        .cfg-period-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .cfg-period-btn {
+            padding: 5px 13px; border-radius: 6px; font-size: 12px;
+            border: 1px solid #d8dce3; background: white; color: #4a5568;
+            cursor: pointer; transition: all .12s; font-weight: 500;
+        }
+        .cfg-period-btn:hover { border-color: #3b5bdb; color: #3b5bdb; background: #f0f4ff; }
+        .cfg-period-btn.active { border-color: #3b5bdb; background: #3b5bdb; color: white; }
+
+        /* Chips de "aplica a" */
+        .cfg-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+        .cfg-chip {
+            padding: 3px 9px; background: #f0f4ff; border-radius: 4px;
+            font-size: 11px; color: #3b5bdb; font-weight: 500;
+        }
+
+        /* Barra de guardar */
+        .cfg-save-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 28px; background: #f8f9fb;
+            border-top: 1px solid #e3e6ea; gap: 12px; flex-wrap: wrap;
+        }
+        #cfgSaveStatus { color: #8a93a2; font-size: 11px; }
+
+        /* Perfil hero */
         .cfg-profile-hero {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #7c3aed 100%);
-            border-radius: 16px; padding: 28px 32px;
-            display: flex; align-items: center; gap: 24px;
-            position: relative; overflow: hidden;
-        }
-        .cfg-profile-hero::before {
-            content: ''; position: absolute; top: -40px; right: -40px;
-            width: 160px; height: 160px; border-radius: 50%;
-            background: rgba(255,255,255,.07);
-        }
-        .cfg-profile-hero::after {
-            content: ''; position: absolute; bottom: -30px; right: 80px;
-            width: 100px; height: 100px; border-radius: 50%;
-            background: rgba(255,255,255,.05);
+            display: flex; align-items: center; gap: 16px;
+            padding: 20px 28px; background: #f8f9fb;
+            border-bottom: 1px solid #e3e6ea;
         }
         .cfg-avatar {
-            width: 64px; height: 64px; border-radius: 16px;
-            background: rgba(255,255,255,.2); border: 2px solid rgba(255,255,255,.35);
+            width: 52px; height: 52px; border-radius: 50%;
+            background: #3b5bdb; color: white;
             display: flex; align-items: center; justify-content: center;
-            font-size: 26px; flex-shrink: 0; backdrop-filter: blur(4px);
+            font-size: 20px; font-weight: 700; flex-shrink: 0;
         }
-        .cfg-profile-info { flex: 1; }
-        .cfg-profile-name { font-size: 20px; font-weight: 800; color: white; line-height: 1.2; }
-        .cfg-profile-email { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 4px; }
+        .cfg-profile-name { font-size: 15px; font-weight: 700; color: #1a202c; }
+        .cfg-profile-email { font-size: 12px; color: #8a93a2; margin-top: 2px; }
         .cfg-profile-role {
-            display: inline-flex; align-items: center; gap: 5px;
-            margin-top: 10px; padding: 4px 12px;
-            background: rgba(255,255,255,.18); border-radius: 20px;
-            font-size: 12px; font-weight: 600; color: white;
-            border: 1px solid rgba(255,255,255,.25);
-        }
-        .cfg-profile-role::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #a5f3fc; }
-
-        /* Tarjeta genérica */
-        .cfg-card {
-            background: white; border: 1px solid #e5e7eb;
-            border-radius: 14px; overflow: hidden;
-        }
-        .cfg-card-header {
-            padding: 18px 22px 14px;
-            border-bottom: 1px solid #f3f4f6;
-            display: flex; align-items: center; gap: 12px;
-        }
-        .cfg-card-icon {
-            width: 36px; height: 36px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 17px; flex-shrink: 0;
-        }
-        .cfg-card-title { font-size: 14px; font-weight: 700; color: #111827; }
-        .cfg-card-subtitle { font-size: 11px; color: #9ca3af; margin-top: 1px; }
-
-        /* Rows dentro de tarjeta */
-        .cfg-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 13px 22px; border-bottom: 1px solid #f9fafb;
-        }
-        .cfg-item:last-child { border-bottom: none; }
-        .cfg-item-label { font-size: 13px; color: #374151; font-weight: 500; }
-        .cfg-item-label small { display: block; font-size: 11px; color: #9ca3af; font-weight: 400; margin-top: 2px; }
-        .cfg-item-val { font-size: 13px; color: #6b7280; text-align: right; max-width: 55%; word-break: break-all; }
-
-        /* Badge de estado de conexión */
-        .cfg-status-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 12px; font-weight: 600;
-        }
-        .cfg-status-badge.ok  { background: #d1fae5; color: #065f46; }
-        .cfg-status-badge.err { background: #fee2e2; color: #991b1b; }
-        .cfg-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
-        .cfg-status-badge.ok  .dot { background: #10b981; }
-        .cfg-status-badge.err .dot { background: #ef4444; }
-
-        /* URL truncada */
-        .cfg-url-chip {
-            font-size: 11px; font-family: monospace; background: #f3f4f6;
-            padding: 4px 10px; border-radius: 6px; color: #4b5563;
-            max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-top: 6px; padding: 2px 9px;
+            background: #e8eeff; border-radius: 4px;
+            font-size: 11px; font-weight: 600; color: #3b5bdb;
         }
 
-        /* Sección de período */
-        .cfg-periodo-wrap { padding: 18px 22px; }
-        .cfg-periodo-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
-        .cfg-periodo-hint  { font-size: 11px; color: #9ca3af; margin-bottom: 14px; }
-        .cfg-periodo-active {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 3px 10px; border-radius: 20px;
-            background: #ede9fe; color: #4f46e5;
-            font-size: 11px; font-weight: 700; margin-bottom: 12px;
-        }
-        .cfg-applies {
-            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
-            padding-top: 14px; border-top: 1px solid #f3f4f6;
-        }
-        .cfg-applies-chip {
-            padding: 3px 10px; background: #f3f4f6; border-radius: 6px;
-            font-size: 11px; color: #6b7280;
-        }
+        /* Acciones al fondo */
+        .cfg-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 4px; }
 
-        .cfg-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:20px 22px; }
-        .cfg-setting { display:flex; flex-direction:column; gap:7px; min-width:0; }
-        .cfg-setting label { font-size:12px; font-weight:700; color:#374151; }
-        .cfg-setting small, .cfg-toggle-row small { display:block; font-size:11px; line-height:1.5; color:#9ca3af; margin-top:3px; }
-        .cfg-setting .filter-select { width:100%; max-width:none; }
-        .cfg-save-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 22px; border-top:1px solid #f3f4f6; flex-wrap:wrap; }
-        #cfgSaveStatus { color:#6b7280; font-size:11px; }
-        .cfg-toggle-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 22px; border-bottom:1px solid #f9fafb; font-size:12px; color:#374151; }
-        .cfg-toggle-row input { width:17px; height:17px; accent-color:#6366f1; flex-shrink:0; }
-        .cfg-actions { display:flex; flex-wrap:wrap; gap:8px; padding:14px 22px; }
-        .btn-secondary { padding:8px 12px; background:#fff; border:1px solid #d1d5db; border-radius:8px; color:#374151; font-size:12px; font-weight:600; cursor:pointer; }
-        .btn-secondary:hover { background:#f9fafb; }
-        body.cfg-dark { background:#111827 !important; color:#e5e7eb; }
-        body.cfg-dark .cfg-card, body.cfg-dark .card, body.cfg-dark .report-card, body.cfg-dark .table-wrap { background:#1f2937; border-color:#374151; }
-        body.cfg-dark .cfg-card-title, body.cfg-dark .cfg-item-label, body.cfg-dark .cfg-setting label, body.cfg-dark .cfg-toggle-row { color:#e5e7eb; }
-        body.cfg-dark .cfg-item, body.cfg-dark .cfg-toggle-row, body.cfg-dark .cfg-card-header { border-color:#374151; }
-        @media(max-width:700px) { .cfg-settings-grid { grid-template-columns:1fr; padding:16px; } .cfg-save-row { padding:14px 16px; } }
+        /* Dark mode compat */
+        body.cfg-dark .cfg-page { background: #1f2937; border-color: #374151; }
+        body.cfg-dark .cfg-sidebar { background: #111827; border-color: #374151; }
+        body.cfg-dark .cfg-nav-item { color: #d1d5db; }
+        body.cfg-dark .cfg-nav-item:hover { background: #374151; color: white; }
+        body.cfg-dark .cfg-nav-item.active { background: #1e3a8a; color: #93c5fd; }
+        body.cfg-dark .cfg-content, body.cfg-dark .cfg-panel-header,
+        body.cfg-dark .cfg-section, body.cfg-dark .cfg-row { border-color: #374151; }
+        body.cfg-dark .cfg-panel-title, body.cfg-dark .cfg-row-label { color: #f3f4f6; }
+        body.cfg-dark .cfg-select { background-color: #374151; border-color: #4b5563; color: #e5e7eb; }
+        body.cfg-dark .cfg-profile-hero, body.cfg-dark .cfg-save-bar { background: #111827; border-color: #374151; }
+        body.cfg-dark .cfg-sidebar-header { color: #6b7280; }
+
+        /* Btn-secondary override for settings */
+        .cfg-actions .btn-secondary { padding: 7px 14px; font-size: 12px; }
+
+        @media(max-width:700px) {
+            .cfg-page { flex-direction: column; }
+            .cfg-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e3e6ea; display: flex; flex-wrap: wrap; gap: 2px; padding: 10px; }
+            .cfg-sidebar-header { display: none; }
+            .cfg-nav-divider { display: none; }
+        }
 
         /* Legacy — mantener por si algo los referencia */
-        .config-section { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
-        .config-section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #111827; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
-        .config-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9fafb; }
+        .cfg-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .cfg-status-badge.ok  { background: #e6f9f0; color: #1a7a4a; }
+        .cfg-status-badge.err { background: #fff0f0; color: #c0392b; }
+        .cfg-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .cfg-status-badge.ok  .dot { background: #22c55e; }
+        .cfg-status-badge.err .dot { background: #ef4444; }
+        .cfg-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid #f0f2f5; }
+        .cfg-item:last-child { border-bottom: none; }
+        .cfg-item-label { font-size: 13px; color: #2d3748; font-weight: 500; }
+        .cfg-item-label small { display: block; font-size: 11px; color: #8a93a2; font-weight: 400; margin-top: 2px; }
+        .cfg-item-val { font-size: 13px; color: #8a93a2; text-align: right; max-width: 55%; word-break: break-all; }
+        .cfg-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+        .cfg-setting { display:flex; flex-direction:column; gap:7px; min-width:0; }
+        .cfg-setting label { font-size:12px; font-weight:600; color:#2d3748; }
+        .cfg-setting small { display:block; font-size:11px; line-height:1.5; color:#8a93a2; margin-top:3px; }
+        .cfg-setting .filter-select { width:100%; max-width:none; }
+        .cfg-save-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0; border-top:1px solid #f0f2f5; flex-wrap:wrap; }
+        .cfg-toggle-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #f0f2f5; font-size:13px; color:#2d3748; }
+        .cfg-toggle-row input { width:17px; height:17px; accent-color:#3b5bdb; flex-shrink:0; }
+        .cfg-toggle-row strong { font-weight: 600; }
+        .cfg-toggle-row small { display:block; font-size:11px; color:#8a93a2; font-weight:400; margin-top:2px; }
+        .cfg-periodo-wrap { padding: 4px 0; }
+        .cfg-periodo-label { font-size: 13px; font-weight: 500; color: #2d3748; margin-bottom: 4px; }
+        .cfg-periodo-hint  { font-size: 11px; color: #8a93a2; margin-bottom: 14px; }
+        .cfg-periodo-active { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; background: #e8eeff; color: #3b5bdb; font-size: 11px; font-weight: 700; margin-bottom: 12px; }
+        .cfg-applies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f2f5; }
+        .cfg-applies-chip { padding: 3px 10px; background: #f0f4ff; border-radius: 4px; font-size: 11px; color: #3b5bdb; font-weight: 500; }
+        .cfg-card { background: white; border: 1px solid #e3e6ea; border-radius: 8px; overflow: hidden; margin-bottom: 0; }
+        .cfg-card-header { padding: 16px 0 12px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; gap: 12px; }
+        .cfg-card-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .cfg-card-title { font-size: 13px; font-weight: 700; color: #1a202c; }
+        .cfg-card-subtitle { font-size: 11px; color: #8a93a2; margin-top: 1px; }
+        .config-section { background: white; border: 1px solid #e3e6ea; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        .config-section-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: #1a202c; padding-bottom: 10px; border-bottom: 1px solid #f0f2f5; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid #f0f2f5; }
         .config-row:last-child { border-bottom: none; }
-        .config-label  { font-size: 13px; color: #374151; }
-        .config-value  { font-size: 13px; color: #6b7280; }
-        .config-badge  { display: inline-block; padding: 3px 10px; background: #d1fae5; color: #065f46; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .config-label  { font-size: 13px; color: #2d3748; }
+        .config-value  { font-size: 13px; color: #8a93a2; }
+        .config-badge  { display: inline-block; padding: 3px 10px; background: #e6f9f0; color: #1a7a4a; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .btn-secondary { padding:8px 12px; background:#fff; border:1px solid #d8dce3; border-radius:6px; color:#2d3748; font-size:12px; font-weight:600; cursor:pointer; }
+        .btn-secondary:hover { background:#f4f5f7; }
 
         /* ── VISTA KANBAN ── */
         .kanban-wrap {
@@ -1584,158 +1689,312 @@
         <section class="page" id="page-configuracion">
             <div class="cfg-page">
 
-                <!-- Hero perfil — fila completa -->
-                <div class="cfg-full">
-                    <div class="cfg-profile-hero">
-                        <div class="cfg-avatar">👤</div>
-                        <div class="cfg-profile-info">
-                            <div class="cfg-profile-name" id="cfgNombre">—</div>
-                            <div class="cfg-profile-email" id="cfgCorreo">—</div>
-                            <div class="cfg-profile-role" id="cfgRolBadge">—</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- ── SIDEBAR de navegación ── -->
+                <aside class="cfg-sidebar">
+                    <div class="cfg-sidebar-header">Configuración</div>
 
-                <!-- Conexión -->
-                <div class="cfg-card">
-                    <div class="cfg-card-header">
-                        <div class="cfg-card-icon" style="background:#ede9fe">🔌</div>
-                        <div>
-                            <div class="cfg-card-title">Conexión</div>
-                            <div class="cfg-card-subtitle">Base de datos Supabase</div>
-                        </div>
+                    <div class="cfg-nav-item active" onclick="cfgNavegar('general')" data-panel="general">
+                        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+                        General
                     </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">Estado</div>
-                        <span class="cfg-status-badge ok" id="cfgEstado">
-                            <span class="dot"></span> Conectado
-                        </span>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('usuarios')" data-panel="usuarios">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Usuarios
                     </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">
-                            Endpoint
-                            <small>URL del proyecto</small>
-                        </div>
-                        <span class="cfg-url-chip" id="cfgUrl">—</span>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('seguridad')" data-panel="seguridad">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Seguridad
                     </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">
-                            Actividades cargadas
-                            <small>En sesión actual</small>
-                        </div>
-                        <span class="cfg-item-val" id="cfgTotal">—</span>
-                    </div>
-                </div>
 
-                <!-- Sesión -->
-                <div class="cfg-card">
-                    <div class="cfg-card-header">
-                        <div class="cfg-card-icon" style="background:#dbeafe">🔐</div>
-                        <div>
-                            <div class="cfg-card-title">Sesión actual</div>
-                            <div class="cfg-card-subtitle">Información del usuario autenticado</div>
-                        </div>
-                    </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">Nombre</div>
-                        <span class="cfg-item-val" id="cfgNombreRow">—</span>
-                    </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">Correo</div>
-                        <span class="cfg-item-val" id="cfgCorreoRow">—</span>
-                    </div>
-                    <div class="cfg-item">
-                        <div class="cfg-item-label">Rol asignado</div>
-                        <span class="cfg-item-val" id="cfgRol">—</span>
-                    </div>
-                </div>
+                    <div class="cfg-nav-divider"></div>
 
-                <!-- Período de reportes — fila completa -->
-                <div class="cfg-card cfg-full">
-                    <div class="cfg-card-header">
-                        <div class="cfg-card-icon" style="background:#fef3c7">📊</div>
-                        <div>
-                            <div class="cfg-card-title">Visualización de Reportes</div>
-                            <div class="cfg-card-subtitle">Rango de fechas para gráficas de actividades</div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('notificaciones')" data-panel="notificaciones">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        Notificaciones
+                    </div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('sistema')" data-panel="sistema">
+                        <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                        Sistema
+                    </div>
+                    <div class="cfg-nav-item" onclick="cfgNavegar('auditoria')" data-panel="auditoria">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Auditoría
+                    </div>
+                </aside>
+
+                <!-- ── CONTENIDO ── -->
+                <div class="cfg-content">
+
+                    <!-- Panel: General -->
+                    <div class="cfg-panel active" id="cfg-panel-general">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">General</div>
+                            <div class="cfg-panel-desc">Preferencias personales y apariencia.</div>
+                        </div>
+
+                        <!-- Perfil del usuario -->
+                        <div class="cfg-profile-hero">
+                            <div class="cfg-avatar" id="cfgAvatarInitial">—</div>
+                            <div>
+                                <div class="cfg-profile-name" id="cfgNombre">—</div>
+                                <div class="cfg-profile-email" id="cfgCorreo">—</div>
+                                <div class="cfg-profile-role" id="cfgRolBadge">—</div>
+                            </div>
+                        </div>
+
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Apariencia</div>
+
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#eef0f4">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Tema de la interfaz</div>
+                                    <div class="cfg-row-desc">Claro, oscuro o automático</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select id="cfgTemaSelect" class="cfg-select" onchange="cambiarTemaDesdeAjustes(this.value)">
+                                        <option value="claro">Claro</option>
+                                        <option value="oscuro">Oscuro</option>
+                                        <option value="sistema">Según dispositivo</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#eef0f4">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Formato de fecha</div>
+                                    <div class="cfg-row-desc">DD/MM/AAAA</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select id="cfgZonaSelect" class="cfg-select" onchange="actualizarPreferencia('zona_horaria',this.value)">
+                                        <option value="America/Guatemala">Guatemala (UTC−06:00)</option>
+                                        <option value="America/Mexico_City">Ciudad de México</option>
+                                        <option value="America/New_York">Nueva York</option>
+                                        <option value="UTC">UTC</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Actividades</div>
+
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#eef0f4">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Vista predeterminada</div>
+                                    <div class="cfg-row-desc">Cómo se muestra la lista de actividades</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select id="cfgVistaSelect" class="cfg-select" onchange="cambiarVistaDesdeAjustes(this.value)">
+                                        <option value="tabla">Tabla</option>
+                                        <option value="kanban">Kanban</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#eef0f4">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Período de reportes</div>
+                                    <div class="cfg-row-desc">Rango de fechas para gráficas. Activo: <span id="cfgPeriodoLabel" style="color:#3b5bdb;font-weight:600">—</span></div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <select id="cfgPeriodoSelect" class="cfg-select" onchange="cambiarPeriodoDesdeAjustes(this.value)">
+                                        <option value="0">Todas las fechas</option>
+                                        <option value="7">Últimos 7 días</option>
+                                        <option value="14">Últimos 14 días</option>
+                                        <option value="30">Últimos 30 días</option>
+                                        <option value="90">Últimos 90 días</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cfg-save-bar">
+                            <span id="cfgSaveStatus" role="status">Cambios guardados localmente.</span>
+                            <button class="btn-primary" onclick="guardarConfiguracionUsuario(true)">Guardar preferencias</button>
                         </div>
                     </div>
-                    <div class="cfg-periodo-wrap">
-                        <div class="cfg-periodo-label">Período activo</div>
-                        <div class="cfg-periodo-hint">Selecciona el rango de tiempo que se usará al generar las gráficas de actividades.</div>
-                        <div class="cfg-periodo-active">⚡ Activo: <span id="cfgPeriodoLabel">—</span></div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap" id="periodoButtons">
-                            <button class="periodo-btn" data-periodo="7"   onclick="setPeriodo(7)"   title="Últimos 7 días">1 semana</button>
-                            <button class="periodo-btn" data-periodo="14"  onclick="setPeriodo(14)"  title="Últimos 14 días">2 semanas</button>
-                            <button class="periodo-btn" data-periodo="30"  onclick="setPeriodo(30)"  title="Últimos 30 días">1 mes</button>
-                            <button class="periodo-btn" data-periodo="90"  onclick="setPeriodo(90)"  title="Últimos 90 días">3 meses</button>
-                            <button class="periodo-btn" data-periodo="0"   onclick="setPeriodo(0)"   title="Sin filtro de fecha">Todas</button>
+
+                    <!-- Panel: Usuarios -->
+                    <div class="cfg-panel" id="cfg-panel-usuarios">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Usuarios</div>
+                            <div class="cfg-panel-desc">Información de la sesión activa.</div>
                         </div>
-                        <div class="cfg-applies">
-                            <span style="font-size:11px;color:#9ca3af;margin-right:4px;align-self:center">Aplica a:</span>
-                            <span class="cfg-applies-chip">Estado</span>
-                            <span class="cfg-applies-chip">Prioridad</span>
-                            <span class="cfg-applies-chip">Por área</span>
-                            <span class="cfg-applies-chip">Por responsable</span>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Sesión actual</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info"><div class="cfg-row-label">Nombre</div></div>
+                                <span class="cfg-item-val" id="cfgNombreRow">—</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info"><div class="cfg-row-label">Correo electrónico</div></div>
+                                <span class="cfg-item-val" id="cfgCorreoRow">—</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info"><div class="cfg-row-label">Rol asignado</div></div>
+                                <span class="cfg-item-val" id="cfgRol">—</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Preferencias personales -->
-                <div class="cfg-card cfg-full">
-                    <div class="cfg-card-header">
-                        <div class="cfg-card-icon" style="background:#e0f2fe">⚙️</div>
-                        <div><div class="cfg-card-title">Preferencias personales</div><div class="cfg-card-subtitle">Se aplican a tu experiencia de uso</div></div>
-                    </div>
-                    <div class="cfg-settings-grid">
-                        <div class="cfg-setting">
-                            <label for="cfgVistaSelect">Vista predeterminada de actividades</label>
-                            <select id="cfgVistaSelect" class="filter-select" onchange="cambiarVistaDesdeAjustes(this.value)">
-                                <option value="tabla">Tabla</option><option value="kanban">Kanban</option>
-                            </select>
-                            <small>Se aplica también al entrar desde otro dispositivo cuando la sincronización está disponible.</small>
+                    <!-- Panel: Seguridad -->
+                    <div class="cfg-panel" id="cfg-panel-seguridad">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Seguridad</div>
+                            <div class="cfg-panel-desc">Contraseña y acceso a la cuenta.</div>
                         </div>
-                        <div class="cfg-setting">
-                            <label for="cfgPeriodoSelect">Período predeterminado de reportes</label>
-                            <select id="cfgPeriodoSelect" class="filter-select" onchange="cambiarPeriodoDesdeAjustes(this.value)">
-                                <option value="0">Todas las fechas</option><option value="7">Últimos 7 días</option><option value="14">Últimos 14 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option>
-                            </select>
-                            <small>Actualiza las gráficas y el período activo del dashboard.</small>
-                        </div>
-                        <div class="cfg-setting">
-                            <label for="cfgTemaSelect">Apariencia</label>
-                            <select id="cfgTemaSelect" class="filter-select" onchange="cambiarTemaDesdeAjustes(this.value)">
-                                <option value="claro">Claro</option><option value="oscuro">Oscuro</option><option value="sistema">Según dispositivo</option>
-                            </select>
-                            <small>La preferencia se guarda en tu perfil de configuración.</small>
-                        </div>
-                        <div class="cfg-setting">
-                            <label for="cfgZonaSelect">Zona horaria</label>
-                            <select id="cfgZonaSelect" class="filter-select" onchange="actualizarPreferencia('zona_horaria',this.value)">
-                                <option value="America/Guatemala">Guatemala (UTC−06:00)</option><option value="America/Mexico_City">Ciudad de México</option><option value="America/New_York">Nueva York</option><option value="UTC">UTC</option>
-                            </select>
-                            <small>Se utiliza para presentar fechas y horas cuando la pantalla lo permite.</small>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Acceso</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#eef0f4">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Contraseña</div>
+                                    <div class="cfg-row-desc">Última actualización desconocida</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <button class="btn-secondary">Cambiar</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="cfg-save-row"><span id="cfgSaveStatus" role="status">Cambios guardados localmente hasta habilitar sincronización segura.</span><button class="btn-primary" onclick="guardarConfiguracionUsuario(true)">Guardar preferencias</button></div>
-                </div>
 
-                <!-- Notificaciones -->
-                <div class="cfg-card">
-                    <div class="cfg-card-header"><div class="cfg-card-icon" style="background:#fef3c7">🔔</div><div><div class="cfg-card-title">Notificaciones</div><div class="cfg-card-subtitle">Preferencias de avisos dentro del dashboard</div></div></div>
-                    <div class="cfg-toggle-row"><div><strong>Actividades vencidas</strong><small>Mostrar avisos de tareas fuera de fecha</small></div><input id="cfgNotifVencidas" type="checkbox" checked onchange="actualizarPreferencia('notif_vencidas',this.checked)"></div>
-                    <div class="cfg-toggle-row"><div><strong>Actividades próximas a vencer</strong><small>Mostrar avisos de fechas límite próximas</small></div><input id="cfgNotifProximas" type="checkbox" checked onchange="actualizarPreferencia('notif_proximas',this.checked)"></div>
-                    <div class="cfg-toggle-row"><div><strong>Resumen al iniciar</strong><small>Mostrar notificaciones al abrir el dashboard</small></div><input id="cfgNotifResumen" type="checkbox" checked onchange="actualizarPreferencia('notif_resumen',this.checked)"></div>
-                </div>
+                    <!-- Panel: Notificaciones -->
+                    <div class="cfg-panel" id="cfg-panel-notificaciones">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Notificaciones</div>
+                            <div class="cfg-panel-desc">Preferencias de avisos dentro del dashboard.</div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Alertas de actividades</div>
 
-                <!-- Diagnóstico y datos -->
-                <div class="cfg-card">
-                    <div class="cfg-card-header"><div class="cfg-card-icon" style="background:#dcfce7">🩺</div><div><div class="cfg-card-title">Diagnóstico del sistema</div><div class="cfg-card-subtitle">Comprobaciones reales de conectividad</div></div></div>
-                    <div class="cfg-item"><div class="cfg-item-label">Última comprobación</div><span id="cfgUltimaPrueba" class="cfg-item-val">Pendiente</span></div>
-                    <div class="cfg-item"><div class="cfg-item-label">Sincronización de preferencias</div><span id="cfgSyncEstado" class="cfg-item-val">Comprobando…</span></div>
-                    <div class="cfg-actions"><button class="btn-secondary" onclick="probarConexionSupabase()">Probar conexión</button><button class="btn-secondary" onclick="exportarActividadesCSV()">Exportar actividades CSV</button></div>
-                </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#fff5e6">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Actividades vencidas</div>
+                                    <div class="cfg-row-desc">Mostrar avisos de tareas fuera de fecha</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" id="cfgNotifVencidas" checked onchange="actualizarPreferencia('notif_vencidas',this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
 
-            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#fffbeb">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Próximas a vencer</div>
+                                    <div class="cfg-row-desc">Alertas de fechas límite cercanas</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" id="cfgNotifProximas" checked onchange="actualizarPreferencia('notif_proximas',this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="cfg-row">
+                                <div class="cfg-row-icon" style="background:#f0f4ff">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                </div>
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Resumen al iniciar</div>
+                                    <div class="cfg-row-desc">Mostrar resumen al abrir el dashboard</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" id="cfgNotifResumen" checked onchange="actualizarPreferencia('notif_resumen',this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Sistema -->
+                    <div class="cfg-panel" id="cfg-panel-sistema">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Sistema</div>
+                            <div class="cfg-panel-desc">Conexión y diagnóstico de la base de datos.</div>
+                        </div>
+                        <div class="cfg-section">
+                            <div class="cfg-section-title">Base de datos</div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info"><div class="cfg-row-label">Estado</div></div>
+                                <span class="cfg-status-badge ok" id="cfgEstado"><span class="dot"></span> Conectado</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Endpoint</div>
+                                    <div class="cfg-row-desc">URL del proyecto Supabase</div>
+                                </div>
+                                <span class="cfg-url-chip" id="cfgUrl">—</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Actividades cargadas</div>
+                                    <div class="cfg-row-desc">En sesión actual</div>
+                                </div>
+                                <span class="cfg-item-val" id="cfgTotal">—</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Última comprobación</div>
+                                </div>
+                                <span id="cfgUltimaPrueba" class="cfg-item-val">Pendiente</span>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Sincronización de preferencias</div>
+                                </div>
+                                <span id="cfgSyncEstado" class="cfg-item-val">Comprobando…</span>
+                            </div>
+                        </div>
+                        <div class="cfg-section" style="padding-bottom:20px">
+                            <div class="cfg-actions">
+                                <button class="btn-secondary" onclick="probarConexionSupabase()">Probar conexión</button>
+                                <button class="btn-secondary" onclick="exportarActividadesCSV()">Exportar actividades CSV</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Auditoría -->
+                    <div class="cfg-panel" id="cfg-panel-auditoria">
+                        <div class="cfg-panel-header">
+                            <div class="cfg-panel-title">Auditoría</div>
+                            <div class="cfg-panel-desc">Registro de actividad del sistema.</div>
+                        </div>
+                        <div class="cfg-section" style="padding-bottom:20px">
+                            <div class="cfg-row" style="padding-top:20px">
+                                <div class="cfg-row-info">
+                                    <div class="cfg-row-label" style="color:#8a93a2">No hay registros de auditoría disponibles.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /cfg-content -->
+            </div><!-- /cfg-page -->
         </section>
 
 
