@@ -259,6 +259,112 @@
         .dot-inactive { background: #d1d5db; }
 
         /* ── CONFIGURACIÓN ── */
+        /* ── CONFIGURACIÓN — diseño nuevo ── */
+        .cfg-page { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .cfg-page .cfg-full { grid-column: 1 / -1; }
+
+        /* Hero de perfil */
+        .cfg-profile-hero {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #7c3aed 100%);
+            border-radius: 16px; padding: 28px 32px;
+            display: flex; align-items: center; gap: 24px;
+            position: relative; overflow: hidden;
+        }
+        .cfg-profile-hero::before {
+            content: ''; position: absolute; top: -40px; right: -40px;
+            width: 160px; height: 160px; border-radius: 50%;
+            background: rgba(255,255,255,.07);
+        }
+        .cfg-profile-hero::after {
+            content: ''; position: absolute; bottom: -30px; right: 80px;
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(255,255,255,.05);
+        }
+        .cfg-avatar {
+            width: 64px; height: 64px; border-radius: 16px;
+            background: rgba(255,255,255,.2); border: 2px solid rgba(255,255,255,.35);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; flex-shrink: 0; backdrop-filter: blur(4px);
+        }
+        .cfg-profile-info { flex: 1; }
+        .cfg-profile-name { font-size: 20px; font-weight: 800; color: white; line-height: 1.2; }
+        .cfg-profile-email { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 4px; }
+        .cfg-profile-role {
+            display: inline-flex; align-items: center; gap: 5px;
+            margin-top: 10px; padding: 4px 12px;
+            background: rgba(255,255,255,.18); border-radius: 20px;
+            font-size: 12px; font-weight: 600; color: white;
+            border: 1px solid rgba(255,255,255,.25);
+        }
+        .cfg-profile-role::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #a5f3fc; }
+
+        /* Tarjeta genérica */
+        .cfg-card {
+            background: white; border: 1px solid #e5e7eb;
+            border-radius: 14px; overflow: hidden;
+        }
+        .cfg-card-header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .cfg-card-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; flex-shrink: 0;
+        }
+        .cfg-card-title { font-size: 14px; font-weight: 700; color: #111827; }
+        .cfg-card-subtitle { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+        /* Rows dentro de tarjeta */
+        .cfg-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 13px 22px; border-bottom: 1px solid #f9fafb;
+        }
+        .cfg-item:last-child { border-bottom: none; }
+        .cfg-item-label { font-size: 13px; color: #374151; font-weight: 500; }
+        .cfg-item-label small { display: block; font-size: 11px; color: #9ca3af; font-weight: 400; margin-top: 2px; }
+        .cfg-item-val { font-size: 13px; color: #6b7280; text-align: right; max-width: 55%; word-break: break-all; }
+
+        /* Badge de estado de conexión */
+        .cfg-status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+        }
+        .cfg-status-badge.ok  { background: #d1fae5; color: #065f46; }
+        .cfg-status-badge.err { background: #fee2e2; color: #991b1b; }
+        .cfg-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .cfg-status-badge.ok  .dot { background: #10b981; }
+        .cfg-status-badge.err .dot { background: #ef4444; }
+
+        /* URL truncada */
+        .cfg-url-chip {
+            font-size: 11px; font-family: monospace; background: #f3f4f6;
+            padding: 4px 10px; border-radius: 6px; color: #4b5563;
+            max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* Sección de período */
+        .cfg-periodo-wrap { padding: 18px 22px; }
+        .cfg-periodo-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+        .cfg-periodo-hint  { font-size: 11px; color: #9ca3af; margin-bottom: 14px; }
+        .cfg-periodo-active {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 3px 10px; border-radius: 20px;
+            background: #ede9fe; color: #4f46e5;
+            font-size: 11px; font-weight: 700; margin-bottom: 12px;
+        }
+        .cfg-applies {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
+            padding-top: 14px; border-top: 1px solid #f3f4f6;
+        }
+        .cfg-applies-chip {
+            padding: 3px 10px; background: #f3f4f6; border-radius: 6px;
+            font-size: 11px; color: #6b7280;
+        }
+
+        /* Legacy — mantener por si algo los referencia */
         .config-section { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .config-section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #111827; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
         .config-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9fafb; }
@@ -715,6 +821,11 @@
 
             /* Config rows stack */
             .config-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+            /* Config grid mobile */
+            .cfg-page { grid-template-columns: 1fr; }
+            .cfg-profile-hero { flex-direction: column; text-align: center; padding: 24px 20px; }
+            .cfg-profile-info { text-align: center; }
+            .cfg-url-chip { max-width: 140px; }
 
             /* Bar label wider */
             .bar-label { width: 100px; font-size: 11px; }
@@ -1453,60 +1564,105 @@
              PÁGINA: CONFIGURACIÓN
         ══════════════════════════════════════ -->
         <section class="page" id="page-configuracion">
+            <div class="cfg-page">
 
-            <div class="config-section">
-                <div class="config-section-title">Conexión</div>
-                <div class="config-row">
-                    <span class="config-label">Supabase URL</span>
-                    <span class="config-value" id="cfgUrl">—</span>
-                </div>
-                <div class="config-row">
-                    <span class="config-label">Estado de conexión</span>
-                    <span class="config-badge" id="cfgEstado">Conectado</span>
-                </div>
-                <div class="config-row">
-                    <span class="config-label">Total actividades cargadas</span>
-                    <span class="config-value" id="cfgTotal">—</span>
-                </div>
-            </div>
-
-            <div class="config-section">
-                <div class="config-section-title">Sesión actual</div>
-                <div class="config-row">
-                    <span class="config-label">Usuario</span>
-                    <span class="config-value" id="cfgNombre">—</span>
-                </div>
-                <div class="config-row">
-                    <span class="config-label">Correo</span>
-                    <span class="config-value" id="cfgCorreo">—</span>
-                </div>
-                <div class="config-row">
-                    <span class="config-label">Rol</span>
-                    <span class="config-value" id="cfgRol">—</span>
-                </div>
-            </div>
-
-            <div class="config-section">
-                <div class="config-section-title">Visualización de Reportes — Actividades</div>
-                <div class="config-row" style="flex-direction:column;align-items:flex-start;gap:12px">
-                    <div>
-                        <span class="config-label" style="display:block;margin-bottom:6px">Período de tiempo a mostrar en las gráficas de actividades</span>
-                        <span class="config-value" style="font-size:11px;color:#9ca3af">Activo: <strong id="cfgPeriodoLabel">—</strong></span>
-                    </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap" id="periodoButtons">
-                        <button class="periodo-btn" data-periodo="7"   onclick="setPeriodo(7)"   title="Últimos 7 días">1 semana</button>
-                        <button class="periodo-btn" data-periodo="14"  onclick="setPeriodo(14)"  title="Últimos 14 días">2 semanas</button>
-                        <button class="periodo-btn" data-periodo="30"  onclick="setPeriodo(30)"  title="Últimos 30 días">1 mes</button>
-                        <button class="periodo-btn" data-periodo="90"  onclick="setPeriodo(90)"  title="Últimos 90 días">3 meses</button>
-                        <button class="periodo-btn" data-periodo="0"   onclick="setPeriodo(0)"   title="Sin filtro de fecha">Todas</button>
+                <!-- Hero perfil — fila completa -->
+                <div class="cfg-full">
+                    <div class="cfg-profile-hero">
+                        <div class="cfg-avatar">👤</div>
+                        <div class="cfg-profile-info">
+                            <div class="cfg-profile-name" id="cfgNombre">—</div>
+                            <div class="cfg-profile-email" id="cfgCorreo">—</div>
+                            <div class="cfg-profile-role" id="cfgRolBadge">—</div>
+                        </div>
                     </div>
                 </div>
-                <div class="config-row">
-                    <span class="config-label">Aplica a</span>
-                    <span class="config-value">Reportes → Estado, Prioridad, Por área, Por responsable</span>
-                </div>
-            </div>
 
+                <!-- Conexión -->
+                <div class="cfg-card">
+                    <div class="cfg-card-header">
+                        <div class="cfg-card-icon" style="background:#ede9fe">🔌</div>
+                        <div>
+                            <div class="cfg-card-title">Conexión</div>
+                            <div class="cfg-card-subtitle">Base de datos Supabase</div>
+                        </div>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">Estado</div>
+                        <span class="cfg-status-badge ok" id="cfgEstado">
+                            <span class="dot"></span> Conectado
+                        </span>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">
+                            Endpoint
+                            <small>URL del proyecto</small>
+                        </div>
+                        <span class="cfg-url-chip" id="cfgUrl">—</span>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">
+                            Actividades cargadas
+                            <small>En sesión actual</small>
+                        </div>
+                        <span class="cfg-item-val" id="cfgTotal">—</span>
+                    </div>
+                </div>
+
+                <!-- Sesión -->
+                <div class="cfg-card">
+                    <div class="cfg-card-header">
+                        <div class="cfg-card-icon" style="background:#dbeafe">🔐</div>
+                        <div>
+                            <div class="cfg-card-title">Sesión actual</div>
+                            <div class="cfg-card-subtitle">Información del usuario autenticado</div>
+                        </div>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">Nombre</div>
+                        <span class="cfg-item-val" id="cfgNombreRow">—</span>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">Correo</div>
+                        <span class="cfg-item-val" id="cfgCorreoRow">—</span>
+                    </div>
+                    <div class="cfg-item">
+                        <div class="cfg-item-label">Rol asignado</div>
+                        <span class="cfg-item-val" id="cfgRol">—</span>
+                    </div>
+                </div>
+
+                <!-- Período de reportes — fila completa -->
+                <div class="cfg-card cfg-full">
+                    <div class="cfg-card-header">
+                        <div class="cfg-card-icon" style="background:#fef3c7">📊</div>
+                        <div>
+                            <div class="cfg-card-title">Visualización de Reportes</div>
+                            <div class="cfg-card-subtitle">Rango de fechas para gráficas de actividades</div>
+                        </div>
+                    </div>
+                    <div class="cfg-periodo-wrap">
+                        <div class="cfg-periodo-label">Período activo</div>
+                        <div class="cfg-periodo-hint">Selecciona el rango de tiempo que se usará al generar las gráficas de actividades.</div>
+                        <div class="cfg-periodo-active">⚡ Activo: <span id="cfgPeriodoLabel">—</span></div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap" id="periodoButtons">
+                            <button class="periodo-btn" data-periodo="7"   onclick="setPeriodo(7)"   title="Últimos 7 días">1 semana</button>
+                            <button class="periodo-btn" data-periodo="14"  onclick="setPeriodo(14)"  title="Últimos 14 días">2 semanas</button>
+                            <button class="periodo-btn" data-periodo="30"  onclick="setPeriodo(30)"  title="Últimos 30 días">1 mes</button>
+                            <button class="periodo-btn" data-periodo="90"  onclick="setPeriodo(90)"  title="Últimos 90 días">3 meses</button>
+                            <button class="periodo-btn" data-periodo="0"   onclick="setPeriodo(0)"   title="Sin filtro de fecha">Todas</button>
+                        </div>
+                        <div class="cfg-applies">
+                            <span style="font-size:11px;color:#9ca3af;margin-right:4px;align-self:center">Aplica a:</span>
+                            <span class="cfg-applies-chip">Estado</span>
+                            <span class="cfg-applies-chip">Prioridad</span>
+                            <span class="cfg-applies-chip">Por área</span>
+                            <span class="cfg-applies-chip">Por responsable</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </section>
 
 
@@ -3851,11 +4007,33 @@
     }
 
     function renderConfiguracion() {
-        document.getElementById("cfgUrl").textContent    = SUPABASE_URL;
-        document.getElementById("cfgTotal").textContent  = todasActividades.length + " registros";
-        document.getElementById("cfgNombre").textContent = usuario?.nombre  || "—";
-        document.getElementById("cfgCorreo").textContent = usuario?.correo  || "—";
-        document.getElementById("cfgRol").textContent    = usuario?.rol     || "—";
+        const nombre = usuario?.nombre || "—";
+        const correo = usuario?.correo || "—";
+        const rol    = usuario?.rol    || "—";
+
+        // Hero perfil
+        document.getElementById("cfgNombre").textContent    = nombre;
+        document.getElementById("cfgCorreo").textContent    = correo;
+        document.getElementById("cfgRolBadge").textContent  = rol;
+
+        // Filas de sesión (duplicados para las tarjetas)
+        document.getElementById("cfgNombreRow").textContent = nombre;
+        document.getElementById("cfgCorreoRow").textContent = correo;
+        document.getElementById("cfgRol").textContent       = rol;
+
+        // Conexión
+        const urlChip = document.getElementById("cfgUrl");
+        if (urlChip) urlChip.textContent = SUPABASE_URL;
+
+        document.getElementById("cfgTotal").textContent = todasActividades.length + " registros";
+
+        // Badge de estado
+        const badge = document.getElementById("cfgEstado");
+        if (badge) {
+            badge.className = "cfg-status-badge ok";
+            badge.innerHTML = '<span class="dot"></span> Conectado';
+        }
+
         sincronizarBotonesPeriodo();
         aplicarVistaActividades(getVistaActividades());
     }
