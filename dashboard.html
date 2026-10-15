@@ -364,6 +364,24 @@
             font-size: 11px; color: #6b7280;
         }
 
+        .cfg-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:20px 22px; }
+        .cfg-setting { display:flex; flex-direction:column; gap:7px; min-width:0; }
+        .cfg-setting label { font-size:12px; font-weight:700; color:#374151; }
+        .cfg-setting small, .cfg-toggle-row small { display:block; font-size:11px; line-height:1.5; color:#9ca3af; margin-top:3px; }
+        .cfg-setting .filter-select { width:100%; max-width:none; }
+        .cfg-save-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 22px; border-top:1px solid #f3f4f6; flex-wrap:wrap; }
+        #cfgSaveStatus { color:#6b7280; font-size:11px; }
+        .cfg-toggle-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 22px; border-bottom:1px solid #f9fafb; font-size:12px; color:#374151; }
+        .cfg-toggle-row input { width:17px; height:17px; accent-color:#6366f1; flex-shrink:0; }
+        .cfg-actions { display:flex; flex-wrap:wrap; gap:8px; padding:14px 22px; }
+        .btn-secondary { padding:8px 12px; background:#fff; border:1px solid #d1d5db; border-radius:8px; color:#374151; font-size:12px; font-weight:600; cursor:pointer; }
+        .btn-secondary:hover { background:#f9fafb; }
+        body.cfg-dark { background:#111827 !important; color:#e5e7eb; }
+        body.cfg-dark .cfg-card, body.cfg-dark .card, body.cfg-dark .report-card, body.cfg-dark .table-wrap { background:#1f2937; border-color:#374151; }
+        body.cfg-dark .cfg-card-title, body.cfg-dark .cfg-item-label, body.cfg-dark .cfg-setting label, body.cfg-dark .cfg-toggle-row { color:#e5e7eb; }
+        body.cfg-dark .cfg-item, body.cfg-dark .cfg-toggle-row, body.cfg-dark .cfg-card-header { border-color:#374151; }
+        @media(max-width:700px) { .cfg-settings-grid { grid-template-columns:1fr; padding:16px; } .cfg-save-row { padding:14px 16px; } }
+
         /* Legacy — mantener por si algo los referencia */
         .config-section { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
         .config-section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #111827; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
@@ -1660,6 +1678,61 @@
                             <span class="cfg-applies-chip">Por responsable</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Preferencias personales -->
+                <div class="cfg-card cfg-full">
+                    <div class="cfg-card-header">
+                        <div class="cfg-card-icon" style="background:#e0f2fe">⚙️</div>
+                        <div><div class="cfg-card-title">Preferencias personales</div><div class="cfg-card-subtitle">Se aplican a tu experiencia de uso</div></div>
+                    </div>
+                    <div class="cfg-settings-grid">
+                        <div class="cfg-setting">
+                            <label for="cfgVistaSelect">Vista predeterminada de actividades</label>
+                            <select id="cfgVistaSelect" class="filter-select" onchange="cambiarVistaDesdeAjustes(this.value)">
+                                <option value="tabla">Tabla</option><option value="kanban">Kanban</option>
+                            </select>
+                            <small>Se aplica también al entrar desde otro dispositivo cuando la sincronización está disponible.</small>
+                        </div>
+                        <div class="cfg-setting">
+                            <label for="cfgPeriodoSelect">Período predeterminado de reportes</label>
+                            <select id="cfgPeriodoSelect" class="filter-select" onchange="cambiarPeriodoDesdeAjustes(this.value)">
+                                <option value="0">Todas las fechas</option><option value="7">Últimos 7 días</option><option value="14">Últimos 14 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option>
+                            </select>
+                            <small>Actualiza las gráficas y el período activo del dashboard.</small>
+                        </div>
+                        <div class="cfg-setting">
+                            <label for="cfgTemaSelect">Apariencia</label>
+                            <select id="cfgTemaSelect" class="filter-select" onchange="cambiarTemaDesdeAjustes(this.value)">
+                                <option value="claro">Claro</option><option value="oscuro">Oscuro</option><option value="sistema">Según dispositivo</option>
+                            </select>
+                            <small>La preferencia se guarda en tu perfil de configuración.</small>
+                        </div>
+                        <div class="cfg-setting">
+                            <label for="cfgZonaSelect">Zona horaria</label>
+                            <select id="cfgZonaSelect" class="filter-select" onchange="actualizarPreferencia('zona_horaria',this.value)">
+                                <option value="America/Guatemala">Guatemala (UTC−06:00)</option><option value="America/Mexico_City">Ciudad de México</option><option value="America/New_York">Nueva York</option><option value="UTC">UTC</option>
+                            </select>
+                            <small>Se utiliza para presentar fechas y horas cuando la pantalla lo permite.</small>
+                        </div>
+                    </div>
+                    <div class="cfg-save-row"><span id="cfgSaveStatus" role="status">Cambios guardados localmente hasta habilitar sincronización segura.</span><button class="btn-primary" onclick="guardarConfiguracionUsuario(true)">Guardar preferencias</button></div>
+                </div>
+
+                <!-- Notificaciones -->
+                <div class="cfg-card">
+                    <div class="cfg-card-header"><div class="cfg-card-icon" style="background:#fef3c7">🔔</div><div><div class="cfg-card-title">Notificaciones</div><div class="cfg-card-subtitle">Preferencias de avisos dentro del dashboard</div></div></div>
+                    <div class="cfg-toggle-row"><div><strong>Actividades vencidas</strong><small>Mostrar avisos de tareas fuera de fecha</small></div><input id="cfgNotifVencidas" type="checkbox" checked onchange="actualizarPreferencia('notif_vencidas',this.checked)"></div>
+                    <div class="cfg-toggle-row"><div><strong>Actividades próximas a vencer</strong><small>Mostrar avisos de fechas límite próximas</small></div><input id="cfgNotifProximas" type="checkbox" checked onchange="actualizarPreferencia('notif_proximas',this.checked)"></div>
+                    <div class="cfg-toggle-row"><div><strong>Resumen al iniciar</strong><small>Mostrar notificaciones al abrir el dashboard</small></div><input id="cfgNotifResumen" type="checkbox" checked onchange="actualizarPreferencia('notif_resumen',this.checked)"></div>
+                </div>
+
+                <!-- Diagnóstico y datos -->
+                <div class="cfg-card">
+                    <div class="cfg-card-header"><div class="cfg-card-icon" style="background:#dcfce7">🩺</div><div><div class="cfg-card-title">Diagnóstico del sistema</div><div class="cfg-card-subtitle">Comprobaciones reales de conectividad</div></div></div>
+                    <div class="cfg-item"><div class="cfg-item-label">Última comprobación</div><span id="cfgUltimaPrueba" class="cfg-item-val">Pendiente</span></div>
+                    <div class="cfg-item"><div class="cfg-item-label">Sincronización de preferencias</div><span id="cfgSyncEstado" class="cfg-item-val">Comprobando…</span></div>
+                    <div class="cfg-actions"><button class="btn-secondary" onclick="probarConexionSupabase()">Probar conexión</button><button class="btn-secondary" onclick="exportarActividadesCSV()">Exportar actividades CSV</button></div>
                 </div>
 
             </div>
@@ -3221,7 +3294,9 @@
     }
 
     function renderNotificaciones() {
-        const notifs  = calcularNotificaciones();
+        let notifs = calcularNotificaciones();
+        if (preferenciasUsuario.notif_vencidas === false) notifs = notifs.filter(n => n.tipo !== "vencida");
+        if (preferenciasUsuario.notif_proximas === false) notifs = notifs.filter(n => n.tipo !== "proxima");
         const badge   = document.getElementById("notifBadge");
         const list    = document.getElementById("notifList");
         const count   = document.getElementById("notifCount");
@@ -3242,7 +3317,7 @@
         }
 
         // Notificación del navegador (solo la primera vez que carga)
-        dispararNotifNavegador(notifs);
+        if (preferenciasUsuario.notif_resumen !== false) dispararNotifNavegador(notifs);
     }
 
     let notifNavegadorDisparada = false;
@@ -3845,14 +3920,16 @@
     const VISTA_KEY = "alterna_vista_actividades";
 
     function getVistaActividades() {
-        return localStorage.getItem(VISTA_KEY) || "tabla";
+        return preferenciasUsuario.vista_actividades || localStorage.getItem(VISTA_KEY) || "tabla";
     }
 
     function setVistaActividades(modo) {
         localStorage.setItem(VISTA_KEY, modo);
+        preferenciasUsuario.vista_actividades = modo;
         aplicarVistaActividades(modo);
         if (modo === "kanban") renderKanban();
         else { paginaTabla = 1; renderTabla(); }
+        guardarConfiguracionUsuario(false);
     }
 
     function aplicarVistaActividades(modo) {
@@ -3962,6 +4039,7 @@
     const PERIODO_KEY = "alterna_periodo_reportes";
 
     function getPeriodo() {
+        if (preferenciasUsuario.periodo_reportes !== undefined && preferenciasUsuario.periodo_reportes !== null) return Number(preferenciasUsuario.periodo_reportes) || 0;
         const val = localStorage.getItem(PERIODO_KEY);
         return val !== null ? parseInt(val) : 0; // 0 = todas
     }
@@ -3970,8 +4048,10 @@
 
     function setPeriodo(dias) {
         localStorage.setItem(PERIODO_KEY, dias);
+        preferenciasUsuario.periodo_reportes = Number(dias);
         sincronizarBotonesPeriodo();
         renderReportes();
+        guardarConfiguracionUsuario(false);
     }
 
     function filtrarActividadesPorPeriodo() {
@@ -4006,36 +4086,121 @@
         if (cfgLabel) cfgLabel.textContent = label;
     }
 
+    const SETTINGS_TABLE = "configuraciones_usuario";
+    let preferenciasUsuario = {
+        vista_actividades: localStorage.getItem(VISTA_KEY) || "tabla",
+        periodo_reportes: Number(localStorage.getItem(PERIODO_KEY) ?? 0),
+        tema: localStorage.getItem("alterna_tema") || "claro",
+        zona_horaria: "America/Guatemala",
+        notif_vencidas: true, notif_proximas: true, notif_resumen: true
+    };
+    let settingsSyncReady = false;
+    let settingsSaveTimer = null;
+
     function renderConfiguracion() {
-        const nombre = usuario?.nombre || "—";
-        const correo = usuario?.correo || "—";
-        const rol    = usuario?.rol    || "—";
+        const nombre = usuario?.nombre || "—", correo = usuario?.correo || "—", rol = usuario?.rol || "—";
+        ["cfgNombre", "cfgNombreRow"].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=nombre; });
+        ["cfgCorreo", "cfgCorreoRow"].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=correo; });
+        const rolHero=document.getElementById("cfgRolBadge"), rolRow=document.getElementById("cfgRol");
+        if(rolHero) rolHero.textContent=rol; if(rolRow) rolRow.textContent=rol;
+        const urlChip=document.getElementById("cfgUrl"); if(urlChip) urlChip.textContent=SUPABASE_URL;
+        const total=document.getElementById("cfgTotal"); if(total) total.textContent=todasActividades.length+" registros";
+        sincronizarBotonesPeriodo(); aplicarVistaActividades(getVistaActividades());
+        aplicarPreferenciasEnControles();
+        probarConexionSupabase();
+        cargarConfiguracionUsuario();
+    }
 
-        // Hero perfil
-        document.getElementById("cfgNombre").textContent    = nombre;
-        document.getElementById("cfgCorreo").textContent    = correo;
-        document.getElementById("cfgRolBadge").textContent  = rol;
+    function aplicarPreferenciasEnControles() {
+        const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=String(val);};
+        set("cfgVistaSelect", preferenciasUsuario.vista_actividades || "tabla");
+        set("cfgPeriodoSelect", preferenciasUsuario.periodo_reportes ?? 0);
+        set("cfgTemaSelect", preferenciasUsuario.tema || "claro");
+        set("cfgZonaSelect", preferenciasUsuario.zona_horaria || "America/Guatemala");
+        ["notif_vencidas","notif_proximas","notif_resumen"].forEach(k=>{const el=document.getElementById("cfg"+k.split("_").map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(""));if(el)el.checked=preferenciasUsuario[k]!==false;});
+        aplicarTema(preferenciasUsuario.tema || "claro");
+    }
 
-        // Filas de sesión (duplicados para las tarjetas)
-        document.getElementById("cfgNombreRow").textContent = nombre;
-        document.getElementById("cfgCorreoRow").textContent = correo;
-        document.getElementById("cfgRol").textContent       = rol;
+    function cambiarVistaDesdeAjustes(modo) { setVistaActividades(modo); }
+    function cambiarPeriodoDesdeAjustes(valor) { setPeriodo(Number(valor)); }
+    function cambiarTemaDesdeAjustes(tema) { preferenciasUsuario.tema=tema; aplicarTema(tema); actualizarPreferencia("tema",tema); }
+    function aplicarTema(tema) {
+        const dark=tema==="oscuro" || (tema==="sistema" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.body.classList.toggle("cfg-dark",!!dark);
+        localStorage.setItem("alterna_tema",tema||"claro");
+    }
+    function actualizarPreferencia(clave,valor) {
+        preferenciasUsuario[clave]=valor;
+        if(clave==="zona_horaria") preferenciasUsuario.zona_horaria=valor;
+        if(clave.startsWith("notif_")) renderNotificaciones();
+        guardarConfiguracionUsuario(false);
+    }
 
-        // Conexión
-        const urlChip = document.getElementById("cfgUrl");
-        if (urlChip) urlChip.textContent = SUPABASE_URL;
+    async function obtenerUsuarioAuth() {
+        try { const {data,error}=await supabaseClient.auth.getUser(); if(error) return null; return data?.user || null; }
+        catch(_) { return null; }
+    }
 
-        document.getElementById("cfgTotal").textContent = todasActividades.length + " registros";
-
-        // Badge de estado
-        const badge = document.getElementById("cfgEstado");
-        if (badge) {
-            badge.className = "cfg-status-badge ok";
-            badge.innerHTML = '<span class="dot"></span> Conectado';
+    async function cargarConfiguracionUsuario() {
+        const sync=document.getElementById("cfgSyncEstado");
+        const authUser=await obtenerUsuarioAuth();
+        if(!authUser) {
+            settingsSyncReady=false;
+            if(sync) sync.textContent="Sin sesión de Supabase Auth";
+            mostrarEstadoAjustes("Preferencias locales activas. Para sincronizarlas entre dispositivos, la sesión de usuario debe autenticarse con Supabase Auth y habilitar la tabla de ajustes.");
+            return;
         }
+        const {data,error}=await supabaseClient.from(SETTINGS_TABLE).select("preferencias,updated_at").eq("user_id",authUser.id).maybeSingle();
+        if(error) {
+            settingsSyncReady=false;
+            if(sync) sync.textContent="Tabla no disponible";
+            mostrarEstadoAjustes("No se pudo leer la configuración remota. Ejecuta el SQL de instalación incluido y verifica las políticas RLS.");
+            console.warn("Configuración remota:",error.message); return;
+        }
+        if(data?.preferencias && typeof data.preferencias==="object") preferenciasUsuario={...preferenciasUsuario,...data.preferencias};
+        settingsSyncReady=true;
+        if(sync) sync.textContent="Sincronizado";
+        aplicarPreferenciasEnControles(); sincronizarBotonesPeriodo(); aplicarVistaActividades(getVistaActividades());
+        if(preferenciasUsuario.vista_actividades==="kanban") renderKanban();
+        if(data?.updated_at) mostrarEstadoAjustes("Sincronizado · último guardado: "+new Date(data.updated_at).toLocaleString("es-GT"));
+        else mostrarEstadoAjustes("Preferencias sincronizadas con Supabase.");
+    }
 
-        sincronizarBotonesPeriodo();
-        aplicarVistaActividades(getVistaActividades());
+    function mostrarEstadoAjustes(texto) { const el=document.getElementById("cfgSaveStatus"); if(el) el.textContent=texto; }
+
+    async function guardarConfiguracionUsuario(manual=false) {
+        localStorage.setItem(VISTA_KEY, preferenciasUsuario.vista_actividades || "tabla");
+        localStorage.setItem(PERIODO_KEY, String(preferenciasUsuario.periodo_reportes ?? 0));
+        localStorage.setItem("alterna_tema", preferenciasUsuario.tema || "claro");
+        if(!manual && settingsSaveTimer) clearTimeout(settingsSaveTimer);
+        if(!manual) { settingsSaveTimer=setTimeout(()=>guardarConfiguracionUsuario(true),700); return; }
+        const authUser=await obtenerUsuarioAuth();
+        if(!authUser) { mostrarEstadoAjustes("Guardado en este navegador. La sincronización entre dispositivos requiere sesión de Supabase Auth."); return; }
+        const {error}=await supabaseClient.from(SETTINGS_TABLE).upsert({user_id:authUser.id,preferencias:preferenciasUsuario,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+        if(error) { mostrarEstadoAjustes("No se pudo sincronizar: "+error.message); console.error("Guardar configuración:",error); return; }
+        settingsSyncReady=true;
+        const sync=document.getElementById("cfgSyncEstado"); if(sync) sync.textContent="Sincronizado";
+        mostrarEstadoAjustes("Preferencias guardadas en Supabase · "+new Date().toLocaleTimeString("es-GT"));
+    }
+
+    async function probarConexionSupabase() {
+        const badge=document.getElementById("cfgEstado"), last=document.getElementById("cfgUltimaPrueba");
+        if(badge) { badge.className="cfg-status-badge"; badge.innerHTML='<span class="dot"></span> Comprobando…'; }
+        let ok=false, detalle="";
+        try { const {error}=await supabaseClient.from("actividades").select("id",{head:true,count:"exact"}); ok=!error; detalle=error?.message||"OK"; }
+        catch(e) { detalle=e?.message||"Error de conexión"; }
+        if(badge) { badge.className="cfg-status-badge "+(ok?"ok":"err"); badge.innerHTML='<span class="dot"></span> '+(ok?"Conectado":"Sin conexión"); badge.title=detalle; }
+        if(last) last.textContent=new Date().toLocaleString("es-GT")+(ok?" · OK":" · Error");
+        return ok;
+    }
+
+    function exportarActividadesCSV() {
+        if(!Array.isArray(todasActividades)||!todasActividades.length) { alert("No hay actividades cargadas para exportar."); return; }
+        const cols=["id","actividad","proyecto_macro","area","asignado","prioridad","estado","fecha_limite","fecha_finalizacion","notas"];
+        const cell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+        const csv="\uFEFF"+[cols.join(","),...todasActividades.map(a=>cols.map(c=>cell(a[c])).join(","))].join("\r\n");
+        const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+        a.href=url; a.download="alterna-actividades-"+new Date().toISOString().slice(0,10)+".csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
 
@@ -5536,6 +5701,7 @@
     ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
         await cargarUsuario();
+        await cargarConfiguracionUsuario();
         await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
         sincronizarBotonesPeriodo();
         aplicarVistaActividades(getVistaActividades());
