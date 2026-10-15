@@ -41,8 +41,8 @@
         reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
         configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
-        "licencias-kanva":  { titulo: "Licencias — Canva",  subtitulo: "Gestión de licencias de diseño Canva" },
-        mantenimientos:     { titulo: "Mantenimientos",        subtitulo: "Calendario y tickets de mantenimiento de equipos" },
+        "licencias-kanva":  { titulo: "Licencias — Canva",   subtitulo: "Gestión de licencias de diseño Canva" },
+        mantenimientos:     { titulo: "Mantenimientos",      subtitulo: "Calendario y tickets de mantenimiento de equipos" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -88,33 +88,13 @@
             else renderTabla();
         }
 
-        if (pagina === "usuarios") {
-            cargarTablaUsuarios();
-        }
-
-        if (pagina === "equipos") {
-            cargarEquipos();
-        }
-
-        if (pagina === "reportes") {
-            renderReportes();
-        }
-
-        if (pagina === "configuracion") {
-            renderConfiguracion();
-        }
-
-        if (pagina === "licencias-office") {
-            cargarLicenciasOffice();
-        }
-
-        if (pagina === "licencias-kanva") {
-            cargarLicenciasKanva();
-        }
-
-        if (pagina === "mantenimientos") {
-            cargarMantenimientos();
-        }
+        if (pagina === "usuarios")         cargarTablaUsuarios();
+        if (pagina === "equipos")          cargarEquipos();
+        if (pagina === "reportes")         renderReportes();
+        if (pagina === "configuracion")    renderConfiguracion();
+        if (pagina === "licencias-office") cargarLicenciasOffice();
+        if (pagina === "licencias-kanva")  cargarLicenciasKanva();
+        if (pagina === "mantenimientos")   cargarMantenimientos();
     }
 
 
@@ -152,9 +132,9 @@
         const nombre = usuario.nombre || "Usuario";
         const rol    = usuario.rol    || "usuario";
 
-        document.getElementById("sidebarName").textContent      = nombre;
-        document.getElementById("sidebarRole").textContent      = rol;
-        document.getElementById("welcomeMessage").textContent   = "Bienvenido, " + nombre;
+        document.getElementById("sidebarName").textContent    = nombre;
+        document.getElementById("sidebarRole").textContent    = rol;
+        document.getElementById("welcomeMessage").textContent = "Bienvenido, " + nombre;
 
         const partes = nombre.trim().split(/\s+/);
         const iniciales = partes.length >= 2
@@ -225,12 +205,16 @@
                          MELI:"🏪", Devela:"🏢", Adquisiciones:"🛒",
                          Administración:"📁", Cultivación:"🌱" };
 
+        const n = Number(preferenciasUsuario.completadas_dashboard) || 0;
+        const container = document.getElementById("actividadReciente");
+        const panel = container?.closest(".panel");
+        if (panel) panel.style.display = n ? "" : "none";
+        if (!n) return;
+
         const recientes = todasActividades
             .filter(a => a.estado === "Terminado" && a.fecha_finalizacion)
             .sort((a,b) => new Date(b.fecha_finalizacion) - new Date(a.fecha_finalizacion))
-            .slice(0, 6);
-
-        const container = document.getElementById("actividadReciente");
+            .slice(0, n);
 
         if (!recientes.length) {
             container.innerHTML = `<div class="activity"><div class="activity-text">
@@ -282,7 +266,7 @@
        ACTIVIDADES — FILTROS + TABLA
     ═══════════════════════════════════════════ */
     let paginaTabla    = 1;
-    const POR_PAGINA   = 25;
+    let POR_PAGINA     = 25;
     let sortCol        = null;
     let sortDir        = "asc";
     // historial y comentarios — almacenados en localStorage
@@ -328,7 +312,6 @@
         } else {
             sortCol = col; sortDir = "asc";
         }
-        // update header classes
         document.querySelectorAll("thead th.sortable").forEach(th => {
             th.classList.remove("sort-asc","sort-desc");
             if (th.dataset.col === col) th.classList.add("sort-" + sortDir);
@@ -336,6 +319,7 @@
         paginaTabla = 1;
         renderTabla();
     }
+
 
     /* ═══════════════════════════════════════════
        GRÁFICAS DE REPORTES
@@ -440,11 +424,12 @@
         });
     }
 
+
     /* ═══════════════════════════════════════════
        HISTORIAL DE CAMBIOS — SUPABASE
     ═══════════════════════════════════════════ */
     async function registrarHistorial(actividad_id, accion, cambios) {
-        // cambios: array de { campo, valor_anterior, valor_nuevo }
+        // cambios: array de { campo, anterior, nuevo }
         const nombre = usuario?.nombre || "Usuario";
         if (!cambios || !cambios.length) return;
 
@@ -490,8 +475,9 @@
             </div>`).join("");
     }
 
+
     /* ═══════════════════════════════════════════
-       EXPORTAR EXCEL
+       DATOS VISIBLES (filtros actuales)
     ═══════════════════════════════════════════ */
     function getDatosVisibles() {
         const busq      = document.getElementById("busqueda").value.toLowerCase();
@@ -517,43 +503,56 @@
         });
     }
 
+
+    /* ═══════════════════════════════════════════
+       EXPORTAR (Excel / PDF / predeterminado)
+    ═══════════════════════════════════════════ */
+    function nombreArchivo(ext) {
+        const prefijo = (preferenciasUsuario.export_prefijo || "actividades")
+            .replace(/[\\/:*?"<>|]/g, "").trim() || "actividades";
+        return `${prefijo}_${new Date().toISOString().slice(0,10)}.${ext}`;
+    }
+
+    function exportarPredeterminado() {
+        if (preferenciasUsuario.export_formato === "pdf") exportarPDF();
+        else exportarExcel();
+    }
+
     function exportarExcel() {
-        const datos = getDatosVisibles();
-        const filas = datos.map(a => ({
-            "Actividad":      a.actividad      || "",
-            "Proyecto":       a.proyecto_macro || "",
-            "Área":           a.area           || "",
-            "Prioridad":      a.prioridad      || "",
-            "Estado":         a.estado         || "",
-            "Asignado":       a.asignado       || "",
-            "Fecha límite":   a.fecha_limite   || "",
-            "Finalización":   a.fecha_finalizacion || "",
-            "Notas":          a.notas          || "",
-        }));
+        const conNotas = preferenciasUsuario.export_notas !== false;
+        const filas = getDatosVisibles().map(a => {
+            const fila = {
+                "Actividad":    a.actividad      || "",
+                "Proyecto":     a.proyecto_macro || "",
+                "Área":         a.area           || "",
+                "Prioridad":    a.prioridad      || "",
+                "Estado":       a.estado         || "",
+                "Asignado":     a.asignado       || "",
+                "Fecha límite": a.fecha_limite   || "",
+                "Finalización": a.fecha_finalizacion || "",
+            };
+            if (conNotas) fila["Notas"] = a.notas || "";
+            return fila;
+        });
 
         const ws = XLSX.utils.json_to_sheet(filas);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Actividades");
 
-        // Ancho de columnas
-        ws["!cols"] = [
-            {wch:45},{wch:30},{wch:18},{wch:12},
-            {wch:14},{wch:20},{wch:14},{wch:14},{wch:40}
-        ];
+        const anchos = [45, 30, 18, 12, 14, 20, 14, 14];
+        if (conNotas) anchos.push(40);
+        ws["!cols"] = anchos.map(wch => ({ wch }));
 
-        const fecha = new Date().toISOString().slice(0,10);
-        XLSX.writeFile(wb, `actividades_${fecha}.xlsx`);
+        XLSX.writeFile(wb, nombreArchivo("xlsx"));
     }
 
-    /* ═══════════════════════════════════════════
-       EXPORTAR PDF
-    ═══════════════════════════════════════════ */
     function exportarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-        const datos = getDatosVisibles();
-        const fecha = new Date().toLocaleDateString("es-GT");
+        const datos    = getDatosVisibles();
+        const conNotas = preferenciasUsuario.export_notas !== false;
+        const fecha    = new Date().toLocaleDateString("es-GT");
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
@@ -564,135 +563,37 @@
         doc.text(`Generado el ${fecha} · ${datos.length} actividades`, 14, 22);
         doc.setTextColor(0);
 
+        const head   = ["Actividad", "Proyecto", "Área", "Prioridad", "Estado", "Asignado", "Fecha límite"];
+        const anchos = [60, 40, 25, 22, 22, 28, 24];
+        if (conNotas) { head.push("Notas"); anchos.push(48); }
+
+        const body = datos.map(a => {
+            const fila = [a.actividad||"", a.proyecto_macro||"", a.area||"", a.prioridad||"",
+                          a.estado||"", a.asignado||"", a.fecha_limite||""];
+            if (conNotas) fila.push(a.notas || "");
+            return fila;
+        });
+
+        const columnStyles = {};
+        anchos.forEach((w, i) => { columnStyles[i] = { cellWidth: w }; });
+
         doc.autoTable({
             startY: 27,
-            head: [["Actividad", "Proyecto", "Área", "Prioridad", "Estado", "Asignado", "Fecha límite"]],
-            body: datos.map(a => [
-                a.actividad      || "",
-                a.proyecto_macro || "",
-                a.area           || "",
-                a.prioridad      || "",
-                a.estado         || "",
-                a.asignado       || "",
-                a.fecha_limite   || "",
-            ]),
+            head: [head],
+            body,
             styles:     { fontSize: 8, cellPadding: 3 },
             headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: "bold" },
             alternateRowStyles: { fillColor: [249, 250, 251] },
-            columnStyles: {
-                0: { cellWidth: 70 },
-                1: { cellWidth: 45 },
-                2: { cellWidth: 25 },
-                3: { cellWidth: 22 },
-                4: { cellWidth: 25 },
-                5: { cellWidth: 30 },
-                6: { cellWidth: 25 },
-            },
+            columnStyles
         });
 
-        const fechaArchivo = new Date().toISOString().slice(0,10);
-        doc.save(`actividades_${fechaArchivo}.pdf`);
+        doc.save(nombreArchivo("pdf"));
     }
+
 
     /* ═══════════════════════════════════════════
-       NOTIFICACIONES
+       FILTROS DE FECHA Y TABLA
     ═══════════════════════════════════════════ */
-    function calcularNotificaciones() {
-        const hoy = new Date(); hoy.setHours(0,0,0,0);
-        const notifs = [];
-
-        todasActividades.forEach(a => {
-            if (!a.fecha_limite || a.estado === "Terminado") return;
-            const limite = new Date(a.fecha_limite + "T00:00:00");
-            const diff   = Math.round((limite - hoy) / 86400000);
-
-            if (diff < 0) {
-                notifs.push({ id: a.id, titulo: a.actividad, tipo: "vencida",
-                    meta: `Venció hace ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""} · ${a.asignado || "Sin asignar"}` });
-            } else if (diff <= 3) {
-                notifs.push({ id: a.id, titulo: a.actividad, tipo: "proxima",
-                    meta: `Vence ${diff === 0 ? "hoy" : `en ${diff} día${diff !== 1 ? "s" : ""}`} · ${a.asignado || "Sin asignar"}` });
-            }
-        });
-
-        // Ordenar: vencidas primero
-        notifs.sort((a,b) => (a.tipo === "vencida" ? -1 : 1));
-        return notifs;
-    }
-
-    function renderNotificaciones() {
-        let notifs = calcularNotificaciones();
-        if (preferenciasUsuario.notif_vencidas === false) notifs = notifs.filter(n => n.tipo !== "vencida");
-        if (preferenciasUsuario.notif_proximas === false) notifs = notifs.filter(n => n.tipo !== "proxima");
-        const badge   = document.getElementById("notifBadge");
-        const list    = document.getElementById("notifList");
-        const count   = document.getElementById("notifCount");
-
-        if (notifs.length) {
-            badge.textContent  = notifs.length > 9 ? "9+" : notifs.length;
-            badge.style.display = "flex";
-            count.textContent  = `${notifs.length} pendiente${notifs.length !== 1 ? "s" : ""}`;
-            list.innerHTML = notifs.map(n => `
-                <div class="notif-item ${n.tipo}" onclick="navegar('actividades');cerrarNotifDropdown()">
-                    <div class="notif-item-title">${esc(n.titulo)}</div>
-                    <div class="notif-item-meta">${n.tipo === "vencida" ? "🔴" : "🟡"} ${n.meta}</div>
-                </div>`).join("");
-        } else {
-            badge.style.display = "none";
-            count.textContent   = "";
-            list.innerHTML      = `<div class="notif-empty">✅ Sin actividades vencidas o próximas a vencer</div>`;
-        }
-
-        // Notificación del navegador (solo la primera vez que carga)
-        if (preferenciasUsuario.notif_resumen !== false) dispararNotifNavegador(notifs);
-    }
-
-    let notifNavegadorDisparada = false;
-    function dispararNotifNavegador(notifs) {
-        if (notifNavegadorDisparada || !notifs.length) return;
-        notifNavegadorDisparada = true;
-
-        const vencidas = notifs.filter(n => n.tipo === "vencida").length;
-        const proximas = notifs.filter(n => n.tipo === "proxima").length;
-
-        const partes = [];
-        if (vencidas) partes.push(`${vencidas} vencida${vencidas !== 1 ? "s" : ""}`);
-        if (proximas) partes.push(`${proximas} próxima${proximas !== 1 ? "s" : ""} a vencer`);
-        const mensaje = partes.join(" · ");
-
-        if (!("Notification" in window)) return;
-
-        if (Notification.permission === "granted") {
-            new Notification("Alterna — Actividades", {
-                body: mensaje,
-                icon: "https://cdn-icons-png.flaticon.com/512/1827/1827392.png"
-            });
-        } else if (Notification.permission !== "denied") {
-            Notification.requestPermission().then(perm => {
-                if (perm === "granted") {
-                    new Notification("Alterna — Actividades", {
-                        body: mensaje,
-                        icon: "https://cdn-icons-png.flaticon.com/512/1827/1827392.png"
-                    });
-                }
-            });
-        }
-    }
-
-    function toggleNotifDropdown() {
-        document.getElementById("notifDropdown").classList.toggle("open");
-    }
-
-    function cerrarNotifDropdown() {
-        document.getElementById("notifDropdown").classList.remove("open");
-    }
-
-    // Cerrar dropdown al hacer click fuera
-    document.addEventListener("click", function(e) {
-        const wrap = document.getElementById("notifWrap");
-        if (wrap && !wrap.contains(e.target)) cerrarNotifDropdown();
-    });
-
     function limpiarFiltrosFecha() {
         document.getElementById("filtroFechaDesde").value = "";
         document.getElementById("filtroFechaHasta").value = "";
@@ -708,10 +609,9 @@
         const terminado = estado === "Terminado";
 
         if (terminado) {
-            // Para terminados sólo mostrar fecha formateada
             return { texto: formatFecha(isoFecha), clase: "" };
         }
-        if (diff < 0)  return { texto: `Vencida hace ${Math.abs(diff)} día${Math.abs(diff)!==1?"s":""}`, clase: "fecha-vencida" };
+        if (diff < 0)   return { texto: `Vencida hace ${Math.abs(diff)} día${Math.abs(diff)!==1?"s":""}`, clase: "fecha-vencida" };
         if (diff === 0) return { texto: "Vence hoy",    clase: "fecha-proxima" };
         if (diff <= 3)  return { texto: `Vence en ${diff} día${diff!==1?"s":""}`, clase: "fecha-proxima" };
         return { texto: `Vence en ${diff} días`, clase: "fecha-ok" };
@@ -725,7 +625,7 @@
         const prioridad = document.getElementById("filtroPrioridad").value;
         const area      = document.getElementById("filtroArea").value;
 
-        const ordenPrio  = { "Alta":0, "Media":1, "Baja":2 };
+        const ordenPrio   = { "Alta":0, "Media":1, "Baja":2 };
         const ordenEstado = { "En proceso":0, "No iniciado":1, "Terminado":2 };
 
         const fechaDesde = document.getElementById("filtroFechaDesde").value;
@@ -782,20 +682,19 @@
         // Paginación
         const totalPags = Math.ceil(filtradas.length / POR_PAGINA);
         if (paginaTabla > totalPags) paginaTabla = totalPags;
-        const inicio   = (paginaTabla - 1) * POR_PAGINA;
-        const pagina   = filtradas.slice(inicio, inicio + POR_PAGINA);
+        const inicio = (paginaTabla - 1) * POR_PAGINA;
+        const pagina = filtradas.slice(inicio, inicio + POR_PAGINA);
 
         const hoy = new Date(); hoy.setHours(0,0,0,0);
 
         tbody.innerHTML = pagina.map(a => {
-            const vencida = a.fecha_limite && new Date(a.fecha_limite+"T00:00:00") < hoy && a.estado !== "Terminado";
+            const vencida  = a.fecha_limite && new Date(a.fecha_limite+"T00:00:00") < hoy && a.estado !== "Terminado";
             const rowClass = vencida ? "clickable-row row-vencida" : "clickable-row";
 
             const estadoMap = { "Terminado":"badge-terminado","En proceso":"badge-en-proceso","No iniciado":"badge-no-iniciado" };
             const eClass    = estadoMap[a.estado] || "badge-no-iniciado";
 
             const esTerminado = a.estado === "Terminado";
-            const fechaParaMostrar = esTerminado ? a.fecha_finalizacion : a.fecha_limite;
             const { texto: fechaTxt, clase: fechaClass } = esTerminado
                 ? { texto: formatFecha(a.fecha_finalizacion) || "—", clase: "" }
                 : fechaRelativa(a.fecha_limite, a.estado);
@@ -828,7 +727,6 @@
             thFecha.innerHTML = (estado === "Terminado" ? "Finalización" : "Fecha límite") + '<span class="sort-icon"></span>';
         }
 
-        // Render paginación
         renderPaginacion(filtradas.length, totalPags);
     }
 
@@ -869,7 +767,6 @@
         const estadoAnterior = a.estado;
         if (estadoAnterior === nuevoEstado) return;
 
-        // Update clase visual inmediatamente
         const eMap = {"Terminado":"badge-terminado","En proceso":"badge-en-proceso","No iniciado":"badge-no-iniciado"};
         sel.className = `inline-estado ${eMap[nuevoEstado]||"badge-no-iniciado"}`;
 
@@ -901,9 +798,9 @@
         if (!a) return;
         drawerIdActual = id;
 
-        document.getElementById("drawerTitulo").textContent  = a.actividad || "—";
+        document.getElementById("drawerTitulo").textContent   = a.actividad || "—";
         document.getElementById("drawerProyecto").textContent = a.proyecto_macro || "";
-        document.getElementById("dArea").innerHTML     = esc(a.area || "—");
+        document.getElementById("dArea").innerHTML      = esc(a.area || "—");
         document.getElementById("dPrioridad").innerHTML = badgePrioridad(a.prioridad);
         document.getElementById("dEstado").innerHTML    = badgeEstado(a.estado);
         document.getElementById("dAsignado").innerHTML  = `<span class="asignado-chip">${esc(a.asignado||"—")}</span>`;
@@ -920,10 +817,7 @@
             notasSec.style.display = "none";
         }
 
-        // Historial desde Supabase
         cargarHistorialDrawer(id);
-
-        // Comentarios
         renderComentariosDrawer(id);
 
         document.getElementById("drawerOverlay").classList.add("open");
@@ -940,7 +834,6 @@
         const id = drawerIdActual;
         if (!id) return;
         cerrarDrawer();
-        // pequeño delay para que el drawer termine de cerrar antes de abrir el modal
         setTimeout(() => abrirEditarTarea(id), 50);
     }
 
@@ -1086,15 +979,15 @@
     function abrirFichaUsuario(id) {
         const u = todosUsuarios.find(x => x.id === id);
         if (!u) return;
-        document.getElementById("fuId").value             = u.id;
+        document.getElementById("fuId").value                = u.id;
         document.getElementById("fuNombreTitle").textContent = u.nombre || "—";
-        document.getElementById("fuNombre").value         = u.nombre    || "";
-        document.getElementById("fuCorreo").value         = u.correo    || "";
-        document.getElementById("fuPassword").value       = "";
-        document.getElementById("fuRol").value            = u.rol       || "usuario";
-        document.getElementById("fuActivo").value         = String(u.activo ?? true);
-        document.getElementById("fuMsg").textContent      = "";
-        document.getElementById("fuGuardar").disabled     = false;
+        document.getElementById("fuNombre").value            = u.nombre    || "";
+        document.getElementById("fuCorreo").value            = u.correo    || "";
+        document.getElementById("fuPassword").value          = "";
+        document.getElementById("fuRol").value               = u.rol       || "usuario";
+        document.getElementById("fuActivo").value            = String(u.activo ?? true);
+        document.getElementById("fuMsg").textContent         = "";
+        document.getElementById("fuGuardar").disabled        = false;
         document.getElementById("modalFichaUsuario").classList.add("open");
     }
 
@@ -1160,88 +1053,6 @@
 
 
     /* ═══════════════════════════════════════════
-       REPORTES
-    ═══════════════════════════════════════════ */
-    function renderReportes() {
-        if (!todasActividades.length) return;
-
-        const total       = todasActividades.length;
-        const enProceso   = todasActividades.filter(a => a.estado === "En proceso").length;
-        const noIniciado  = todasActividades.filter(a => a.estado === "No iniciado").length;
-        const terminado   = todasActividades.filter(a => a.estado === "Terminado").length;
-        const pctDone     = Math.round((terminado / total) * 100);
-
-        // Resumen
-        document.getElementById("reportResumen").innerHTML = `
-            <div class="stat-row">
-                <span class="stat-label">Total de actividades</span>
-                <span class="stat-value">${total}</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Completadas</span>
-                <span class="stat-value" style="color:#10b981">${terminado}</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">En proceso</span>
-                <span class="stat-value" style="color:#f59e0b">${enProceso}</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Sin iniciar</span>
-                <span class="stat-value" style="color:#6b7280">${noIniciado}</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">% de avance global</span>
-                <span class="stat-value" style="color:#6366f1">${pctDone}%</span>
-            </div>`;
-
-        // Por asignado
-        const porAsignado = {};
-        todasActividades.forEach(a => {
-            const nombres = (a.asignado || "Sin asignar").split("/").map(n => n.trim());
-            nombres.forEach(n => {
-                if (!porAsignado[n]) porAsignado[n] = { total:0, terminado:0 };
-                porAsignado[n].total++;
-                if (a.estado === "Terminado") porAsignado[n].terminado++;
-            });
-        });
-        const maxA = Math.max(...Object.values(porAsignado).map(v => v.total));
-        document.getElementById("reportAsignado").innerHTML =
-            Object.entries(porAsignado)
-                .sort((a,b) => b[1].total - a[1].total)
-                .map(([nombre, v]) => barRow(nombre, v.total, maxA, "#6366f1",
-                    `${v.terminado}/${v.total}`)).join("");
-
-        // Por área
-        const porArea = {};
-        todasActividades.forEach(a => {
-            const area = a.area || "Sin área";
-            if (!porArea[area]) porArea[area] = 0;
-            porArea[area]++;
-        });
-        const maxB = Math.max(...Object.values(porArea));
-        document.getElementById("reportArea").innerHTML =
-            Object.entries(porArea)
-                .sort((a,b) => b[1] - a[1])
-                .map(([area, cnt]) => barRow(area, cnt, maxB, "#3b82f6")).join("");
-    }
-
-    function barRow(label, value, max, color, extraLabel) {
-        const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-        return `
-            <div class="bar-row">
-                <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
-                </div>
-                <div class="bar-value">${extraLabel || value}</div>
-            </div>`;
-    }
-
-
-    /* ═══════════════════════════════════════════
-       CONFIGURACIÓN
-    ═══════════════════════════════════════════ */
-    /* ═══════════════════════════════════════════
        VISTA DE ACTIVIDADES (tabla | kanban)
     ═══════════════════════════════════════════ */
     const VISTA_KEY = "alterna_vista_actividades";
@@ -1272,13 +1083,11 @@
             kanbanWrap.classList.remove("active");
         }
 
-        // Botones toggle en el header de actividades
         const btnTabla  = document.getElementById("btnVistaTabla");
         const btnKanban = document.getElementById("btnVistaKanban");
         if (btnTabla)  btnTabla.classList.toggle("active",  modo === "tabla");
         if (btnKanban) btnKanban.classList.toggle("active", modo === "kanban");
 
-        // Botones en configuración
         document.querySelectorAll(".vista-cfg-btn").forEach(btn => {
             const activo = btn.dataset.vista === modo;
             btn.style.borderColor = activo ? "#6366f1" : "#e5e7eb";
@@ -1286,16 +1095,15 @@
             btn.style.color       = activo ? "#4f46e5" : "#374151";
         });
 
-        // Label en configuración
         const cfgLabel = document.getElementById("cfgVistaLabel");
         if (cfgLabel) cfgLabel.textContent = modo === "kanban" ? "Kanban" : "Tabla";
     }
 
     function renderKanban() {
-        const busq      = (document.getElementById("busqueda")?.value || "").toLowerCase();
-        const asignado  = document.getElementById("filtroAsignado")?.value || "";
-        const prioridad = document.getElementById("filtroPrioridad")?.value || "";
-        const area      = document.getElementById("filtroArea")?.value || "";
+        const busq       = (document.getElementById("busqueda")?.value || "").toLowerCase();
+        const asignado   = document.getElementById("filtroAsignado")?.value || "";
+        const prioridad  = document.getElementById("filtroPrioridad")?.value || "";
+        const area       = document.getElementById("filtroArea")?.value || "";
         const fechaDesde = document.getElementById("filtroFechaDesde")?.value || "";
         const fechaHasta = document.getElementById("filtroFechaHasta")?.value || "";
 
@@ -1320,7 +1128,7 @@
         const cols = {
             "No iniciado": { id: "kColNoIniciado", cnt: "kCntNoIniciado", items: [] },
             "En proceso":  { id: "kColEnProceso",  cnt: "kCntEnProceso",  items: [] },
-            "Terminado":   { id: "kColTerminado",   cnt: "kCntTerminado",  items: [] },
+            "Terminado":   { id: "kColTerminado",  cnt: "kCntTerminado",  items: [] },
         };
 
         filtradas.forEach(a => {
@@ -1341,8 +1149,8 @@
 
             document.getElementById(col.id).innerHTML = col.items.map(a => {
                 const vencida = a.fecha_limite && new Date(a.fecha_limite+"T00:00:00") < hoy && a.estado !== "Terminado";
-                const { texto: fechaTxt, clase: fechaClass } = a.estado === "Terminado"
-                    ? { texto: formatFecha(a.fecha_finalizacion) || "—", clase: "" }
+                const { texto: fechaTxt } = a.estado === "Terminado"
+                    ? { texto: formatFecha(a.fecha_finalizacion) || "—" }
                     : fechaRelativa(a.fecha_limite, a.estado);
 
                 return `<div class="kanban-card" onclick="abrirDrawer(${a.id})">
@@ -1360,6 +1168,7 @@
         });
     }
 
+
     /* ═══════════════════════════════════════════
        PERÍODO DE REPORTES
     ═══════════════════════════════════════════ */
@@ -1368,7 +1177,7 @@
     function getPeriodo() {
         if (preferenciasUsuario.periodo_reportes !== undefined && preferenciasUsuario.periodo_reportes !== null) return Number(preferenciasUsuario.periodo_reportes) || 0;
         const val = localStorage.getItem(PERIODO_KEY);
-        return val !== null ? parseInt(val) : 0; // 0 = todas
+        return val !== null ? parseInt(val) : 0;
     }
 
     const PERIODO_LABELS = { 0: "Todas", 7: "1 semana", 14: "2 semanas", 30: "1 mes", 90: "3 meses" };
@@ -1383,12 +1192,12 @@
 
     function filtrarActividadesPorPeriodo() {
         const dias = getPeriodo();
-        if (!dias) return todasActividades; // 0 = sin filtro
+        if (!dias) return todasActividades;
         const corte = new Date();
         corte.setDate(corte.getDate() - dias);
         return todasActividades.filter(a => {
             const fecha = a.fecha_inicio || a.created_at || a.fecha_limite;
-            if (!fecha) return true; // sin fecha: incluir siempre
+            if (!fecha) return true;
             return new Date(fecha) >= corte;
         });
     }
@@ -1397,32 +1206,65 @@
         const periodo = getPeriodo();
         const label   = PERIODO_LABELS[periodo] || "Todas";
 
-        // Botones en configuración
-        document.querySelectorAll("#periodoButtons .periodo-btn").forEach(btn => {
-            btn.classList.toggle("active", parseInt(btn.dataset.periodo) === periodo);
-        });
-        // Botones en reportes
         document.querySelectorAll("#reportePeriodoButtons .periodo-btn").forEach(btn => {
             btn.classList.toggle("active", parseInt(btn.dataset.periodo) === periodo);
         });
-        // Badge en reportes
         const badge = document.getElementById("reportePeriodoBadge");
         if (badge) badge.textContent = label;
-        // Label en configuración
         const cfgLabel = document.getElementById("cfgPeriodoLabel");
         if (cfgLabel) cfgLabel.textContent = label;
     }
 
+
+    /* ═══════════════════════════════════════════
+       PREFERENCIAS Y CONFIGURACIÓN
+    ═══════════════════════════════════════════ */
     const SETTINGS_TABLE = "configuraciones_usuario";
+    const PREFS_KEY      = "alterna_prefs";
+
+    let prefsLocales = {};
+    try { prefsLocales = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { prefsLocales = {}; }
+
     let preferenciasUsuario = {
+        // Originales
         vista_actividades: localStorage.getItem(VISTA_KEY) || "tabla",
         periodo_reportes: Number(localStorage.getItem(PERIODO_KEY) ?? 0),
         tema: localStorage.getItem("alterna_tema") || "claro",
-        zona_horaria: "America/Guatemala",
-        notif_vencidas: true, notif_proximas: true, notif_resumen: true
+        notif_vencidas: true, notif_proximas: true, notif_resumen: true,
+        // Apariencia
+        tamano_texto: "normal",          // compacto | normal | grande
+        densidad: "comoda",              // comoda | compacta
+        pagina_inicio: "dashboard",      // dashboard | actividades | mantenimientos
+        // Actividades
+        registros_pagina: 25,            // 10 | 25 | 50 | 100
+        dias_alerta: 3,                  // 1 | 3 | 5 | 7
+        completadas_dashboard: 6,        // 0 = ocultar panel
+        // Notificaciones
+        notif_navegador: true,
+        notif_frecuencia: 0,             // 0 = solo al abrir; si no, minutos entre recordatorios
+        notif_sonido: false,
+        // Mantenimientos
+        mant_vista: "cal",               // cal | list
+        mant_primer_dia: 0,              // 0 = domingo, 1 = lunes
+        mant_ocultar_cancelados: false,
+        // Exportación
+        export_formato: "xlsx",          // xlsx | pdf
+        export_notas: true,
+        export_prefijo: "actividades",
+        // Seguridad
+        inactividad_min: 0,              // 0 = desactivado
+        ...prefsLocales                  // lo guardado en este navegador tiene prioridad
     };
     let settingsSyncReady = false;
     let settingsSaveTimer = null;
+
+    /* Navegación interna del panel de Configuración (sidebar izquierda) */
+    function cfgNavegar(panel) {
+        document.querySelectorAll(".cfg-nav-item").forEach(i =>
+            i.classList.toggle("active", i.dataset.panel === panel));
+        document.querySelectorAll(".cfg-panel").forEach(p =>
+            p.classList.toggle("active", p.id === "cfg-panel-" + panel));
+    }
 
     function renderConfiguracion() {
         const nombre = usuario?.nombre || "—", correo = usuario?.correo || "—", rol = usuario?.rol || "—";
@@ -1432,35 +1274,29 @@
         if(rolHero) rolHero.textContent=rol; if(rolRow) rolRow.textContent=rol;
         const urlChip=document.getElementById("cfgUrl"); if(urlChip) urlChip.textContent=SUPABASE_URL;
         const total=document.getElementById("cfgTotal"); if(total) total.textContent=todasActividades.length+" registros";
-        sincronizarBotonesPeriodo(); aplicarVistaActividades(getVistaActividades());
         aplicarPreferenciasEnControles();
         probarConexionSupabase();
         cargarConfiguracionUsuario();
     }
 
-    function aplicarPreferenciasEnControles() {
-        const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=String(val);};
-        set("cfgVistaSelect", preferenciasUsuario.vista_actividades || "tabla");
-        set("cfgPeriodoSelect", preferenciasUsuario.periodo_reportes ?? 0);
-        set("cfgTemaSelect", preferenciasUsuario.tema || "claro");
-        set("cfgZonaSelect", preferenciasUsuario.zona_horaria || "America/Guatemala");
-        ["notif_vencidas","notif_proximas","notif_resumen"].forEach(k=>{const el=document.getElementById("cfg"+k.split("_").map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(""));if(el)el.checked=preferenciasUsuario[k]!==false;});
-        aplicarTema(preferenciasUsuario.tema || "claro");
+    /* Copia las preferencias a los controles del HTML (los que tienen data-pref) */
+    function sincronizarControles() {
+        document.querySelectorAll("[data-pref]").forEach(el => {
+            const v = preferenciasUsuario[el.dataset.pref];
+            if (el.type === "checkbox") el.checked = !!v;
+            else el.value = String(v ?? "");
+        });
     }
 
-    function cambiarVistaDesdeAjustes(modo) { setVistaActividades(modo); }
-    function cambiarPeriodoDesdeAjustes(valor) { setPeriodo(Number(valor)); }
-    function cambiarTemaDesdeAjustes(tema) { preferenciasUsuario.tema=tema; aplicarTema(tema); actualizarPreferencia("tema",tema); }
-    function aplicarTema(tema) {
-        const dark=tema==="oscuro" || (tema==="sistema" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
-        document.body.classList.toggle("cfg-dark",!!dark);
-        localStorage.setItem("alterna_tema",tema||"claro");
+    function aplicarPreferenciasEnControles() {
+        sincronizarControles();
+        aplicarAjustes();
     }
-    function actualizarPreferencia(clave,valor) {
-        preferenciasUsuario[clave]=valor;
-        if(clave==="zona_horaria") preferenciasUsuario.zona_horaria=valor;
-        if(clave.startsWith("notif_")) renderNotificaciones();
-        guardarConfiguracionUsuario(false);
+
+    function aplicarTema(tema) {
+        const dark = tema === "oscuro" || (tema === "sistema" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.body.classList.toggle("cfg-dark", !!dark);
+        localStorage.setItem("alterna_tema", tema || "claro");
     }
 
     async function obtenerUsuarioAuth() {
@@ -1469,197 +1305,358 @@
     }
 
     async function cargarConfiguracionUsuario() {
-        const sync=document.getElementById("cfgSyncEstado");
-        const authUser=await obtenerUsuarioAuth();
-        if(!authUser) {
-            settingsSyncReady=false;
-            if(sync) sync.textContent="Sin sesión de Supabase Auth";
+        const sync = document.getElementById("cfgSyncEstado");
+        const authUser = await obtenerUsuarioAuth();
+        if (!authUser) {
+            settingsSyncReady = false;
+            if (sync) sync.textContent = "Sin sesión de Supabase Auth";
             mostrarEstadoAjustes("Preferencias locales activas. Para sincronizarlas entre dispositivos, la sesión de usuario debe autenticarse con Supabase Auth y habilitar la tabla de ajustes.");
             return;
         }
-        const {data,error}=await supabaseClient.from(SETTINGS_TABLE).select("preferencias,updated_at").eq("user_id",authUser.id).maybeSingle();
-        if(error) {
-            settingsSyncReady=false;
-            if(sync) sync.textContent="Tabla no disponible";
+        const { data, error } = await supabaseClient.from(SETTINGS_TABLE).select("preferencias,updated_at").eq("user_id", authUser.id).maybeSingle();
+        if (error) {
+            settingsSyncReady = false;
+            if (sync) sync.textContent = "Tabla no disponible";
             mostrarEstadoAjustes("No se pudo leer la configuración remota. Ejecuta el SQL de instalación incluido y verifica las políticas RLS.");
-            console.warn("Configuración remota:",error.message); return;
+            console.warn("Configuración remota:", error.message); return;
         }
-        if(data?.preferencias && typeof data.preferencias==="object") preferenciasUsuario={...preferenciasUsuario,...data.preferencias};
-        settingsSyncReady=true;
-        if(sync) sync.textContent="Sincronizado";
-        aplicarPreferenciasEnControles(); sincronizarBotonesPeriodo(); aplicarVistaActividades(getVistaActividades());
-        if(preferenciasUsuario.vista_actividades==="kanban") renderKanban();
-        if(data?.updated_at) mostrarEstadoAjustes("Sincronizado · último guardado: "+new Date(data.updated_at).toLocaleString("es-GT"));
+        if (data?.preferencias && typeof data.preferencias === "object") {
+            preferenciasUsuario = { ...preferenciasUsuario, ...data.preferencias };
+        }
+        settingsSyncReady = true;
+        if (sync) sync.textContent = "Sincronizado";
+        aplicarPreferenciasEnControles();
+        if (data?.updated_at) mostrarEstadoAjustes("Sincronizado · último guardado: " + new Date(data.updated_at).toLocaleString("es-GT"));
         else mostrarEstadoAjustes("Preferencias sincronizadas con Supabase.");
     }
 
-    function mostrarEstadoAjustes(texto) { const el=document.getElementById("cfgSaveStatus"); if(el) el.textContent=texto; }
+    function mostrarEstadoAjustes(texto, panel) {
+        // Si se pasa un panel específico, actualiza solo ese; de lo contrario,
+        // actualiza todos los paneles que no tengan cambios pendientes.
+        if (panel) {
+            const el = document.getElementById("cfgSaveStatus-" + panel);
+            if (el) el.textContent = texto;
+        } else {
+            document.querySelectorAll(".cfg-save-status").forEach(el => {
+                // Solo sobreescribe si no está marcado como "con cambios"
+                if (!el.classList.contains("dirty")) el.textContent = texto;
+            });
+        }
+    }
 
-    async function guardarConfiguracionUsuario(manual=false) {
+    async function guardarConfiguracionUsuario(manual = false) {
+        localStorage.setItem(PREFS_KEY, JSON.stringify(preferenciasUsuario));
         localStorage.setItem(VISTA_KEY, preferenciasUsuario.vista_actividades || "tabla");
         localStorage.setItem(PERIODO_KEY, String(preferenciasUsuario.periodo_reportes ?? 0));
         localStorage.setItem("alterna_tema", preferenciasUsuario.tema || "claro");
-        if(!manual && settingsSaveTimer) clearTimeout(settingsSaveTimer);
-        if(!manual) { settingsSaveTimer=setTimeout(()=>guardarConfiguracionUsuario(true),700); return; }
-        const authUser=await obtenerUsuarioAuth();
-        if(!authUser) { mostrarEstadoAjustes("Guardado en este navegador. La sincronización entre dispositivos requiere sesión de Supabase Auth."); return; }
-        const {error}=await supabaseClient.from(SETTINGS_TABLE).upsert({user_id:authUser.id,preferencias:preferenciasUsuario,updated_at:new Date().toISOString()},{onConflict:"user_id"});
-        if(error) { mostrarEstadoAjustes("No se pudo sincronizar: "+error.message); console.error("Guardar configuración:",error); return; }
-        settingsSyncReady=true;
-        const sync=document.getElementById("cfgSyncEstado"); if(sync) sync.textContent="Sincronizado";
-        mostrarEstadoAjustes("Preferencias guardadas en Supabase · "+new Date().toLocaleTimeString("es-GT"));
+
+        if (!manual && settingsSaveTimer) clearTimeout(settingsSaveTimer);
+        if (!manual) { settingsSaveTimer = setTimeout(() => guardarConfiguracionUsuario(true), 700); return; }
+
+        const authUser = await obtenerUsuarioAuth();
+        if (!authUser) {
+            // Guardado solo local; guardarSeccion mostrará su propio mensaje
+            return;
+        }
+        const { error } = await supabaseClient.from(SETTINGS_TABLE).upsert(
+            { user_id: authUser.id, preferencias: preferenciasUsuario, updated_at: new Date().toISOString() },
+            { onConflict: "user_id" });
+        if (error) {
+            mostrarEstadoAjustes("No se pudo sincronizar: " + error.message);
+            console.error("Guardar configuración:", error);
+            return;
+        }
+        settingsSyncReady = true;
+        const sync = document.getElementById("cfgSyncEstado");
+        if (sync) sync.textContent = "Sincronizado";
+        // No sobreescribimos el status aquí; guardarSeccion lo hace con
+        // formato de hora y contexto de sección.
     }
 
     async function probarConexionSupabase() {
-        const badge=document.getElementById("cfgEstado"), last=document.getElementById("cfgUltimaPrueba");
-        if(badge) { badge.className="cfg-status-badge"; badge.innerHTML='<span class="dot"></span> Comprobando…'; }
-        let ok=false, detalle="";
-        try { const {error}=await supabaseClient.from("actividades").select("id",{head:true,count:"exact"}); ok=!error; detalle=error?.message||"OK"; }
-        catch(e) { detalle=e?.message||"Error de conexión"; }
-        if(badge) { badge.className="cfg-status-badge "+(ok?"ok":"err"); badge.innerHTML='<span class="dot"></span> '+(ok?"Conectado":"Sin conexión"); badge.title=detalle; }
-        if(last) last.textContent=new Date().toLocaleString("es-GT")+(ok?" · OK":" · Error");
+        const badge = document.getElementById("cfgEstado"), last = document.getElementById("cfgUltimaPrueba");
+        if (badge) { badge.className = "cfg-status-badge"; badge.innerHTML = '<span class="dot"></span> Comprobando…'; }
+        let ok = false, detalle = "";
+        try { const { error } = await supabaseClient.from("actividades").select("id", { head: true, count: "exact" }); ok = !error; detalle = error?.message || "OK"; }
+        catch (e) { detalle = e?.message || "Error de conexión"; }
+        if (badge) { badge.className = "cfg-status-badge " + (ok ? "ok" : "err"); badge.innerHTML = '<span class="dot"></span> ' + (ok ? "Conectado" : "Sin conexión"); badge.title = detalle; }
+        if (last) last.textContent = new Date().toLocaleString("es-GT") + (ok ? " · OK" : " · Error");
         return ok;
     }
 
     function exportarActividadesCSV() {
-        if(!Array.isArray(todasActividades)||!todasActividades.length) { alert("No hay actividades cargadas para exportar."); return; }
-        const cols=["id","actividad","proyecto_macro","area","asignado","prioridad","estado","fecha_limite","fecha_finalizacion","notas"];
-        const cell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-        const csv="\uFEFF"+[cols.join(","),...todasActividades.map(a=>cols.map(c=>cell(a[c])).join(","))].join("\r\n");
-        const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}), url=URL.createObjectURL(blob), a=document.createElement("a");
-        a.href=url; a.download="alterna-actividades-"+new Date().toISOString().slice(0,10)+".csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        if (!Array.isArray(todasActividades) || !todasActividades.length) { alert("No hay actividades cargadas para exportar."); return; }
+        const cols = ["id","actividad","proyecto_macro","area","asignado","prioridad","estado","fecha_limite","fecha_finalizacion","notas"];
+        const cell = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+        const csv  = "\uFEFF" + [cols.join(","), ...todasActividades.map(a => cols.map(c => cell(a[c])).join(","))].join("\r\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" }), url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = "alterna-actividades-" + new Date().toISOString().slice(0,10) + ".csv";
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
 
 
     /* ═══════════════════════════════════════════
-       HELPERS
+       APLICACIÓN DE AJUSTES
     ═══════════════════════════════════════════ */
-    function badgeEstado(e) {
-        const m = { "Terminado":"badge-terminado", "En proceso":"badge-en-proceso", "No iniciado":"badge-no-iniciado" };
-        return `<span class="badge ${m[e]||'badge-no-iniciado'}">${esc(e||"—")}</span>`;
-    }
-    function badgePrioridad(p) {
-        const m = { "Alta":"badge-alta", "Media":"badge-media", "Baja":"badge-baja" };
-        return `<span class="badge ${m[p]||'badge-baja'}">${esc(p||"—")}</span>`;
-    }
-    function esc(str) {
-        return String(str??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    }
-    function truncar(str, max) {
-        return str && str.length > max ? str.slice(0, max) + "…" : str;
-    }
-    function formatFecha(iso) {
-        if (!iso) return "—";
-        try { const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`; }
-        catch { return iso; }
+    function setPref(clave, valor) {
+        preferenciasUsuario[clave] = valor;
+        aplicarAjustes();
+        // NO se guarda aquí. guardarSeccion() lo hace cuando el usuario
+        // pulsa el botón explícito de cada panel.
     }
 
+    function aplicarAjustes() {
+        const p = preferenciasUsuario;
+        const html = document.documentElement;
+
+        html.classList.toggle("texto-compacto", p.tamano_texto === "compacto");
+        html.classList.toggle("texto-grande",   p.tamano_texto === "grande");
+        document.body.classList.toggle("tabla-compacta", p.densidad === "compacta");
+        aplicarTema(p.tema || "claro");
+
+        POR_PAGINA  = Number(p.registros_pagina) || 25;
+        paginaTabla = 1;
+
+        // Auditoría solo visible para administradores
+        const navAud = document.querySelector('.cfg-nav-item[data-panel="auditoria"]');
+        if (navAud) navAud.style.display = usuario?.rol === "admin" ? "" : "none";
+
+        aplicarVistaActividades(getVistaActividades());
+        sincronizarBotonesPeriodo();
+        switchMantView(p.mant_vista || "cal");
+
+        if (todasActividades.length) {
+            renderActividadReciente();
+            renderTabla();
+            renderReportes();
+            renderNotificaciones();
+        }
+
+        sincronizarControles();
+        programarRecordatorios();
+    }
 
     /* ═══════════════════════════════════════════
-       SUBMENÚ ACTIVIDADES
+       GUARDADO POR SECCIÓN
+       Cada panel de configuración tiene su propio
+       botón de guardar. cfgCambio marca la sección
+       como sucia; guardarSeccion la persiste.
     ═══════════════════════════════════════════ */
-    function toggleSubmenu(item, pagina) {
-        const submenu = document.getElementById("submenu-" + pagina);
-        if (!submenu) { navegar(pagina); return; }
-        const isOpen = submenu.classList.contains("open");
-        submenu.classList.toggle("open", !isOpen);
-        item.classList.toggle("open", !isOpen);
-        // Solo despliega/colapsa el menú, NO navega
+
+    // Mapeo: qué claves de preferencia pertenecen a cada sección
+    const PREFS_POR_SECCION = {
+        general:       ["tema", "tamano_texto", "densidad", "pagina_inicio"],
+        actividades:   ["vista_actividades", "registros_pagina", "completadas_dashboard", "periodo_reportes"],
+        mantenimientos:["mant_vista", "mant_primer_dia", "mant_ocultar_cancelados"],
+        exportacion:   ["export_formato", "export_notas", "export_prefijo"],
+        seguridad:     ["inactividad_min"],
+        notificaciones:["notif_vencidas", "notif_proximas", "dias_alerta", "notif_navegador", "notif_resumen", "notif_frecuencia", "notif_sonido"],
+    };
+
+    // Detecta a qué panel pertenece un elemento y activa su botón de guardar
+    function cfgCambio(el) {
+        const panel = el.closest(".cfg-panel");
+        if (!panel) return;
+        const id = panel.id.replace("cfg-panel-", "");
+        const btn    = document.getElementById("cfgSaveBtn-" + id);
+        const status = document.getElementById("cfgSaveStatus-" + id);
+        if (btn) { btn.disabled = false; btn.classList.add("has-changes"); }
+        if (status) {
+            status.textContent = "Tienes cambios sin guardar.";
+            status.classList.add("dirty");
+        }
     }
 
-    function navegarSubmenu(pagina, filtroEstado) {
-        // Marcar subitem activo
-        document.querySelectorAll(".submenu-item").forEach(i => i.classList.remove("active"));
-        const activo = document.querySelector(`.submenu-item[data-sub="${filtroEstado || pagina.split('-')[1]}"]`);
-        if (activo) activo.classList.add("active");
-        navegar(pagina, filtroEstado);
+    // Guarda todas las preferencias y marca esa sección como limpia
+    async function guardarSeccion(panel) {
+        const btn    = document.getElementById("cfgSaveBtn-" + panel);
+        const status = document.getElementById("cfgSaveStatus-" + panel);
+
+        // Deshabilitar mientras guarda
+        if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; btn.classList.remove("has-changes"); }
+        if (status) { status.textContent = "Guardando…"; status.classList.remove("dirty"); }
+
+        // Guardar en localStorage + Supabase
+        await guardarConfiguracionUsuario(true);
+
+        // Actualizar estado del botón según resultado
+        const sincrono = document.getElementById("cfgSyncEstado");
+        const ok = sincrono ? sincrono.textContent.toLowerCase().includes("sincroniz") : true;
+
+        if (btn) { btn.disabled = true; btn.textContent = "Guardar preferencias"; }
+        if (status) {
+            status.textContent = ok
+                ? "✓ Guardado · " + new Date().toLocaleTimeString("es-GT", { hour:"2-digit", minute:"2-digit" })
+                : "Guardado localmente (sin conexión a Supabase).";
+            status.classList.remove("dirty");
+        }
     }
 
+    let timerRecordatorios = null;
+    function programarRecordatorios() {
+        if (timerRecordatorios) clearInterval(timerRecordatorios);
+        timerRecordatorios = null;
+        const min = Number(preferenciasUsuario.notif_frecuencia) || 0;
+        if (!min) return;
+        timerRecordatorios = setInterval(() => {
+            renderNotificaciones();
+            dispararNotifNavegador(notifsVisibles());
+        }, min * 60000);
+    }
 
-    /* ═══════════════════════════════════════════
-       LICENCIAS — OFFICE
-    ═══════════════════════════════════════════ */
-    let todasLicenciasOffice = [];
+    function reproducirSonidoAlerta() {
+        try {
+            const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+        } catch { /* el navegador puede bloquear audio sin interacción previa */ }
+    }
 
-    async function cargarLicenciasOffice() {
-        const tbody = document.getElementById("officeBody");
-        if (!tbody) return;
-        tbody.innerHTML = `<tr class="loading-row"><td colspan="9">Cargando...</td></tr>`;
+    async function cambiarContrasena() {
+        const actual = document.getElementById("cpActual").value;
+        const nueva  = document.getElementById("cpNueva").value;
+        const conf   = document.getElementById("cpConfirmar").value;
+        const msg    = document.getElementById("cpMsg");
+        msg.style.color = "#ef4444";
+
+        if (!actual || !nueva || !conf) { msg.textContent = "Completa los tres campos."; return; }
+        if (nueva.length < 8)           { msg.textContent = "La nueva contraseña debe tener al menos 8 caracteres."; return; }
+        if (nueva !== conf)             { msg.textContent = "La confirmación no coincide."; return; }
 
         const { data, error } = await supabaseClient
-            .from("licencias_office")
-            .select("*")
-            .order("numero_licencia, slot");
+            .from("usuarios").select("contraseña").eq("id", usuario.id).single();
+        if (error || !data) { msg.textContent = "No se pudo verificar la contraseña actual."; return; }
+        if (data.contraseña !== actual) { msg.textContent = "La contraseña actual no es correcta."; return; }
 
-        if (error) {
-            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
-            return;
+        const { error: errUpd } = await supabaseClient
+            .from("usuarios").update({ contraseña: nueva }).eq("id", usuario.id);
+        if (errUpd) { msg.textContent = "❌ " + errUpd.message; return; }
+
+        msg.style.color = "#10b981";
+        msg.textContent = "✅ Contraseña actualizada.";
+        ["cpActual","cpNueva","cpConfirmar"].forEach(id => document.getElementById(id).value = "");
+    }
+
+    // Cierre de sesión por inactividad
+    let ultimaActividad = Date.now();
+    ["mousemove","keydown","click","scroll","touchstart"].forEach(ev =>
+        document.addEventListener(ev, () => { ultimaActividad = Date.now(); }, { passive: true }));
+
+    setInterval(() => {
+        const min = Number(preferenciasUsuario.inactividad_min) || 0;
+        if (min && Date.now() - ultimaActividad >= min * 60000) {
+            localStorage.removeItem("usuario");
+            alert("Tu sesión se cerró por inactividad.");
+            window.location.href = "index.html";
         }
+    }, 15000);
 
-        todasLicenciasOffice = data || [];
-        poblarFiltroLicencia();
-        renderTablaOffice();
-    }
 
-    function poblarFiltroLicencia() {
-        const lics = [...new Set(todasLicenciasOffice.map(r => r.numero_licencia).filter(Boolean))].sort();
-        const sel = document.getElementById("officeFiltroLic");
-        sel.innerHTML = `<option value="">Todas las licencias</option>` +
-            lics.map(l => `<option value="${l}">Licencia ${l}</option>`).join("");
-    }
+    /* ═══════════════════════════════════════════
+       NOTIFICACIONES
+    ═══════════════════════════════════════════ */
+    function calcularNotificaciones() {
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+        const diasAviso = Number(preferenciasUsuario.dias_alerta) || 3;
+        const notifs = [];
 
-    function renderTablaOffice() {
-        const tbody = document.getElementById("officeBody");
-        if (!tbody) return;
-        const q    = (document.getElementById("officeBusqueda")?.value || "").toLowerCase();
-        const flic = document.getElementById("officeFiltroLic")?.value || "";
+        todasActividades.forEach(a => {
+            if (!a.fecha_limite || a.estado === "Terminado") return;
+            const limite = new Date(a.fecha_limite + "T00:00:00");
+            const diff   = Math.round((limite - hoy) / 86400000);
 
-        let rows = todasLicenciasOffice.filter(r => {
-            const matchLic = !flic || String(r.numero_licencia) === flic;
-            const matchQ   = !q ||
-                (r.nombre||"").toLowerCase().includes(q) ||
-                (r.correo||"").toLowerCase().includes(q) ||
-                (r.nombre_cuenta||"").toLowerCase().includes(q) ||
-                (r.tipo||"").toLowerCase().includes(q);
-            return matchLic && matchQ;
+            if (diff < 0) {
+                notifs.push({ id: a.id, titulo: a.actividad, tipo: "vencida",
+                    meta: `Venció hace ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""} · ${a.asignado || "Sin asignar"}` });
+            } else if (diff <= diasAviso) {
+                notifs.push({ id: a.id, titulo: a.actividad, tipo: "proxima",
+                    meta: `Vence ${diff === 0 ? "hoy" : `en ${diff} día${diff !== 1 ? "s" : ""}`} · ${a.asignado || "Sin asignar"}` });
+            }
         });
 
-        document.getElementById("officeCount").textContent = `${rows.length} registro${rows.length !== 1 ? "s" : ""}`;
+        notifs.sort((a,b) => (a.tipo === "vencida" ? -1 : 1));
+        return notifs;
+    }
 
-        if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No se encontraron licencias.</div></td></tr>`;
-            return;
+    function notifsVisibles() {
+        let notifs = calcularNotificaciones();
+        if (preferenciasUsuario.notif_vencidas === false) notifs = notifs.filter(n => n.tipo !== "vencida");
+        if (preferenciasUsuario.notif_proximas === false) notifs = notifs.filter(n => n.tipo !== "proxima");
+        return notifs;
+    }
+
+    function renderNotificaciones() {
+        const notifs = notifsVisibles();
+        const badge  = document.getElementById("notifBadge");
+        const list   = document.getElementById("notifList");
+        const count  = document.getElementById("notifCount");
+
+        if (notifs.length) {
+            badge.textContent   = notifs.length > 9 ? "9+" : notifs.length;
+            badge.style.display = "flex";
+            count.textContent   = `${notifs.length} pendiente${notifs.length !== 1 ? "s" : ""}`;
+            list.innerHTML = notifs.map(n => `
+                <div class="notif-item ${n.tipo}" onclick="navegar('actividades');cerrarNotifDropdown()">
+                    <div class="notif-item-title">${esc(n.titulo)}</div>
+                    <div class="notif-item-meta">${n.tipo === "vencida" ? "🔴" : "🟡"} ${n.meta}</div>
+                </div>`).join("");
+        } else {
+            badge.style.display = "none";
+            count.textContent   = "";
+            list.innerHTML      = `<div class="notif-empty">✅ Sin actividades vencidas o próximas a vencer</div>`;
         }
 
-        // Agrupar por número de licencia para separadores visuales
-        let lastLic = null;
-        tbody.innerHTML = rows.map(r => {
-            let sep = "";
-            if (r.numero_licencia !== lastLic) {
-                lastLic = r.numero_licencia;
-                sep = `<tr style="background:#f0f4ff">
-                    <td colspan="10" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
-                        📦 Licencia ${esc(String(r.numero_licencia || "—"))}
-                    </td>
-                </tr>`;
-            }
-            const expBadge = r.fecha_expiracion
-                ? `<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600">${esc(r.fecha_expiracion)}</span>`
-                : `<span style="color:#9ca3af">—</span>`;
-            return sep + `<tr>
-                <td data-label="Slot" style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
-                <td data-label="Nombre"><strong>${esc(r.nombre||"—")}</strong></td>
-                <td data-label="Tipo"><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
-                <td data-label="Correo" style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
-                <td data-label="Cuenta" style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
-                <td data-label="Expiración">${expBadge}</td>
-                <td data-label="País" style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
-                <td data-label="Contacto" style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
-                <td data-label="N° Lic." style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
-                <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
-            </tr>`;
-        }).join("");
+        // Con recordatorios periódicos, el temporizador es quien avisa
+        const periodica = Number(preferenciasUsuario.notif_frecuencia) > 0;
+        if (!periodica && preferenciasUsuario.notif_resumen !== false) dispararNotifNavegador(notifs);
     }
+
+    let notifNavegadorDisparada = false;
+    function dispararNotifNavegador(notifs) {
+        if (preferenciasUsuario.notif_navegador === false || !notifs.length) return;
+
+        const periodica = Number(preferenciasUsuario.notif_frecuencia) > 0;
+        if (!periodica && notifNavegadorDisparada) return;
+        notifNavegadorDisparada = true;
+
+        if (preferenciasUsuario.notif_sonido) reproducirSonidoAlerta();
+
+        const vencidas = notifs.filter(n => n.tipo === "vencida").length;
+        const proximas = notifs.filter(n => n.tipo === "proxima").length;
+        const partes = [];
+        if (vencidas) partes.push(`${vencidas} vencida${vencidas !== 1 ? "s" : ""}`);
+        if (proximas) partes.push(`${proximas} próxima${proximas !== 1 ? "s" : ""} a vencer`);
+        const mensaje = partes.join(" · ");
+
+        if (!("Notification" in window)) return;
+
+        const mostrar = () => new Notification("Alterna — Actividades", {
+            body: mensaje,
+            icon: "https://cdn-icons-png.flaticon.com/512/1827/1827392.png"
+        });
+
+        if (Notification.permission === "granted") mostrar();
+        else if (Notification.permission !== "denied")
+            Notification.requestPermission().then(p => { if (p === "granted") mostrar(); });
+    }
+
+    function toggleNotifDropdown() {
+        document.getElementById("notifDropdown").classList.toggle("open");
+    }
+
+    function cerrarNotifDropdown() {
+        document.getElementById("notifDropdown").classList.remove("open");
+    }
+
+    document.addEventListener("click", function(e) {
+        const wrap = document.getElementById("notifWrap");
+        if (wrap && !wrap.contains(e.target)) cerrarNotifDropdown();
+    });
 
 
     /* ═══════════════════════════════════════════
@@ -1667,17 +1664,17 @@
     ═══════════════════════════════════════════ */
     function abrirModalNuevaTarea() {
         document.getElementById("modalNuevaTarea").classList.add("open");
-        document.getElementById("ntActividad").value  = "";
-        document.getElementById("ntProyecto").value   = "";
-        document.getElementById("ntArea").value       = "";
-        document.getElementById("ntEstado").value     = "No iniciado";
-        document.getElementById("ntPrioridad").value  = "Media";
-        document.getElementById("ntAsignado").value   = "";
-        document.getElementById("ntFecha").value      = "";
+        document.getElementById("ntActividad").value   = "";
+        document.getElementById("ntProyecto").value    = "";
+        document.getElementById("ntArea").value        = "";
+        document.getElementById("ntEstado").value      = "No iniciado";
+        document.getElementById("ntPrioridad").value   = "Media";
+        document.getElementById("ntAsignado").value    = "";
+        document.getElementById("ntFecha").value       = "";
         document.getElementById("ntDescripcion").value = "";
-        document.getElementById("ntMsg").textContent  = "";
-        document.getElementById("ntMsg").style.color  = "";
-        document.getElementById("ntGuardar").disabled = false;
+        document.getElementById("ntMsg").textContent   = "";
+        document.getElementById("ntMsg").style.color   = "";
+        document.getElementById("ntGuardar").disabled  = false;
         navegar("actividades");
     }
 
@@ -1718,13 +1715,10 @@
 
         document.getElementById("ntMsg").textContent = "✅ Tarea guardada correctamente.";
         document.getElementById("ntMsg").style.color = "#10b981";
-
-        // Recargar actividades y cerrar modal
         await cargarActividades();
         setTimeout(() => cerrarModal(), 800);
     }
 
-    // Cerrar modal al hacer click fuera
     document.getElementById("modalNuevaTarea").addEventListener("click", function(e) {
         if (e.target === this) cerrarModal();
     });
@@ -1785,8 +1779,6 @@
         document.getElementById("pntMsg").textContent = "✅ Tarea guardada correctamente.";
         document.getElementById("pntMsg").style.color = "#10b981";
         await cargarActividades();
-
-        // Limpiar form después de un momento para nueva entrada
         setTimeout(() => limpiarNuevaTarea(), 1200);
     }
 
@@ -1797,13 +1789,12 @@
     function abrirEditarTarea(id) {
         const a = todasActividades.find(x => x.id === id);
         if (!a) return;
-        document.getElementById("etId").value          = a.id;
-        document.getElementById("etActividad").value   = a.actividad        || "";
-        document.getElementById("etProyecto").value    = a.proyecto_macro   || "";
-        document.getElementById("etArea").value        = a.area             || "";
-        document.getElementById("etEstado").value      = a.estado           || "No iniciado";
-        document.getElementById("etPrioridad").value   = a.prioridad        || "Media";
-        // Si el valor guardado no está en las opciones del select, añadirlo
+        document.getElementById("etId").value         = a.id;
+        document.getElementById("etActividad").value  = a.actividad        || "";
+        document.getElementById("etProyecto").value   = a.proyecto_macro   || "";
+        document.getElementById("etArea").value       = a.area             || "";
+        document.getElementById("etEstado").value     = a.estado           || "No iniciado";
+        document.getElementById("etPrioridad").value  = a.prioridad        || "Media";
         const etSel = document.getElementById("etAsignado");
         const asignadoVal = a.asignado || "";
         if (asignadoVal && ![...etSel.options].some(o => o.value === asignadoVal)) {
@@ -1812,12 +1803,12 @@
             etSel.appendChild(opt);
         }
         etSel.value = asignadoVal;
-        document.getElementById("etFecha").value       = a.fecha_limite       || "";
-        document.getElementById("etFechaFin").value    = a.fecha_finalizacion || "";
-        document.getElementById("etNotas").value       = a.notas            || "";
-        document.getElementById("etMsg").textContent   = "";
-        document.getElementById("etMsg").style.color   = "";
-        document.getElementById("etGuardar").disabled  = false;
+        document.getElementById("etFecha").value      = a.fecha_limite       || "";
+        document.getElementById("etFechaFin").value   = a.fecha_finalizacion || "";
+        document.getElementById("etNotas").value      = a.notas            || "";
+        document.getElementById("etMsg").textContent  = "";
+        document.getElementById("etMsg").style.color  = "";
+        document.getElementById("etGuardar").disabled = false;
         document.getElementById("modalEditarTarea").classList.add("open");
     }
 
@@ -1850,7 +1841,6 @@
             notas:              document.getElementById("etNotas").value.trim()     || null,
         };
 
-        // Detectar cambios vs estado anterior
         const anterior = todasActividades.find(x => x.id === id) || {};
         const camposLabel = {
             actividad: "Actividad", proyecto_macro: "Proyecto", area: "Área",
@@ -1894,8 +1884,89 @@
 
 
     /* ═══════════════════════════════════════════
-       EDITAR LICENCIA OFFICE
+       LICENCIAS — OFFICE
     ═══════════════════════════════════════════ */
+    let todasLicenciasOffice = [];
+
+    async function cargarLicenciasOffice() {
+        const tbody = document.getElementById("officeBody");
+        if (!tbody) return;
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="9">Cargando...</td></tr>`;
+
+        const { data, error } = await supabaseClient
+            .from("licencias_office")
+            .select("*")
+            .order("numero_licencia, slot");
+
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
+            return;
+        }
+
+        todasLicenciasOffice = data || [];
+        poblarFiltroLicencia();
+        renderTablaOffice();
+    }
+
+    function poblarFiltroLicencia() {
+        const lics = [...new Set(todasLicenciasOffice.map(r => r.numero_licencia).filter(Boolean))].sort();
+        const sel = document.getElementById("officeFiltroLic");
+        sel.innerHTML = `<option value="">Todas las licencias</option>` +
+            lics.map(l => `<option value="${l}">Licencia ${l}</option>`).join("");
+    }
+
+    function renderTablaOffice() {
+        const tbody = document.getElementById("officeBody");
+        if (!tbody) return;
+        const q    = (document.getElementById("officeBusqueda")?.value || "").toLowerCase();
+        const flic = document.getElementById("officeFiltroLic")?.value || "";
+
+        const rows = todasLicenciasOffice.filter(r => {
+            const matchLic = !flic || String(r.numero_licencia) === flic;
+            const matchQ   = !q ||
+                (r.nombre||"").toLowerCase().includes(q) ||
+                (r.correo||"").toLowerCase().includes(q) ||
+                (r.nombre_cuenta||"").toLowerCase().includes(q) ||
+                (r.tipo||"").toLowerCase().includes(q);
+            return matchLic && matchQ;
+        });
+
+        document.getElementById("officeCount").textContent = `${rows.length} registro${rows.length !== 1 ? "s" : ""}`;
+
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No se encontraron licencias.</div></td></tr>`;
+            return;
+        }
+
+        let lastLic = null;
+        tbody.innerHTML = rows.map(r => {
+            let sep = "";
+            if (r.numero_licencia !== lastLic) {
+                lastLic = r.numero_licencia;
+                sep = `<tr style="background:#f0f4ff">
+                    <td colspan="10" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
+                        📦 Licencia ${esc(String(r.numero_licencia || "—"))}
+                    </td>
+                </tr>`;
+            }
+            const expBadge = r.fecha_expiracion
+                ? `<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600">${esc(r.fecha_expiracion)}</span>`
+                : `<span style="color:#9ca3af">—</span>`;
+            return sep + `<tr>
+                <td data-label="Slot" style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
+                <td data-label="Nombre"><strong>${esc(r.nombre||"—")}</strong></td>
+                <td data-label="Tipo"><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
+                <td data-label="Correo" style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
+                <td data-label="Cuenta" style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
+                <td data-label="Expiración">${expBadge}</td>
+                <td data-label="País" style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
+                <td data-label="Contacto" style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
+                <td data-label="N° Lic." style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+                <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
+            </tr>`;
+        }).join("");
+    }
+
     function abrirEditarOffice(id) {
         const r = todasLicenciasOffice.find(x => x.id === id);
         if (!r) return;
@@ -1924,7 +1995,7 @@
     }
 
     async function guardarEditarOffice() {
-        const id = parseInt(document.getElementById("eoId").value);
+        const id  = parseInt(document.getElementById("eoId").value);
         const btn = document.getElementById("eoGuardar");
         btn.disabled = true;
         document.getElementById("eoMsg").textContent = "Guardando...";
@@ -2002,18 +2073,18 @@
 
     function badgeEquipoEstado(estado) {
         switch (estado) {
-            case "Disponible":      return "badge-terminado";    // verde
-            case "Asignado":        return "badge-en-proceso";   // amarillo
-            case "En mantenimiento":return "badge-media";        // naranja/amarillo
-            case "Dado de baja":    return "badge-alta";         // rojo
-            default:                return "badge-no-iniciado";
+            case "Disponible":       return "badge-terminado";
+            case "Asignado":         return "badge-en-proceso";
+            case "En mantenimiento": return "badge-media";
+            case "Dado de baja":     return "badge-alta";
+            default:                 return "badge-no-iniciado";
         }
     }
 
     function actualizarCardsEquipos() {
-        const total        = todosEquipos.length;
-        const disponibles  = todosEquipos.filter(r => r.estado === "Disponible").length;
-        const asignados    = todosEquipos.filter(r => r.estado === "Asignado").length;
+        const total         = todosEquipos.length;
+        const disponibles   = todosEquipos.filter(r => r.estado === "Disponible").length;
+        const asignados     = todosEquipos.filter(r => r.estado === "Asignado").length;
         const mantenimiento = todosEquipos.filter(r =>
             r.estado === "En mantenimiento" || r.estado === "Dado de baja"
         ).length;
@@ -2026,12 +2097,12 @@
     function renderTablaEquipos() {
         const tbody = document.getElementById("equiposBody");
         if (!tbody) return;
-        const q = (document.getElementById("eqBusqueda")?.value || "").toLowerCase();
+        const q       = (document.getElementById("eqBusqueda")?.value || "").toLowerCase();
         const fEstado = document.getElementById("eqFiltroEstado")?.value || "";
 
         actualizarCardsEquipos();
 
-        let rows = todosEquipos.filter(r => {
+        const rows = todosEquipos.filter(r => {
             const matchEstado = !fEstado || r.estado === fEstado;
             const matchQ = !q ||
                 (r.tipo||"").toLowerCase().includes(q) ||
@@ -2064,16 +2135,16 @@
         }).join("");
     }
 
-    /* ── CRUD NUEVO EQUIPO ── */
+    /* ── NUEVO EQUIPO ── */
     function abrirModalNuevoEquipo() {
-        document.getElementById("neTipo").value = "";
-        document.getElementById("neSerie").value = "";
-        document.getElementById("neMarca").value = "";
-        document.getElementById("neModelo").value = "";
-        document.getElementById("neEstado").value = "Disponible";
-        document.getElementById("neAsignado").value = "";
-        document.getElementById("neFecha").value = "";
-        document.getElementById("neNotas").value = "";
+        document.getElementById("neTipo").value      = "";
+        document.getElementById("neSerie").value     = "";
+        document.getElementById("neMarca").value     = "";
+        document.getElementById("neModelo").value    = "";
+        document.getElementById("neEstado").value    = "Disponible";
+        document.getElementById("neAsignado").value  = "";
+        document.getElementById("neFecha").value     = "";
+        document.getElementById("neNotas").value     = "";
         document.getElementById("neMsg").textContent = "";
         document.getElementById("neGuardar").disabled = false;
         document.getElementById("modalNuevoEquipo").classList.add("open");
@@ -2094,16 +2165,16 @@
         btn.disabled = true;
         document.getElementById("neMsg").textContent = "Guardando...";
         document.getElementById("neMsg").style.color = "#6b7280";
-        
+
         const payload = {
             tipo,
             numero_serie: document.getElementById("neSerie").value.trim() || null,
-            marca: document.getElementById("neMarca").value.trim() || null,
-            modelo: document.getElementById("neModelo").value.trim() || null,
-            estado: document.getElementById("neEstado").value,
-            asignado_a: document.getElementById("neAsignado").value.trim() || null,
+            marca:        document.getElementById("neMarca").value.trim() || null,
+            modelo:       document.getElementById("neModelo").value.trim() || null,
+            estado:       document.getElementById("neEstado").value,
+            asignado_a:   document.getElementById("neAsignado").value.trim() || null,
             fecha_compra: document.getElementById("neFecha").value || null,
-            notas: document.getElementById("neNotas").value.trim() || null
+            notas:        document.getElementById("neNotas").value.trim() || null
         };
 
         const { error } = await supabaseClient.from("inventario_equipos").insert([payload]);
@@ -2122,20 +2193,20 @@
         if (e.target === this) cerrarModalNuevoEquipo();
     });
 
-    /* ── CRUD EDITAR EQUIPO ── */
+    /* ── EDITAR EQUIPO ── */
     function abrirEditarEquipo(id) {
         const r = todosEquipos.find(x => x.id === id);
         if (!r) return;
-        document.getElementById("eeId").value = r.id;
-        document.getElementById("eeTipo").value = r.tipo || "";
-        document.getElementById("eeSerie").value = r.numero_serie || "";
-        document.getElementById("eeMarca").value = r.marca || "";
-        document.getElementById("eeModelo").value = r.modelo || "";
-        document.getElementById("eeEstado").value = r.estado || "Disponible";
-        document.getElementById("eeAsignado").value = r.asignado_a || "";
-        document.getElementById("eeFecha").value = r.fecha_compra || "";
-        document.getElementById("eeNotas").value = r.notas || "";
-        document.getElementById("eeMsg").textContent = "";
+        document.getElementById("eeId").value         = r.id;
+        document.getElementById("eeTipo").value       = r.tipo || "";
+        document.getElementById("eeSerie").value      = r.numero_serie || "";
+        document.getElementById("eeMarca").value      = r.marca || "";
+        document.getElementById("eeModelo").value     = r.modelo || "";
+        document.getElementById("eeEstado").value     = r.estado || "Disponible";
+        document.getElementById("eeAsignado").value   = r.asignado_a || "";
+        document.getElementById("eeFecha").value      = r.fecha_compra || "";
+        document.getElementById("eeNotas").value      = r.notas || "";
+        document.getElementById("eeMsg").textContent  = "";
         document.getElementById("eeGuardar").disabled = false;
         document.getElementById("modalEditarEquipo").classList.add("open");
     }
@@ -2145,28 +2216,28 @@
     }
 
     async function guardarEditarEquipo() {
-        const id = parseInt(document.getElementById("eeId").value);
+        const id   = parseInt(document.getElementById("eeId").value);
         const tipo = document.getElementById("eeTipo").value.trim();
         if (!tipo) {
             document.getElementById("eeMsg").textContent = "⚠ El tipo de equipo es obligatorio.";
             document.getElementById("eeMsg").style.color = "#ef4444";
             return;
         }
-        
+
         const btn = document.getElementById("eeGuardar");
         btn.disabled = true;
         document.getElementById("eeMsg").textContent = "Guardando...";
         document.getElementById("eeMsg").style.color = "#6b7280";
-        
+
         const payload = {
             tipo,
             numero_serie: document.getElementById("eeSerie").value.trim() || null,
-            marca: document.getElementById("eeMarca").value.trim() || null,
-            modelo: document.getElementById("eeModelo").value.trim() || null,
-            estado: document.getElementById("eeEstado").value,
-            asignado_a: document.getElementById("eeAsignado").value.trim() || null,
+            marca:        document.getElementById("eeMarca").value.trim() || null,
+            modelo:       document.getElementById("eeModelo").value.trim() || null,
+            estado:       document.getElementById("eeEstado").value,
+            asignado_a:   document.getElementById("eeAsignado").value.trim() || null,
             fecha_compra: document.getElementById("eeFecha").value || null,
-            notas: document.getElementById("eeNotas").value.trim() || null
+            notas:        document.getElementById("eeNotas").value.trim() || null
         };
 
         const { error } = await supabaseClient.from("inventario_equipos").update(payload).eq("id", id);
@@ -2188,7 +2259,7 @@
         cerrarModalEditarEquipo();
         await cargarEquipos();
     }
-    
+
     document.getElementById("modalEditarEquipo").addEventListener("click", function(e) {
         if (e.target === this) cerrarModalEditarEquipo();
     });
@@ -2221,15 +2292,12 @@
 
         const base = `<option value="">— Sin asignar —</option>` + opciones;
 
-        // Página nueva tarea
         const pntSel = document.getElementById("pntAsignado");
         if (pntSel) pntSel.innerHTML = base;
 
-        // Modal nueva tarea
         const ntSel = document.getElementById("ntAsignado");
         if (ntSel) ntSel.innerHTML = base;
 
-        // Modal editar tarea (conserva valor actual si ya estaba abierto)
         const etSel = document.getElementById("etAsignado");
         if (etSel) {
             const valActual = etSel.value;
@@ -2237,12 +2305,10 @@
             if (valActual) etSel.value = valActual;
         }
 
-        // Filtro de tabla (sección actividades)
         const filtroSel = document.getElementById("filtroAsignado");
         if (filtroSel) {
             const valFiltro = filtroSel.value;
-            filtroSel.innerHTML =
-                `<option value="">Todos los asignados</option>` + opciones;
+            filtroSel.innerHTML = `<option value="">Todos los asignados</option>` + opciones;
             if (valFiltro) filtroSel.value = valFiltro;
         }
     }
@@ -2256,24 +2322,20 @@
         const list  = document.getElementById("expiringList");
         if (!panel || !list) return;
 
-        // Cargar licencias Office
         const { data, error } = await supabaseClient
             .from("licencias_office")
-            .select("id, nombre, tipo, correo, expiracion, nombre_cuenta")
-            .order("expiracion", { ascending: true });
+            .select("id, nombre, tipo, correo, fecha_expiracion, nombre_cuenta")
+            .order("fecha_expiracion", { ascending: true });
 
         if (error || !data) { panel.style.display = "none"; return; }
 
-        const hoy      = new Date(); hoy.setHours(0,0,0,0);
-        const en7Dias  = new Date(hoy); en7Dias.setDate(en7Dias.getDate() + 7);
+        const hoy     = new Date(); hoy.setHours(0,0,0,0);
+        const en7Dias = new Date(hoy); en7Dias.setDate(en7Dias.getDate() + 7);
 
-        // Función para parsear fecha en formato dd/mm/aa o dd/mm/yyyy
         function parsearFecha(str) {
             if (!str) return null;
-            // Intentar ISO primero
             const iso = new Date(str);
             if (!isNaN(iso)) return iso;
-            // Formato dd/mm/aa o dd/mm/yyyy
             const p = str.split("/");
             if (p.length === 3) {
                 let yr = parseInt(p[2]);
@@ -2284,7 +2346,7 @@
         }
 
         const proximas = data.filter(lic => {
-            const f = parsearFecha(lic.expiracion);
+            const f = parsearFecha(lic.fecha_expiracion);
             if (!f || isNaN(f)) return false;
             f.setHours(0,0,0,0);
             return f >= hoy && f <= en7Dias;
@@ -2295,19 +2357,19 @@
         panel.style.display = "";
 
         list.innerHTML = proximas.map(lic => {
-            const f    = parsearFecha(lic.expiracion);
+            const f    = parsearFecha(lic.fecha_expiracion);
             f.setHours(0,0,0,0);
             const diff = Math.round((f - hoy) / 86400000);
             let daysLabel, daysClass;
-            if (diff === 0)      { daysLabel = "Vence hoy";        daysClass = "today"; }
-            else if (diff === 1) { daysLabel = "Mañana";           daysClass = "day1"; }
-            else if (diff <= 3)  { daysLabel = `${diff} días`;     daysClass = "day2-3"; }
-            else                 { daysLabel = `${diff} días`;     daysClass = "day4-7"; }
+            if (diff === 0)      { daysLabel = "Vence hoy";    daysClass = "today"; }
+            else if (diff === 1) { daysLabel = "Mañana";       daysClass = "day1"; }
+            else if (diff <= 3)  { daysLabel = `${diff} días`; daysClass = "day2-3"; }
+            else                 { daysLabel = `${diff} días`; daysClass = "day4-7"; }
 
             return `<div class="expiring-item" onclick="navegar('licencias-office')">
                 <div class="expiring-item-left">
                     <div class="expiring-item-name">${esc(lic.nombre || lic.nombre_cuenta || "—")}</div>
-                    <div class="expiring-item-meta">${esc(lic.tipo||"")} ${lic.correo ? "· " + esc(lic.correo) : ""} · Exp: ${esc(lic.expiracion||"")}</div>
+                    <div class="expiring-item-meta">${esc(lic.tipo||"")} ${lic.correo ? "· " + esc(lic.correo) : ""} · Exp: ${esc(lic.fecha_expiracion||"")}</div>
                 </div>
                 <span class="expiring-days ${daysClass}">${daysLabel}</span>
             </div>`;
@@ -2339,29 +2401,34 @@
         actualizarCardsKanva();
     }
 
-    function actualizarCardsKanva() {
-        const hoy     = new Date(); hoy.setHours(0,0,0,0);
-        const en7dias = new Date(hoy); en7dias.setDate(en7dias.getDate() + 7);
-
-        function parsearFechaKanva(str) {
-            if (!str) return null;
-            const iso = new Date(str);
-            if (!isNaN(iso)) return iso;
-            const p = str.split("/");
-            if (p.length === 3) {
-                let yr = parseInt(p[2]); if (yr < 100) yr += 2000;
-                return new Date(yr, parseInt(p[1])-1, parseInt(p[0]));
-            }
-            return null;
+    function parsearFechaKanva(str) {
+        if (!str) return null;
+        const iso = new Date(str);
+        if (!isNaN(iso)) return iso;
+        const p = str.split("/");
+        if (p.length === 3) {
+            let yr = parseInt(p[2]); if (yr < 100) yr += 2000;
+            return new Date(yr, parseInt(p[1])-1, parseInt(p[0]));
         }
+        return null;
+    }
 
-        let activas = 0, alertas = 0;
+    function estadoKanva(lic) {
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+        const en7 = new Date(hoy); en7.setDate(en7.getDate() + 7);
+        const f = parsearFechaKanva(lic.expiracion);
+        if (!f || isNaN(f)) return "Activa";
+        f.setHours(0,0,0,0);
+        if (f < hoy) return "Vencida";
+        if (f <= en7) return "Por vencer";
+        return "Activa";
+    }
+
+    function actualizarCardsKanva() {
+        let alertas = 0;
         todasLicenciasKanva.forEach(l => {
-            const f = parsearFechaKanva(l.expiracion);
-            if (!f || isNaN(f)) { activas++; return; }
-            f.setHours(0,0,0,0);
-            if (f < hoy || f <= en7dias) alertas++;
-            else activas++;
+            const e = estadoKanva(l);
+            if (e === "Vencida" || e === "Por vencer") alertas++;
         });
 
         const total = todasLicenciasKanva.length;
@@ -2374,36 +2441,12 @@
     }
 
     function renderTablaKanva() {
-        const tbody = document.getElementById("kanvaBody");
-        const busq  = (document.getElementById("kanvaBusqueda")?.value || "").toLowerCase();
+        const tbody   = document.getElementById("kanvaBody");
+        const busq    = (document.getElementById("kanvaBusqueda")?.value || "").toLowerCase();
         const fEstado = document.getElementById("kanvaFiltroEstado")?.value || "";
-        const hoy   = new Date(); hoy.setHours(0,0,0,0);
-        const en7   = new Date(hoy); en7.setDate(en7.getDate() + 7);
 
-        function parsearFechaKanva(str) {
-            if (!str) return null;
-            const iso = new Date(str);
-            if (!isNaN(iso)) return iso;
-            const p = str.split("/");
-            if (p.length === 3) {
-                let yr = parseInt(p[2]); if (yr < 100) yr += 2000;
-                return new Date(yr, parseInt(p[1])-1, parseInt(p[0]));
-            }
-            return null;
-        }
-
-        function estadoKanva(lic) {
-            const f = parsearFechaKanva(lic.expiracion);
-            if (!f || isNaN(f)) return "Activa";
-            f.setHours(0,0,0,0);
-            if (f < hoy) return "Vencida";
-            if (f <= en7) return "Por vencer";
-            return "Activa";
-        }
-
-        let filtradas = todasLicenciasKanva.filter(l => {
-            const estado = estadoKanva(l);
-            if (fEstado && estado !== fEstado) return false;
+        const filtradas = todasLicenciasKanva.filter(l => {
+            if (fEstado && estadoKanva(l) !== fEstado) return false;
             if (busq) {
                 const h = `${l.nombre||""} ${l.correo||""} ${l.plan||""}`.toLowerCase();
                 if (!h.includes(busq)) return false;
@@ -2490,14 +2533,14 @@
     function abrirEditarKanva(id) {
         const l = todasLicenciasKanva.find(x => x.id === id);
         if (!l) return;
-        document.getElementById("ekId").value          = l.id;
-        document.getElementById("ekNombre").value      = l.nombre     || "";
-        document.getElementById("ekCorreo").value      = l.correo     || "";
-        document.getElementById("ekPlan").value        = l.plan       || "Pro";
-        document.getElementById("ekExpiracion").value  = l.expiracion || "";
-        document.getElementById("ekNotas").value       = l.notas      || "";
-        document.getElementById("ekMsg").textContent   = "";
-        document.getElementById("ekGuardar").disabled  = false;
+        document.getElementById("ekId").value         = l.id;
+        document.getElementById("ekNombre").value     = l.nombre     || "";
+        document.getElementById("ekCorreo").value     = l.correo     || "";
+        document.getElementById("ekPlan").value       = l.plan       || "Pro";
+        document.getElementById("ekExpiracion").value = l.expiracion || "";
+        document.getElementById("ekNotas").value      = l.notas      || "";
+        document.getElementById("ekMsg").textContent  = "";
+        document.getElementById("ekGuardar").disabled = false;
         document.getElementById("modalEditarKanva").classList.add("open");
     }
 
@@ -2548,7 +2591,6 @@
     });
 
 
-
     /* ═══════════════════════════════════════════
        MANTENIMIENTOS
     ═══════════════════════════════════════════ */
@@ -2556,12 +2598,10 @@
     let todosEquipos_mant   = [];
     let todosUsuarios_mant  = [];
     let calFechaActual      = new Date();
-    let mantVistaActual     = "cal";   // "cal" | "list"
+    let mantVistaActual     = "cal";
     let ticketActualId      = null;
 
-    // ── Load all ──────────────────────────────
     async function cargarMantenimientos() {
-        // parallel loads
         const [mRes, eRes, uRes] = await Promise.all([
             supabaseClient.from("mantenimientos").select("*").order("fecha_programada"),
             supabaseClient.from("equipos").select("*").order("asignado_a"),
@@ -2571,26 +2611,19 @@
         todosEquipos_mant   = eRes.data || [];
         todosUsuarios_mant  = uRes.data || [];
 
-        // populate usuario selects in modal
         poblarSelectUsuariosMant();
-
-        // stats
         actualizarStatsMant();
-
-        // render current view
         renderMantCurrentView();
-
-        // check URL hash for direct ticket link
         checkHashTicket();
     }
 
     function actualizarStatsMant() {
         const d = todosMantenimientos;
         const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-        set("mantCntTotal",     d.length);
-        set("mantCntProgramado",d.filter(t=>t.estado==="Programado").length);
-        set("mantCntProceso",   d.filter(t=>t.estado==="En proceso").length);
-        set("mantCntCompletado",d.filter(t=>t.estado==="Completado").length);
+        set("mantCntTotal",      d.length);
+        set("mantCntProgramado", d.filter(t=>t.estado==="Programado").length);
+        set("mantCntProceso",    d.filter(t=>t.estado==="En proceso").length);
+        set("mantCntCompletado", d.filter(t=>t.estado==="Completado").length);
     }
 
     function switchMantView(v) {
@@ -2612,10 +2645,11 @@
         const est = document.getElementById("mantFiltroEstado")?.value || "";
         const tip = document.getElementById("mantFiltroTipo")?.value   || "";
         return todosMantenimientos.filter(t => {
+            if (preferenciasUsuario.mant_ocultar_cancelados && t.estado === "Cancelado") return false;
             const matchEst = !est || t.estado === est;
             const matchTip = !tip || t.tipo   === tip;
-            const uSearch = todosUsuarios_mant.find(u => u.id === t.usuario_id);
-            const matchQ   = !q  ||
+            const uSearch  = todosUsuarios_mant.find(u => u.id === t.usuario_id);
+            const matchQ   = !q ||
                 (t.numero_ticket||"").toLowerCase().includes(q) ||
                 (t.titulo||"").toLowerCase().includes(q) ||
                 (uSearch?.nombre||"").toLowerCase().includes(q) ||
@@ -2624,34 +2658,34 @@
         });
     }
 
-    // ── CALENDARIO ─────────────────────────────
+    /* ── CALENDARIO ── */
     function calMes(delta) {
         calFechaActual = new Date(calFechaActual.getFullYear(), calFechaActual.getMonth() + delta, 1);
         renderCalendario();
     }
 
     function renderCalendario() {
-        const hoy    = new Date(); hoy.setHours(0,0,0,0);
-        const año    = calFechaActual.getFullYear();
-        const mes    = calFechaActual.getMonth();
-        const label  = document.getElementById("calMonthLabel");
-        const grid   = document.getElementById("calGrid");
+        const hoy   = new Date(); hoy.setHours(0,0,0,0);
+        const año   = calFechaActual.getFullYear();
+        const mes   = calFechaActual.getMonth();
+        const label = document.getElementById("calMonthLabel");
+        const grid  = document.getElementById("calGrid");
         if (!label || !grid) return;
 
         label.textContent = new Date(año, mes, 1)
             .toLocaleDateString("es-GT", { month:"long", year:"numeric" })
             .replace(/^\w/, c => c.toUpperCase());
 
-        // Weekday headers (Dom-Sab)
-        const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-        let html = dias.map(d => `<div class="cal-weekday">${d}</div>`).join("");
+        // Primer día de la semana: 0 = domingo, 1 = lunes
+        const offset  = Number(preferenciasUsuario.mant_primer_dia) === 1 ? 1 : 0;
+        const nombres = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+        const cabeceras = [...nombres.slice(offset), ...nombres.slice(0, offset)];
+        let html = cabeceras.map(d => `<div class="cal-weekday">${d}</div>`).join("");
 
-        // First day of month, last day
-        const primero   = new Date(año, mes, 1).getDay();  // 0=Dom
-        const diasMes   = new Date(año, mes+1, 0).getDate();
+        const primero      = (new Date(año, mes, 1).getDay() - offset + 7) % 7;
+        const diasMes      = new Date(año, mes + 1, 0).getDate();
         const mesFiltrados = filteredMantenimientos();
 
-        // Group tickets by date
         const byDate = {};
         mesFiltrados.forEach(t => {
             if (!t.fecha_programada) return;
@@ -2659,12 +2693,11 @@
             byDate[t.fecha_programada].push(t);
         });
 
-        // Blank cells before 1st
         for (let i = 0; i < primero; i++) html += `<div class="cal-day other-month"></div>`;
 
         for (let d = 1; d <= diasMes; d++) {
-            const fecha = `${año}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-            const isHoy = (new Date(año, mes, d)).getTime() === hoy.getTime();
+            const fecha  = `${año}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+            const isHoy  = (new Date(año, mes, d)).getTime() === hoy.getTime();
             const events = byDate[fecha] || [];
             const maxShow = 3;
             const eventHtml = events.slice(0, maxShow).map(t => {
@@ -2672,10 +2705,9 @@
                 return `<div class="cal-event ${cls}" title="${esc(t.titulo||t.numero_ticket)}" onclick="event.stopPropagation();verTicket(${t.id})">${esc((t.titulo||t.numero_ticket||"").substring(0,22))}</div>`;
             }).join("") + (events.length > maxShow ? `<div style="font-size:9px;color:#9ca3af;padding:1px 4px">+${events.length-maxShow} más</div>` : "");
 
-            html += `<div class="cal-day${isHoy?" today":""}"  onclick=""><div class="cal-day-num">${d}</div>${eventHtml}</div>`;
+            html += `<div class="cal-day${isHoy?" today":""}"><div class="cal-day-num">${d}</div>${eventHtml}</div>`;
         }
 
-        // Fill remaining cells
         const totalCells = primero + diasMes;
         const resto = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
         for (let i = 0; i < resto; i++) html += `<div class="cal-day other-month"></div>`;
@@ -2687,7 +2719,7 @@
         return { "Programado":"programado","En proceso":"en-proceso","Completado":"completado","Cancelado":"cancelado" }[estado] || "programado";
     }
 
-    // ── TABLA LISTA ─────────────────────────────
+    /* ── TABLA LISTA ── */
     function renderTablaMantenimientos() {
         const tbody = document.getElementById("mantTablaBody");
         if (!tbody) return;
@@ -2720,7 +2752,7 @@
         return `<span class="badge ${map[est]||"badge-programado"}">${esc(est||"—")}</span>`;
     }
 
-    // ── MODAL NUEVO TICKET ────────────────────────
+    /* ── NUEVO TICKET ── */
     function poblarSelectUsuariosMant() {
         const sel = document.getElementById("ntmUsuario");
         if (!sel) return;
@@ -2732,13 +2764,11 @@
         const uid  = document.getElementById("ntmUsuario").value;
         const sel  = document.getElementById("ntmEquipo");
         const wrap = document.getElementById("ntmComponentesWrap");
-        const comp = document.getElementById("ntmComponentes");
         if (!sel) return;
         if (!uid) {
             sel.innerHTML = `<option value="">— Primero selecciona usuario —</option>`;
             wrap.style.display = "none"; return;
         }
-        // Get user name to match equipos by asignado_a
         const usuObj = todosUsuarios_mant.find(u => String(u.id) === uid);
         const nombre = usuObj?.nombre || "";
         const equipos = todosEquipos_mant.filter(e => (e.asignado_a||"").toLowerCase() === nombre.toLowerCase() || e.usuario_id == uid);
@@ -2759,20 +2789,19 @@
         if (!eid) { wrap.style.display="none"; return; }
         const eq = todosEquipos_mant.find(e => String(e.id) === eid);
         if (!eq) { wrap.style.display="none"; return; }
-        const chips = buildComponentChips(eq);
-        comp.innerHTML = chips || '<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>';
+        comp.innerHTML = buildComponentChips(eq) || '<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>';
         wrap.style.display = "";
     }
 
     function buildComponentChips(eq) {
         const campos = [
-            {k:"procesador",   l:"CPU"},
-            {k:"ram",          l:"RAM"},
-            {k:"almacenamiento",l:"Disco"},
-            {k:"sistema_operativo",l:"SO"},
-            {k:"tipo",         l:"Tipo"},
-            {k:"marca",        l:"Marca"},
-            {k:"modelo",       l:"Modelo"},
+            {k:"procesador",        l:"CPU"},
+            {k:"ram",               l:"RAM"},
+            {k:"almacenamiento",    l:"Disco"},
+            {k:"sistema_operativo", l:"SO"},
+            {k:"tipo",              l:"Tipo"},
+            {k:"marca",             l:"Marca"},
+            {k:"modelo",            l:"Modelo"},
         ];
         return campos.filter(c => eq[c.k])
             .map(c => `<span class="comp-chip" title="${esc(c.l)}">${esc(c.l)}: <strong>${esc(String(eq[c.k]))}</strong></span>`)
@@ -2812,34 +2841,24 @@
         document.getElementById("ntmMsg").textContent = "Creando ticket...";
         document.getElementById("ntmMsg").style.color = "#6b7280";
 
-        const usuObj = todosUsuarios_mant.find(u => String(u.id) === uid);
-        const eid    = document.getElementById("ntmEquipo").value || null;
-        const eqObj  = eid ? todosEquipos_mant.find(e => String(e.id) === eid) : null;
+        const eid = document.getElementById("ntmEquipo").value || null;
 
-        // Generar numero_ticket
-        const año   = new Date().getFullYear();
-        const { count } = await supabaseClient.from("mantenimientos").select("id", { count:"exact",head:true });
-        const seq   = String((count||0)+1).padStart(4,"0");
+        const año    = new Date().getFullYear();
+        const { count } = await supabaseClient.from("mantenimientos").select("id", { count:"exact", head:true });
+        const seq    = String((count||0)+1).padStart(4,"0");
         const numTkt = `MANT-${año}-${seq}`;
 
-        // Build componentes snapshot
-        const compSnap = eqObj ? {
-            tipo: eqObj.tipo, marca: eqObj.marca, modelo: eqObj.modelo,
-            procesador: eqObj.procesador, ram: eqObj.ram, almacenamiento: eqObj.almacenamiento,
-            sistema_operativo: eqObj.sistema_operativo, numero_serie: eqObj.numero_serie
-        } : {};
-
         const payload = {
-            numero_ticket:   numTkt,
-            usuario_id:      parseInt(uid),
-            equipo_id:       eid ? parseInt(eid) : null,
+            numero_ticket:    numTkt,
+            usuario_id:       parseInt(uid),
+            equipo_id:        eid ? parseInt(eid) : null,
             titulo,
-            tipo:            document.getElementById("ntmTipo").value,
-            prioridad:       document.getElementById("ntmPrioridad").value,
-            estado:          "Programado",
-            tecnico:         document.getElementById("ntmTecnico").value.trim() || null,
+            tipo:             document.getElementById("ntmTipo").value,
+            prioridad:        document.getElementById("ntmPrioridad").value,
+            estado:           "Programado",
+            tecnico:          document.getElementById("ntmTecnico").value.trim() || null,
             fecha_programada: fecha,
-            descripcion:     document.getElementById("ntmDescripcion").value.trim() || null,
+            descripcion:      document.getElementById("ntmDescripcion").value.trim() || null,
         };
 
         const { data, error } = await supabaseClient.from("mantenimientos").insert([payload]).select().single();
@@ -2857,31 +2876,30 @@
 
     document.getElementById("modalNuevoTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalNuevoTicket(); });
 
-    // ── VER TICKET ───────────────────────────────
+    /* ── VER TICKET ── */
     function verTicket(id) {
         const t = todosMantenimientos.find(x => x.id === id);
         if (!t) return;
         ticketActualId = id;
 
-        document.getElementById("vtNumero").textContent   = t.numero_ticket || "—";
-        document.getElementById("vtTitulo").textContent   = t.titulo || "—";
+        document.getElementById("vtNumero").textContent      = t.numero_ticket || "—";
+        document.getElementById("vtTitulo").textContent      = t.titulo || "—";
         const uObjV = todosUsuarios_mant.find(u => u.id === t.usuario_id);
         const eObjV = t.equipo_id ? todosEquipos_mant.find(e => e.id === t.equipo_id) : null;
-        document.getElementById("vtMeta").textContent     = formatFecha(t.fecha_programada) || "—";
-        document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
-        document.getElementById("vtTipo").textContent     = t.tipo || "—";
-        document.getElementById("vtPrioridad").innerHTML  = badgePrioridad(t.prioridad);
-        document.getElementById("vtTecnico").textContent  = t.tecnico || "Sin asignar";
-        document.getElementById("vtFechaProg").textContent = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
-        document.getElementById("vtCreadoPor").textContent = t.creado_por || "—";
-        document.getElementById("vtUsuario").textContent  = uObjV?.nombre || "—";
-        document.getElementById("vtCorreo").textContent   = uObjV?.correo || "—";
-        document.getElementById("vtEquipo").textContent   = eObjV ? [eObjV.tipo, eObjV.marca, eObjV.modelo].filter(Boolean).join(" ") : "Sin equipo asignado";
+        document.getElementById("vtMeta").textContent        = formatFecha(t.fecha_programada) || "—";
+        document.getElementById("vtEstadoWrap").innerHTML    = badgeMantEstado(t.estado);
+        document.getElementById("vtTipo").textContent        = t.tipo || "—";
+        document.getElementById("vtPrioridad").innerHTML     = badgePrioridad(t.prioridad);
+        document.getElementById("vtTecnico").textContent     = t.tecnico || "Sin asignar";
+        document.getElementById("vtFechaProg").textContent   = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
+        document.getElementById("vtCreadoPor").textContent   = t.creado_por || "—";
+        document.getElementById("vtUsuario").textContent     = uObjV?.nombre || "—";
+        document.getElementById("vtCorreo").textContent      = uObjV?.correo || "—";
+        document.getElementById("vtEquipo").textContent      = eObjV ? [eObjV.tipo, eObjV.marca, eObjV.modelo].filter(Boolean).join(" ") : "Sin equipo asignado";
         document.getElementById("vtDescripcion").textContent = t.descripcion || "Sin descripción.";
-        document.getElementById("vtMsgEstado").textContent = "";
-        document.getElementById("vtSerie").textContent = eObjV?.numero_serie || "—";
+        document.getElementById("vtMsgEstado").textContent   = "";
+        document.getElementById("vtSerie").textContent       = eObjV?.numero_serie || "—";
 
-        // Componentes (from snapshot or live)
         const vtComp = document.getElementById("vtComponentes");
         let compData = {};
         if (eObjV) {
@@ -2897,9 +2915,8 @@
         const chips = chipsCampos.filter(c=>compData[c.k]).map(c=>`<span class="comp-chip">${esc(c.l)}: <strong>${esc(String(compData[c.k]))}</strong></span>`).join("");
         vtComp.innerHTML = chips || `<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>`;
 
-        // Link
         const link = window.location.href.split("#")[0] + "#ticket=" + encodeURIComponent(t.numero_ticket||id);
-        document.getElementById("vtLink").textContent = link;
+        document.getElementById("vtLink").textContent    = link;
         document.getElementById("vtLinkMsg").textContent = "";
 
         document.getElementById("modalVerTicket").classList.add("open");
@@ -2908,8 +2925,7 @@
     function cerrarModalVerTicket() {
         document.getElementById("modalVerTicket").classList.remove("open");
         ticketActualId = null;
-        // Remove hash without reload
-        history.replaceState(null,"", window.location.pathname + window.location.search);
+        history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
     document.getElementById("modalVerTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalVerTicket(); });
@@ -2928,27 +2944,26 @@
         if (!ticketActualId) return;
         const { error } = await supabaseClient.from("mantenimientos").update({ estado: nuevoEstado }).eq("id", ticketActualId);
         const msg = document.getElementById("vtMsgEstado");
-        if (error) { msg.textContent = "❌ Error: " + error.message; msg.style.color="#ef4444"; return; }
+        if (error) { msg.textContent = "❌ Error: " + error.message; msg.style.color = "#ef4444"; return; }
         msg.textContent = "✅ Estado actualizado a: " + nuevoEstado; msg.style.color = "#10b981";
         await cargarMantenimientos();
-        // Refresh modal
         const t = todosMantenimientos.find(x => x.id === ticketActualId);
         if (t) document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
     }
 
-    // ── EDITAR TICKET ────────────────────────────
+    /* ── EDITAR TICKET ── */
     function abrirEditarTicket() {
         if (!ticketActualId) return;
         const t = todosMantenimientos.find(x => x.id === ticketActualId);
         if (!t) return;
         document.getElementById("etmId").value          = t.id;
-        document.getElementById("etmTitulo").value      = t.titulo        || "";
-        document.getElementById("etmTipo").value        = t.tipo          || "Preventivo";
-        document.getElementById("etmPrioridad").value   = t.prioridad     || "Media";
-        document.getElementById("etmEstado").value      = t.estado        || "Programado";
+        document.getElementById("etmTitulo").value      = t.titulo           || "";
+        document.getElementById("etmTipo").value        = t.tipo             || "Preventivo";
+        document.getElementById("etmPrioridad").value   = t.prioridad        || "Media";
+        document.getElementById("etmEstado").value      = t.estado           || "Programado";
         document.getElementById("etmFecha").value       = t.fecha_programada || "";
-        document.getElementById("etmTecnico").value     = t.tecnico       || "";
-        document.getElementById("etmDescripcion").value = t.descripcion   || "";
+        document.getElementById("etmTecnico").value     = t.tecnico          || "";
+        document.getElementById("etmDescripcion").value = t.descripcion      || "";
         document.getElementById("etmMsg").textContent   = "";
         document.getElementById("etmGuardar").disabled  = false;
         cerrarModalVerTicket();
@@ -3005,11 +3020,11 @@
         await cargarMantenimientos();
     }
 
-    // ── HASH LINK ───────────────────────────────
+    /* ── LINK DIRECTO A TICKET ── */
     function checkHashTicket() {
         const hash = window.location.hash;
         if (!hash.startsWith("#ticket=")) return;
-        const numOrId = decodeURIComponent(hash.replace("#ticket=",""));
+        const numOrId = decodeURIComponent(hash.replace("#ticket=", ""));
         const t = todosMantenimientos.find(x => x.numero_ticket === numOrId || String(x.id) === numOrId);
         if (t) {
             navegar("mantenimientos");
@@ -3024,14 +3039,58 @@
 
 
     /* ═══════════════════════════════════════════
+       HELPERS
+    ═══════════════════════════════════════════ */
+    function badgeEstado(e) {
+        const m = { "Terminado":"badge-terminado", "En proceso":"badge-en-proceso", "No iniciado":"badge-no-iniciado" };
+        return `<span class="badge ${m[e]||'badge-no-iniciado'}">${esc(e||"—")}</span>`;
+    }
+    function badgePrioridad(p) {
+        const m = { "Alta":"badge-alta", "Media":"badge-media", "Baja":"badge-baja" };
+        return `<span class="badge ${m[p]||'badge-baja'}">${esc(p||"—")}</span>`;
+    }
+    function esc(str) {
+        return String(str??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function truncar(str, max) {
+        return str && str.length > max ? str.slice(0, max) + "…" : str;
+    }
+    function formatFecha(iso) {
+        if (!iso) return "—";
+        try { const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`; }
+        catch { return iso; }
+    }
+
+
+    /* ═══════════════════════════════════════════
+       SUBMENÚ ACTIVIDADES
+    ═══════════════════════════════════════════ */
+    function toggleSubmenu(item, pagina) {
+        const submenu = document.getElementById("submenu-" + pagina);
+        if (!submenu) { navegar(pagina); return; }
+        const isOpen = submenu.classList.contains("open");
+        submenu.classList.toggle("open", !isOpen);
+        item.classList.toggle("open", !isOpen);
+    }
+
+    function navegarSubmenu(pagina, filtroEstado) {
+        document.querySelectorAll(".submenu-item").forEach(i => i.classList.remove("active"));
+        const activo = document.querySelector(`.submenu-item[data-sub="${filtroEstado || pagina.split('-')[1]}"]`);
+        if (activo) activo.classList.add("active");
+        navegar(pagina, filtroEstado);
+    }
+
+
+    /* ═══════════════════════════════════════════
        INIT
     ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
         await cargarUsuario();
         await cargarConfiguracionUsuario();
         await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
-        sincronizarBotonesPeriodo();
-        aplicarVistaActividades(getVistaActividades());
+        aplicarAjustes();
+        const inicio = preferenciasUsuario.pagina_inicio;
+        if (inicio && inicio !== "dashboard") navegar(inicio);
     }
 
     iniciarDashboard();
@@ -3044,7 +3103,6 @@
         sidebar.classList.toggle("mobile-open");
         overlay.classList.toggle("open");
     }
-    // Close sidebar when a nav item is clicked on mobile
     document.querySelectorAll(".menu-item, .submenu-item").forEach(el => {
         el.addEventListener("click", () => {
             if (window.innerWidth <= 768) {
