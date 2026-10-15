@@ -3054,7 +3054,6 @@
         });
     });
 
-</script>
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", (event) => {
         if (event.data === "SW_ACTIVATED") window.location.reload();
