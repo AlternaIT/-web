@@ -43,6 +43,7 @@
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
         "licencias-kanva":  { titulo: "Licencias — Canva",   subtitulo: "Gestión de licencias de diseño Canva" },
         mantenimientos:     { titulo: "Mantenimientos",      subtitulo: "Calendario y tickets de mantenimiento de equipos" },
+        basedatos:          { titulo: "Base de datos",       subtitulo: "Vista en tiempo real de todas las tablas" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -95,6 +96,7 @@
         if (pagina === "licencias-office") cargarLicenciasOffice();
         if (pagina === "licencias-kanva")  cargarLicenciasKanva();
         if (pagina === "mantenimientos")   cargarMantenimientos();
+        if (pagina === "basedatos")        dbIniciar();
     }
 
 
@@ -3116,4 +3118,157 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", (event) => {
         if (event.data === "SW_ACTIVATED") window.location.reload();
     });
+}
+
+
+/* ═══════════════════════════════════════════
+   BASE DE DATOS — VISTA EN TIEMPO REAL
+════════════════════════════════════════════ */
+let dbTablaActual = "actividades";
+let dbSuscripcion = null;
+let dbDatos = [];
+
+const DB_TABLAS_COLS = {
+    actividades:             ["id","actividad","area","estado","prioridad","asignado","fecha_limite","created_at"],
+    activities:              ["id","title","status","priority","importance","assigned_to","due_date","created_at"],
+    activity_history:        ["id","activity_id","action","changed_by","created_at"],
+    areas:                   ["id","nombre","created_at"],
+    configuraciones_usuario: ["user_id","updated_at"],
+    inventario_equipos:      ["id","tipo","marca","modelo","estado","asignado_a","numero_serie"],
+    mantenimientos:          ["id","numero_ticket","titulo","tipo","estado","prioridad","tecnico","fecha_programada"],
+    profiles:                ["id","full_name","role","email","area","is_active","last_seen"],
+    projects:                ["id","name","created_at"],
+    usuarios:                ["id","nombre","correo","rol","activo","created_at"],
+};
+
+async function dbIniciar() {
+    dbCambiarTabla(document.getElementById("db-tabla-select").value || "actividades");
+}
+
+async function dbCambiarTabla(tabla) {
+    dbTablaActual = tabla;
+    document.getElementById("db-tabla-select").value = tabla;
+    document.getElementById("db-tabla-titulo").textContent = tabla;
+    if (dbSuscripcion) { supabaseClient.removeChannel(dbSuscripcion); dbSuscripcion = null; }
+    await dbCargarDatos();
+    dbSuscribir();
+}
+
+async function dbCargarDatos() {
+    const cols = DB_TABLAS_COLS[dbTablaActual] || ["*"];
+    const { data, error } = await supabaseClient
+        .from(dbTablaActual)
+        .select(cols.join(","))
+        .order(cols.includes("created_at") ? "created_at" : cols[0], { ascending: false })
+        .limit(200);
+    if (error) { dbLogEvento("error", `Error al cargar ${dbTablaActual}: ${error.message}`); return; }
+    dbDatos = data || [];
+    dbRenderTabla();
+    dbRenderStats();
+}
+
+function dbRenderTabla() {
+    const thead = document.getElementById("db-thead");
+    const tbody = document.getElementById("db-tbody");
+    const empty = document.getElementById("db-empty");
+    const conteo = document.getElementById("db-conteo");
+    conteo.textContent = `${dbDatos.length} filas`;
+    if (!dbDatos.length) { thead.innerHTML = ""; tbody.innerHTML = ""; empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    const cols = Object.keys(dbDatos[0]);
+    thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>`;
+    tbody.innerHTML = dbDatos.map((row, i) =>
+        `<tr id="db-row-${i}">${cols.map(c => {
+            let v = row[c];
+            if (v === null || v === undefined) v = "—";
+            else if (typeof v === "object") v = JSON.stringify(v).slice(0, 60) + "…";
+            else if (typeof v === "boolean") v = v ? "✓" : "✗";
+            else if (typeof v === "string" && v.length > 50) v = v.slice(0, 50) + "…";
+            return `<td title="${String(row[c] ?? "")}">${v}</td>`;
+        }).join("")}</tr>`
+    ).join("");
+}
+
+function dbRenderStats() {
+    const statsEl = document.getElementById("db-stats");
+    const total = dbDatos.length;
+    const primerRow = dbDatos[0] || {};
+    const campoEstado = ["estado","status","is_active","activo"].find(c => c in primerRow);
+    let html = `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;min-width:120px"><div style="font-size:22px;font-weight:700;color:#111">${total}</div><div style="font-size:12px;color:#6b7280">Total filas</div></div>`;
+    if (campoEstado) {
+        const conteos = {};
+        dbDatos.forEach(r => { const v = String(r[campoEstado] ?? "—"); conteos[v] = (conteos[v] || 0) + 1; });
+        const colorMap = { "true":"#10b981","false":"#ef4444","✓":"#10b981","✗":"#ef4444","Terminado":"#10b981","Completado":"#10b981","activo":"#10b981","En proceso":"#f59e0b","En Proceso":"#f59e0b","Programado":"#3b82f6","No iniciado":"#9ca3af","Cancelado":"#ef4444","Correctivo":"#ef4444" };
+        Object.entries(conteos).slice(0,5).forEach(([k, v]) => {
+            const color = colorMap[k] || "#6b7280";
+            html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;min-width:100px"><div style="font-size:22px;font-weight:700;color:${color}">${v}</div><div style="font-size:12px;color:#6b7280">${k}</div></div>`;
+        });
+    }
+    statsEl.innerHTML = html;
+}
+
+function dbSuscribir() {
+    dbSuscripcion = supabaseClient
+        .channel(`db-realtime-${dbTablaActual}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: dbTablaActual }, (payload) => {
+            const { eventType, new: newRow, old: oldRow } = payload;
+            if (eventType === "INSERT") {
+                dbDatos.unshift(newRow);
+                dbLogEvento("insert", `INSERT en ${dbTablaActual} — id: ${newRow.id ?? "?"}`);
+                dbRenderTabla();
+                setTimeout(() => document.getElementById("db-row-0")?.classList.add("db-row-new"), 50);
+            }
+            if (eventType === "UPDATE") {
+                const idx = dbDatos.findIndex(r => r.id == newRow.id);
+                if (idx >= 0) dbDatos[idx] = newRow;
+                dbLogEvento("update", `UPDATE en ${dbTablaActual} — id: ${newRow.id ?? "?"}`);
+                dbRenderTabla();
+                setTimeout(() => document.getElementById(`db-row-${idx >= 0 ? idx : 0}`)?.classList.add("db-row-new"), 50);
+            }
+            if (eventType === "DELETE") {
+                dbDatos = dbDatos.filter(r => r.id != oldRow.id);
+                dbLogEvento("delete", `DELETE en ${dbTablaActual} — id: ${oldRow.id ?? "?"}`);
+                dbRenderTabla();
+            }
+            dbRenderStats();
+        })
+        .subscribe((status) => {
+            const dot   = document.getElementById("db-live-dot");
+            const label = document.getElementById("db-live-label");
+            if (!dot) return;
+            if (status === "SUBSCRIBED") {
+                dot.style.background = "#10b981";
+                dot.style.animation  = "db-pulse 2s infinite";
+                label.textContent    = "Conectado — actualizando en tiempo real";
+            } else {
+                dot.style.background = "#f59e0b";
+                dot.style.animation  = "none";
+                label.textContent    = "Reconectando…";
+            }
+        });
+}
+
+function dbLogEvento(tipo, msg) {
+    const log = document.getElementById("db-log");
+    if (!log) return;
+    const placeholder = log.querySelector("span[style*='9ca3af']");
+    if (placeholder) placeholder.remove();
+    const hora = new Date().toLocaleTimeString("es-GT", { hour12: false });
+    const clases = { insert: "db-log-insert", update: "db-log-update", delete: "db-log-delete", error: "" };
+    const iconos = { insert: "●", update: "◆", delete: "✕", error: "⚠" };
+    const el = document.createElement("div");
+    el.className = clases[tipo] || "";
+    el.textContent = `${hora}  ${iconos[tipo] || "·"}  ${msg}`;
+    log.prepend(el);
+    while (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+function dbLimpiarLog() {
+    const log = document.getElementById("db-log");
+    if (log) log.innerHTML = `<span style="color:#9ca3af;font-size:12px">Sin cambios detectados aún…</span>`;
+}
+
+async function dbRefrescarManual() {
+    await dbCargarDatos();
+    dbLogEvento("update", `Recarga manual — ${dbTablaActual}`);
 }
