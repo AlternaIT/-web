@@ -1428,6 +1428,99 @@
 
         </section>
 
+
+
+
+
+<!-- ═══════════════════════════════════════════
+     PÁGINA: BASE DE DATOS
+════════════════════════════════════════════ -->
+<section class="page" id="page-basedatos">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+            <span id="db-live-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 #10b981;animation:db-pulse 2s infinite"></span>
+            <span style="font-size:13px;color:#6b7280" id="db-live-label">Conectado — actualizando en tiempo real</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="db-tabla-select" class="modal-select" style="width:auto;font-size:13px" onchange="dbCambiarTabla(this.value)">
+                <option value="actividades">actividades</option>
+                <option value="activities">activities</option>
+                <option value="activity_history">activity_history</option>
+                <option value="areas">areas</option>
+                <option value="configuraciones_usuario">configuraciones_usuario</option>
+                <option value="inventario_equipos">inventario_equipos</option>
+                <option value="mantenimientos">mantenimientos</option>
+                <option value="profiles">profiles</option>
+                <option value="projects">projects</option>
+                <option value="usuarios">usuarios</option>
+            </select>
+            <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="dbRefrescarManual()">↻ Refrescar</button>
+        </div>
+    </div>
+
+    <div id="db-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+    <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:600;color:#374151">⚡ Cambios en tiempo real</span>
+            <button onclick="dbLimpiarLog()" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer">Limpiar</button>
+        </div>
+        <div id="db-log" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;min-height:56px;max-height:180px;overflow-y:auto;padding:8px 12px;font-size:12px;font-family:monospace;display:flex;flex-direction:column;gap:4px">
+            <span style="color:#9ca3af;font-size:12px">Sin cambios detectados aún…</span>
+        </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between">
+            <span id="db-tabla-titulo" style="font-size:14px;font-weight:600;color:#111827">actividades</span>
+            <span id="db-conteo" style="font-size:12px;color:#6b7280">— filas</span>
+        </div>
+        <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px" id="db-tabla">
+                <thead id="db-thead" style="background:#f9fafb"></thead>
+                <tbody id="db-tbody"></tbody>
+            </table>
+        </div>
+        <div id="db-empty" style="display:none;padding:32px;text-align:center;color:#9ca3af;font-size:13px">Sin registros</div>
+    </div>
+</section>
+
+<style>
+@keyframes db-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.6); }
+    70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+@keyframes db-flash {
+    0%   { background: #d1fae5; }
+    100% { background: transparent; }
+}
+.db-row-new { animation: db-flash 1.5s ease-out; }
+#db-tabla thead th {
+    padding: 8px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+#db-tabla tbody td {
+    padding: 8px 14px;
+    border-top: 1px solid #f3f4f6;
+    color: #374151;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#db-tabla tbody tr:hover td { background: #f9fafb; }
+.db-log-insert { color: #065f46; }
+.db-log-update { color: #92400e; }
+.db-log-delete { color: #991b1b; }
+</style>
+
     </main>
 
 </div>
@@ -2128,97 +2221,6 @@
     </div>
 </div>
 
-
-
-
-<!-- ═══════════════════════════════════════════
-     PÁGINA: BASE DE DATOS
-════════════════════════════════════════════ -->
-<div class="page" id="page-basedatos">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-            <span id="db-live-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 #10b981;animation:db-pulse 2s infinite"></span>
-            <span style="font-size:13px;color:#6b7280" id="db-live-label">Conectado — actualizando en tiempo real</span>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <select id="db-tabla-select" class="modal-select" style="width:auto;font-size:13px" onchange="dbCambiarTabla(this.value)">
-                <option value="actividades">actividades</option>
-                <option value="activities">activities</option>
-                <option value="activity_history">activity_history</option>
-                <option value="areas">areas</option>
-                <option value="configuraciones_usuario">configuraciones_usuario</option>
-                <option value="inventario_equipos">inventario_equipos</option>
-                <option value="mantenimientos">mantenimientos</option>
-                <option value="profiles">profiles</option>
-                <option value="projects">projects</option>
-                <option value="usuarios">usuarios</option>
-            </select>
-            <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="dbRefrescarManual()">↻ Refrescar</button>
-        </div>
-    </div>
-
-    <div id="db-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
-
-    <div style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:13px;font-weight:600;color:#374151">⚡ Cambios en tiempo real</span>
-            <button onclick="dbLimpiarLog()" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer">Limpiar</button>
-        </div>
-        <div id="db-log" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;min-height:56px;max-height:180px;overflow-y:auto;padding:8px 12px;font-size:12px;font-family:monospace;display:flex;flex-direction:column;gap:4px">
-            <span style="color:#9ca3af;font-size:12px">Sin cambios detectados aún…</span>
-        </div>
-    </div>
-
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-        <div style="padding:14px 18px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between">
-            <span id="db-tabla-titulo" style="font-size:14px;font-weight:600;color:#111827">actividades</span>
-            <span id="db-conteo" style="font-size:12px;color:#6b7280">— filas</span>
-        </div>
-        <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12px" id="db-tabla">
-                <thead id="db-thead" style="background:#f9fafb"></thead>
-                <tbody id="db-tbody"></tbody>
-            </table>
-        </div>
-        <div id="db-empty" style="display:none;padding:32px;text-align:center;color:#9ca3af;font-size:13px">Sin registros</div>
-    </div>
-</div>
-
-<style>
-@keyframes db-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.6); }
-    70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
-    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-}
-@keyframes db-flash {
-    0%   { background: #d1fae5; }
-    100% { background: transparent; }
-}
-.db-row-new { animation: db-flash 1.5s ease-out; }
-#db-tabla thead th {
-    padding: 8px 14px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    white-space: nowrap;
-}
-#db-tabla tbody td {
-    padding: 8px 14px;
-    border-top: 1px solid #f3f4f6;
-    color: #374151;
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-#db-tabla tbody tr:hover td { background: #f9fafb; }
-.db-log-insert { color: #065f46; }
-.db-log-update { color: #92400e; }
-.db-log-delete { color: #991b1b; }
-</style>
 
 <script src="dashboard.js"></script>
 
