@@ -211,9 +211,9 @@
        DASHBOARD — COMPLETADAS RECIENTES
     ═══════════════════════════════════════════ */
     function renderActividadReciente() {
-        const iconos = { TI:"💻", Proyectos:"📋", Pipeline:"🔄", Talento:"👥",
-                         MELI:"🏪", Devela:"🏢", Adquisiciones:"🛒",
-                         Administración:"📁", Cultivación:"🌱" };
+        const iconos = { TI:"monitor", Proyectos:"clipboard-list", Pipeline:"refresh-cw", Talento:"users",
+                         MELI:"store", Devela:"building-2", Adquisiciones:"shopping-cart",
+                         Administración:"folder", Cultivación:"sprout" };
 
         const n = Number(preferenciasUsuario.completadas_dashboard) || 0;
         const container = document.getElementById("actividadReciente");
@@ -235,7 +235,7 @@
 
         container.innerHTML = recientes.map(a => `
             <div class="activity">
-                <div class="activity-icon">${iconos[a.area] || "✓"}</div>
+                <div class="activity-icon"><i data-lucide="${iconos[a.area] || "check"}"></i></div>
                 <div class="activity-text">
                     <div class="activity-title" title="${esc(a.actividad)}">${esc(truncar(a.actividad, 55))}</div>
                     <div class="activity-meta">${esc(a.proyecto_macro||"")} · ${formatFecha(a.fecha_finalizacion)} · ${esc(a.asignado||"")}</div>
@@ -395,8 +395,8 @@
             data: {
                 labels: areaLabels,
                 datasets: [
-                    { label: "Total",     data: areaLabels.map(k => areas[k].total),     backgroundColor: "#c7d2fe", borderRadius: 5 },
-                    { label: "Terminado", data: areaLabels.map(k => areas[k].terminado), backgroundColor: "#6366f1", borderRadius: 5 }
+                    { label: "Total",     data: areaLabels.map(k => areas[k].total),     backgroundColor: "#d1d1d6", borderRadius: 5 },
+                    { label: "Terminado", data: areaLabels.map(k => areas[k].terminado), backgroundColor: "#3a3a3c", borderRadius: 5 }
                 ]
             },
             options: {
@@ -422,8 +422,8 @@
             data: {
                 labels: asigLabels,
                 datasets: [
-                    { label: "Total",     data: asigLabels.map(k => asigs[k].total),     backgroundColor: "#a7f3d0", borderRadius: 5 },
-                    { label: "Terminado", data: asigLabels.map(k => asigs[k].terminado), backgroundColor: "#10b981", borderRadius: 5 }
+                    { label: "Total",     data: asigLabels.map(k => asigs[k].total),     backgroundColor: "#d1d1d6", borderRadius: 5 },
+                    { label: "Terminado", data: asigLabels.map(k => asigs[k].terminado), backgroundColor: "#3a3a3c", borderRadius: 5 }
                 ]
             },
             options: {
@@ -726,7 +726,7 @@
                 <td data-label="Asignado"><span class="asignado-chip">${esc(a.asignado||"—")}</span></td>
                 <td data-label="Fecha" style="white-space:nowrap" class="${fechaClass}">${esc(fechaTxt)}</td>
                 <td data-label="" onclick="event.stopPropagation()">
-                    <button class="btn-edit" onclick="abrirEditarTarea(${a.id})">✏</button>
+                    <button class="btn-edit" onclick="abrirEditarTarea(${a.id})"><i data-lucide="pencil"></i></button>
                 </td>
             </tr>`;
         }).join("");
@@ -951,7 +951,7 @@
         const rol      = document.getElementById("nuRol").value;
 
         if (!nombre || !correo || !password) {
-            document.getElementById("nuMsg").textContent = "⚠ Nombre, correo y contraseña son obligatorios.";
+            document.getElementById("nuMsg").textContent = "Nombre, correo y contraseña son obligatorios.";
             document.getElementById("nuMsg").style.color = "#ef4444";
             return;
         }
@@ -966,13 +966,13 @@
         }]);
 
         if (error) {
-            document.getElementById("nuMsg").textContent = "❌ " + error.message;
+            document.getElementById("nuMsg").textContent = "" + error.message;
             document.getElementById("nuMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
         }
 
-        document.getElementById("nuMsg").textContent = "✅ Usuario creado correctamente.";
+        document.getElementById("nuMsg").textContent = "Usuario creado correctamente.";
         document.getElementById("nuMsg").style.color = "#10b981";
         await cargarTablaUsuarios();
         await cargarTotalUsuarios();
@@ -1023,7 +1023,7 @@
             supabaseClient.from("aplicaciones").select("*").order("orden").order("nombre"),
             supabaseClient.from("usuarios_aplicaciones").select("aplicacion_id"),
         ]);
-        if (error) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">❌ ${esc(error.message)}</div></td></tr>`; return; }
+        if (error) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">${esc(error.message)}</div></td></tr>`; return; }
         todasAplicaciones = data || [];
         const cuenta = {};
         (accesos || []).forEach(a => { cuenta[a.aplicacion_id] = (cuenta[a.aplicacion_id] || 0) + 1; });
@@ -1036,7 +1036,7 @@
                 <td data-label="Orden">${a.orden}</td>
                 <td data-label="Usuarios con acceso" style="font-size:12px">${cuenta[a.id] || 0} + administradores</td>
                 <td data-label="Estado"><span class="badge ${a.activa ? "badge-terminado" : "badge-no-iniciado"}">${a.activa ? "Activa" : "Inactiva"}</span></td>
-                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="abrirModalAplicacion(${a.id})">✏ Editar</button></td>
+                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="abrirModalAplicacion(${a.id})"><i data-lucide="pencil"></i> Editar</button></td>
             </tr>`).join("");
     }
 
@@ -1086,7 +1086,7 @@
             orden:       parseInt(document.getElementById("apOrden").value) || 0,
             activa:      document.getElementById("apActiva").value === "true",
         };
-        const error = (t) => { msg.textContent = "⚠ " + t; msg.style.color = "#ef4444"; };
+        const error = (t) => { msg.textContent = "" + t; msg.style.color = "#ef4444"; };
         if (!payload.nombre || !payload.clave || !payload.url) return error("Nombre, clave y enlace son obligatorios.");
         if (!/^[a-z0-9_-]{2,30}$/.test(payload.clave)) return error("La clave solo admite letras minúsculas, números, guion y guion bajo (2 a 30).");
         // Mismo criterio que apps.html: páginas del sitio o https (nada de javascript: u otros esquemas)
@@ -1102,7 +1102,7 @@
             btn.disabled = false;
             return error(err.code === "23505" ? "Ya existe una aplicación con esa clave." : err.message);
         }
-        msg.textContent = "✅ Guardado."; msg.style.color = "#10b981";
+        msg.textContent = "Guardado."; msg.style.color = "#10b981";
         await cargarAplicacionesAdmin();
         setTimeout(cerrarModalAplicacion, 600);
     }
@@ -1171,7 +1171,7 @@
         const pass   = document.getElementById("fuPassword").value.trim();
 
         if (!nombre || !correo) {
-            document.getElementById("fuMsg").textContent = "⚠ Nombre y correo son obligatorios.";
+            document.getElementById("fuMsg").textContent = "Nombre y correo son obligatorios.";
             document.getElementById("fuMsg").style.color = "#ef4444";
             return;
         }
@@ -1188,13 +1188,13 @@
         const error = errUsuario || await guardarAccesosUsuario(id);
 
         if (error) {
-            document.getElementById("fuMsg").textContent = "❌ " + error.message;
+            document.getElementById("fuMsg").textContent = "" + error.message;
             document.getElementById("fuMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
         }
 
-        document.getElementById("fuMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("fuMsg").textContent = "Guardado correctamente.";
         document.getElementById("fuMsg").style.color = "#10b981";
         await cargarTablaUsuarios();
         await cargarTotalUsuarios();
@@ -1258,9 +1258,9 @@
 
         document.querySelectorAll(".vista-cfg-btn").forEach(btn => {
             const activo = btn.dataset.vista === modo;
-            btn.style.borderColor = activo ? "#6366f1" : "#e5e7eb";
+            btn.style.borderColor = activo ? "#1c1c1e" : "#e5e5ea";
             btn.style.background  = activo ? "#f5f3ff" : "white";
-            btn.style.color       = activo ? "#4f46e5" : "#374151";
+            btn.style.color       = activo ? "#1c1c1e" : "#3a3a3c";
         });
 
         const cfgLabel = document.getElementById("cfgVistaLabel");
@@ -1654,7 +1654,7 @@
         if (btn) { btn.disabled = true; btn.textContent = "Guardar preferencias"; }
         if (status) {
             status.textContent = ok
-                ? "✓ Guardado · " + new Date().toLocaleTimeString("es-GT", { hour:"2-digit", minute:"2-digit" })
+                ? "Guardado · " + new Date().toLocaleTimeString("es-GT", { hour:"2-digit", minute:"2-digit" })
                 : "Guardado localmente (sin conexión a Supabase).";
             status.classList.remove("dirty");
         }
@@ -1707,11 +1707,11 @@
             if (data.contraseña !== actual) { msg.textContent = "La contraseña actual no es correcta."; return; }
             const { error: errUpd } = await supabaseClient
                 .from("usuarios").update({ contraseña: nueva }).eq("id", usuario.id);
-            if (errUpd) { msg.textContent = "❌ " + errUpd.message; return; }
-        } else { msg.textContent = "❌ " + errRpc.message; return; }
+            if (errUpd) { msg.textContent = "" + errUpd.message; return; }
+        } else { msg.textContent = "" + errRpc.message; return; }
 
         msg.style.color = "#10b981";
-        msg.textContent = "✅ Contraseña actualizada.";
+        msg.textContent = "Contraseña actualizada.";
         ["cpActual","cpNueva","cpConfirmar"].forEach(id => document.getElementById(id).value = "");
     }
 
@@ -1776,12 +1776,12 @@
             list.innerHTML = notifs.map(n => `
                 <div class="notif-item ${n.tipo}" onclick="navegar('actividades');cerrarNotifDropdown()">
                     <div class="notif-item-title">${esc(n.titulo)}</div>
-                    <div class="notif-item-meta">${n.tipo === "vencida" ? "🔴" : "🟡"} ${n.meta}</div>
+                    <div class="notif-item-meta"><span class="notif-dot ${n.tipo}"></span>${n.meta}</div>
                 </div>`).join("");
         } else {
             badge.style.display = "none";
             count.textContent   = "";
-            list.innerHTML      = `<div class="notif-empty">✅ Sin actividades vencidas o próximas a vencer</div>`;
+            list.innerHTML      = `<div class="notif-empty">Sin actividades vencidas o próximas a vencer</div>`;
         }
 
         // Con recordatorios periódicos, el temporizador es quien avisa
@@ -1858,7 +1858,7 @@
     async function guardarNuevaTarea() {
         const actividad = document.getElementById("ntActividad").value.trim();
         if (!actividad) {
-            document.getElementById("ntMsg").textContent = "⚠ El nombre de la actividad es obligatorio.";
+            document.getElementById("ntMsg").textContent = "El nombre de la actividad es obligatorio.";
             document.getElementById("ntMsg").style.color = "#ef4444";
             return;
         }
@@ -1880,13 +1880,13 @@
         const { error } = await supabaseClient.from("actividades").insert([payload]);
 
         if (error) {
-            document.getElementById("ntMsg").textContent = "❌ Error al guardar: " + error.message;
+            document.getElementById("ntMsg").textContent = "Error al guardar: " + error.message;
             document.getElementById("ntMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
         }
 
-        document.getElementById("ntMsg").textContent = "✅ Tarea guardada correctamente.";
+        document.getElementById("ntMsg").textContent = "Tarea guardada correctamente.";
         document.getElementById("ntMsg").style.color = "#10b981";
         await cargarActividades();
         setTimeout(() => cerrarModal(), 800);
@@ -1919,7 +1919,7 @@
     async function guardarPaginaNuevaTarea() {
         const actividad = document.getElementById("pntActividad").value.trim();
         if (!actividad) {
-            document.getElementById("pntMsg").textContent = "⚠ El nombre de la actividad es obligatorio.";
+            document.getElementById("pntMsg").textContent = "El nombre de la actividad es obligatorio.";
             document.getElementById("pntMsg").style.color = "#ef4444";
             document.getElementById("pntActividad").focus();
             return;
@@ -1943,13 +1943,13 @@
 
         const { error } = await supabaseClient.from("actividades").insert([payload]);
         if (error) {
-            document.getElementById("pntMsg").textContent = "❌ Error: " + error.message;
+            document.getElementById("pntMsg").textContent = "Error: " + error.message;
             document.getElementById("pntMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
         }
 
-        document.getElementById("pntMsg").textContent = "✅ Tarea guardada correctamente.";
+        document.getElementById("pntMsg").textContent = "Tarea guardada correctamente.";
         document.getElementById("pntMsg").style.color = "#10b981";
         await cargarActividades();
         setTimeout(() => limpiarNuevaTarea(), 1200);
@@ -1993,7 +1993,7 @@
         const id = parseInt(document.getElementById("etId").value);
         const actividad = document.getElementById("etActividad").value.trim();
         if (!actividad) {
-            document.getElementById("etMsg").textContent = "⚠ El nombre es obligatorio.";
+            document.getElementById("etMsg").textContent = "El nombre es obligatorio.";
             document.getElementById("etMsg").style.color = "#ef4444";
             return;
         }
@@ -2026,7 +2026,7 @@
 
         const { error } = await supabaseClient.from("actividades").update(payload).eq("id", id);
         if (error) {
-            document.getElementById("etMsg").textContent = "❌ " + error.message;
+            document.getElementById("etMsg").textContent = "" + error.message;
             document.getElementById("etMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
@@ -2034,7 +2034,7 @@
 
         if (cambios.length) await registrarHistorial(id, "editó", cambios);
 
-        document.getElementById("etMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("etMsg").textContent = "Guardado correctamente.";
         document.getElementById("etMsg").style.color = "#10b981";
         await cargarActividades();
         setTimeout(() => cerrarModalEditar(), 700);
@@ -2116,9 +2116,9 @@
             let sep = "";
             if (r.numero_licencia !== lastLic) {
                 lastLic = r.numero_licencia;
-                sep = `<tr style="background:#f0f4ff">
-                    <td colspan="10" style="padding:8px 16px;font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em">
-                        📦 Licencia ${esc(String(r.numero_licencia || "—"))}
+                sep = `<tr style="background:#f5f5f7">
+                    <td colspan="10" style="padding:8px 16px;font-size:11px;font-weight:700;color:#48484a;text-transform:uppercase;letter-spacing:.06em">
+                        <i data-lucide="package"></i> Licencia ${esc(String(r.numero_licencia || "—"))}
                     </td>
                 </tr>`;
             }
@@ -2128,14 +2128,14 @@
             return sep + `<tr>
                 <td data-label="Slot" style="color:#9ca3af;font-weight:600">${esc(String(r.slot||"—"))}</td>
                 <td data-label="Nombre"><strong>${esc(r.nombre||"—")}</strong></td>
-                <td data-label="Tipo"><span class="asignado-chip" style="background:#e0e7ff;color:#3730a3">${esc(r.tipo||"—")}</span></td>
+                <td data-label="Tipo"><span class="asignado-chip">${esc(r.tipo||"—")}</span></td>
                 <td data-label="Correo" style="color:#6b7280;font-size:12px">${esc(r.correo||"—")}</td>
                 <td data-label="Cuenta" style="font-size:12px">${esc(r.nombre_cuenta||"—")}</td>
                 <td data-label="Expiración">${expBadge}</td>
                 <td data-label="País" style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
                 <td data-label="Contacto" style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
-                <td data-label="N° Lic." style="font-size:11px;color:#6366f1;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
-                <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})">✏ Editar</button></td>
+                <td data-label="N° Lic." style="font-size:11px;color:#48484a;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+                <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})"><i data-lucide="pencil"></i> Editar</button></td>
             </tr>`;
         }).join("");
     }
@@ -2193,12 +2193,12 @@
 
         const { error } = await supabaseClient.from("licencias_office").update(payload).eq("id", id);
         if (error) {
-            document.getElementById("eoMsg").textContent = "❌ " + error.message;
+            document.getElementById("eoMsg").textContent = "" + error.message;
             document.getElementById("eoMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
         }
-        document.getElementById("eoMsg").textContent = "✅ Guardado correctamente.";
+        document.getElementById("eoMsg").textContent = "Guardado correctamente.";
         document.getElementById("eoMsg").style.color = "#10b981";
         await cargarLicenciasOffice();
         setTimeout(() => cerrarModalEditarOffice(), 700);
@@ -2303,7 +2303,7 @@
                 <td data-label="Serie" style="font-size:12px;color:#6b7280;font-family:monospace">${esc(r.numero_serie||"—")}</td>
                 <td data-label="Estado"><span class="badge ${badgeEquipoEstado(r.estado)}">${esc(r.estado||"—")}</span></td>
                 <td data-label="Asignado a">${asignadoHtml}</td>
-                <td data-label=""><button class="btn-edit" onclick="abrirEditarEquipo(${r.id})">✏ Editar</button></td>
+                <td data-label=""><button class="btn-edit" onclick="abrirEditarEquipo(${r.id})"><i data-lucide="pencil"></i> Editar</button></td>
             </tr>`;
         }).join("");
     }
@@ -2330,7 +2330,7 @@
     async function guardarNuevoEquipo() {
         const tipo = document.getElementById("neTipo").value.trim();
         if (!tipo) {
-            document.getElementById("neMsg").textContent = "⚠ El tipo de equipo es obligatorio.";
+            document.getElementById("neMsg").textContent = "El tipo de equipo es obligatorio.";
             document.getElementById("neMsg").style.color = "#ef4444";
             return;
         }
@@ -2352,7 +2352,7 @@
 
         const { error } = await supabaseClient.from("inventario_equipos").insert([payload]);
         if (error) {
-            document.getElementById("neMsg").textContent = "❌ " + error.message;
+            document.getElementById("neMsg").textContent = "" + error.message;
             document.getElementById("neMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
@@ -2392,7 +2392,7 @@
         const id   = parseInt(document.getElementById("eeId").value);
         const tipo = document.getElementById("eeTipo").value.trim();
         if (!tipo) {
-            document.getElementById("eeMsg").textContent = "⚠ El tipo de equipo es obligatorio.";
+            document.getElementById("eeMsg").textContent = "El tipo de equipo es obligatorio.";
             document.getElementById("eeMsg").style.color = "#ef4444";
             return;
         }
@@ -2415,7 +2415,7 @@
 
         const { error } = await supabaseClient.from("inventario_equipos").update(payload).eq("id", id);
         if (error) {
-            document.getElementById("eeMsg").textContent = "❌ " + error.message;
+            document.getElementById("eeMsg").textContent = "" + error.message;
             document.getElementById("eeMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
@@ -2648,11 +2648,11 @@
                 <td data-label="#">${i + 1}</td>
                 <td data-label="Nombre"><strong>${esc(l.nombre||"—")}</strong></td>
                 <td data-label="Correo" style="color:#6b7280">${esc(l.correo||"—")}</td>
-                <td data-label="Plan"><span class="asignado-chip" style="background:#f5f3ff;color:#6d28d9">${esc(l.plan||"—")}</span></td>
+                <td data-label="Plan"><span class="asignado-chip">${esc(l.plan||"—")}</span></td>
                 <td data-label="Expiración">${esc(l.expiracion||"—")}</td>
                 <td data-label="Estado">${estadoBadge}</td>
                 <td data-label="Notas" style="color:#9ca3af;font-size:11px">${esc((l.notas||"").substring(0,50))}</td>
-                <td data-label=""><button class="btn-edit" onclick="event.stopPropagation();abrirEditarKanva(${l.id})">✏</button></td>
+                <td data-label=""><button class="btn-edit" onclick="event.stopPropagation();abrirEditarKanva(${l.id})"><i data-lucide="pencil"></i></button></td>
             </tr>`;
         }).join("");
     }
@@ -2674,7 +2674,7 @@
         const nombre = document.getElementById("nkNombre").value.trim();
         const correo = document.getElementById("nkCorreo").value.trim();
         if (!nombre || !correo) {
-            document.getElementById("nkMsg").textContent = "⚠ Nombre y correo son obligatorios.";
+            document.getElementById("nkMsg").textContent = "Nombre y correo son obligatorios.";
             document.getElementById("nkMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("nkGuardar"); btn.disabled = true;
@@ -2690,11 +2690,11 @@
 
         const { error } = await supabaseClient.from("licencias_canva").insert([payload]);
         if (error) {
-            document.getElementById("nkMsg").textContent = "❌ " + error.message;
+            document.getElementById("nkMsg").textContent = "" + error.message;
             document.getElementById("nkMsg").style.color = "#ef4444";
             btn.disabled = false; return;
         }
-        document.getElementById("nkMsg").textContent = "✅ Licencia creada.";
+        document.getElementById("nkMsg").textContent = "Licencia creada.";
         document.getElementById("nkMsg").style.color = "#10b981";
         await cargarLicenciasKanva();
         setTimeout(() => cerrarModalNuevaLicenciaKanva(), 600);
@@ -2726,7 +2726,7 @@
         const id     = parseInt(document.getElementById("ekId").value);
         const nombre = document.getElementById("ekNombre").value.trim();
         if (!nombre) {
-            document.getElementById("ekMsg").textContent = "⚠ El nombre es obligatorio.";
+            document.getElementById("ekMsg").textContent = "El nombre es obligatorio.";
             document.getElementById("ekMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("ekGuardar"); btn.disabled = true;
@@ -2743,7 +2743,7 @@
 
         const { error } = await supabaseClient.from("licencias_canva").update(payload).eq("id", id);
         if (error) {
-            document.getElementById("ekMsg").textContent = "❌ " + error.message;
+            document.getElementById("ekMsg").textContent = "" + error.message;
             document.getElementById("ekMsg").style.color = "#ef4444";
             btn.disabled = false; return;
         }
@@ -2785,7 +2785,7 @@
         if (errCarga) {
             console.error("Mantenimientos:", errCarga);
             const grid = document.getElementById("calGrid");
-            if (grid) grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">❌ No se pudieron cargar los mantenimientos: ${esc(errCarga.message)}</div>`;
+            if (grid) grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No se pudieron cargar los mantenimientos: ${esc(errCarga.message)}</div>`;
         }
         todosMantenimientos = mRes.data || [];
         todosEquipos_mant   = eRes.data || [];
@@ -2915,14 +2915,14 @@
             const nombreE = eN ? [eN.tipo,eN.marca,eN.modelo].filter(Boolean).join(" ") : "—";
             return `
             <tr class="ticket-row" onclick="verTicket(${t.id})">
-                <td><span style="font-size:11px;font-weight:700;color:#6366f1">${esc(t.numero_ticket||"—")}</span><br><span style="font-size:11px;color:#9ca3af">${esc((t.titulo||"").substring(0,30))}</span></td>
+                <td><span style="font-size:11px;font-weight:700;color:#1c1c1e">${esc(t.numero_ticket||"—")}</span><br><span style="font-size:11px;color:#9ca3af">${esc((t.titulo||"").substring(0,30))}</span></td>
                 <td><strong style="font-size:13px">${esc(nombreU)}</strong><br><span style="font-size:11px;color:#9ca3af">${esc(nombreE)}</span></td>
                 <td><span class="asignado-chip" style="background:#f0fdf4;color:#166534">${esc(t.tipo||"—")}</span></td>
                 <td>${badgePrioridad(t.prioridad)}</td>
                 <td>${badgeMantEstado(t.estado)}</td>
                 <td style="font-size:12px;white-space:nowrap">${formatFecha(t.fecha_programada)}</td>
                 <td style="font-size:12px">${esc(t.tecnico||"—")}</td>
-                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="verTicket(${t.id})">👁 Ver</button></td>
+                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="verTicket(${t.id})"><i data-lucide="eye"></i> Ver</button></td>
             </tr>`;
         }).join("");
     }
@@ -3014,7 +3014,7 @@
         const uid    = document.getElementById("ntmUsuario").value;
         const fecha  = document.getElementById("ntmFecha").value;
         if (!titulo || !uid || !fecha) {
-            document.getElementById("ntmMsg").textContent = "⚠ Usuario, título y fecha son obligatorios.";
+            document.getElementById("ntmMsg").textContent = "Usuario, título y fecha son obligatorios.";
             document.getElementById("ntmMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("ntmGuardar"); btn.disabled = true;
@@ -3049,12 +3049,12 @@
 
         const { data, error } = await supabaseClient.from("mantenimientos").insert([payload]).select().single();
         if (error) {
-            document.getElementById("ntmMsg").textContent = "❌ " + error.message;
+            document.getElementById("ntmMsg").textContent = "" + error.message;
             document.getElementById("ntmMsg").style.color = "#ef4444";
             btn.disabled = false; return;
         }
 
-        document.getElementById("ntmMsg").textContent = "✅ Ticket " + numTkt + " creado.";
+        document.getElementById("ntmMsg").textContent = "Ticket " + numTkt + " creado.";
         document.getElementById("ntmMsg").style.color = "#10b981";
         await cargarMantenimientos();
         setTimeout(() => { cerrarModalNuevoTicket(); verTicket(data.id); }, 800);
@@ -3134,10 +3134,10 @@
     function copiarLinkTicket() {
         const link = document.getElementById("vtLink").textContent;
         navigator.clipboard.writeText(link).then(() => {
-            document.getElementById("vtLinkMsg").textContent = "✅ Link copiado al portapapeles";
+            document.getElementById("vtLinkMsg").textContent = "Link copiado al portapapeles";
             setTimeout(() => { document.getElementById("vtLinkMsg").textContent = ""; }, 2000);
         }).catch(() => {
-            document.getElementById("vtLinkMsg").textContent = "⚠ No se pudo copiar automáticamente";
+            document.getElementById("vtLinkMsg").textContent = "No se pudo copiar automáticamente";
         });
     }
 
@@ -3145,8 +3145,8 @@
         if (!ticketActualId) return;
         const { error } = await supabaseClient.from("mantenimientos").update({ estado: nuevoEstado }).eq("id", ticketActualId);
         const msg = document.getElementById("vtMsgEstado");
-        if (error) { msg.textContent = "❌ Error: " + error.message; msg.style.color = "#ef4444"; return; }
-        msg.textContent = "✅ Estado actualizado a: " + nuevoEstado; msg.style.color = "#10b981";
+        if (error) { msg.textContent = "Error: " + error.message; msg.style.color = "#ef4444"; return; }
+        msg.textContent = "Estado actualizado a: " + nuevoEstado; msg.style.color = "#10b981";
         await cargarMantenimientos();
         const t = todosMantenimientos.find(x => x.id === ticketActualId);
         if (t) document.getElementById("vtEstadoWrap").innerHTML = badgeMantEstado(t.estado);
@@ -3179,7 +3179,7 @@
         const id     = parseInt(document.getElementById("etmId").value);
         const titulo = document.getElementById("etmTitulo").value.trim();
         if (!titulo) {
-            document.getElementById("etmMsg").textContent = "⚠ El título es obligatorio.";
+            document.getElementById("etmMsg").textContent = "El título es obligatorio.";
             document.getElementById("etmMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("etmGuardar"); btn.disabled = true;
@@ -3198,11 +3198,11 @@
 
         const { error } = await supabaseClient.from("mantenimientos").update(payload).eq("id", id);
         if (error) {
-            document.getElementById("etmMsg").textContent = "❌ " + error.message;
+            document.getElementById("etmMsg").textContent = "" + error.message;
             document.getElementById("etmMsg").style.color = "#ef4444";
             btn.disabled = false; return;
         }
-        document.getElementById("etmMsg").textContent = "✅ Ticket actualizado.";
+        document.getElementById("etmMsg").textContent = "Ticket actualizado.";
         document.getElementById("etmMsg").style.color = "#10b981";
         await cargarMantenimientos();
         ticketActualId = id;
@@ -3304,7 +3304,16 @@
     }
 
     iniciarDashboard();
-    if (typeof lucide !== "undefined") lucide.createIcons();
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+        // Íconos dentro de contenido generado después (tablas, ventanas, notificaciones)
+        let iconosPendientes = false;
+        new MutationObserver(() => {
+            if (iconosPendientes || !document.querySelector("i[data-lucide]")) return;
+            iconosPendientes = true;
+            requestAnimationFrame(() => { iconosPendientes = false; lucide.createIcons(); });
+        }).observe(document.body, { childList: true, subtree: true });
+    }
 
     /* ── MOBILE SIDEBAR ── */
     function toggleSidebar() {
@@ -3392,7 +3401,7 @@ function dbRenderTabla() {
             let v = row[c];
             if (v === null || v === undefined) v = "—";
             else if (typeof v === "object") v = JSON.stringify(v).slice(0, 60) + "…";
-            else if (typeof v === "boolean") v = v ? "✓" : "✗";
+            else if (typeof v === "boolean") v = v ? "Sí" : "No";
             else if (typeof v === "string" && v.length > 50) v = v.slice(0, 50) + "…";
             return `<td title="${String(row[c] ?? "")}">${v}</td>`;
         }).join("")}</tr>`
@@ -3408,7 +3417,7 @@ function dbRenderStats() {
     if (campoEstado) {
         const conteos = {};
         dbDatos.forEach(r => { const v = String(r[campoEstado] ?? "—"); conteos[v] = (conteos[v] || 0) + 1; });
-        const colorMap = { "true":"#10b981","false":"#ef4444","✓":"#10b981","✗":"#ef4444","Terminado":"#10b981","Completado":"#10b981","activo":"#10b981","En proceso":"#f59e0b","En Proceso":"#f59e0b","Programado":"#3b82f6","No iniciado":"#9ca3af","Cancelado":"#ef4444","Correctivo":"#ef4444" };
+        const colorMap = { "true":"#10b981","false":"#ef4444","Sí":"#10b981","No":"#ef4444","Terminado":"#10b981","Completado":"#10b981","activo":"#10b981","En proceso":"#f59e0b","En Proceso":"#f59e0b","Programado":"#3b82f6","No iniciado":"#9ca3af","Cancelado":"#ef4444","Correctivo":"#ef4444" };
         Object.entries(conteos).slice(0,5).forEach(([k, v]) => {
             const color = colorMap[k] || "#6b7280";
             html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;min-width:100px"><div style="font-size:22px;font-weight:700;color:${color}">${v}</div><div style="font-size:12px;color:#6b7280">${k}</div></div>`;
@@ -3468,7 +3477,7 @@ function dbLogEvento(tipo, msg) {
     if (placeholder) placeholder.remove();
     const hora = new Date().toLocaleTimeString("es-GT", { hour12: false });
     const clases = { insert: "db-log-insert", update: "db-log-update", delete: "db-log-delete", error: "" };
-    const iconos = { insert: "●", update: "◆", delete: "✕", error: "⚠" };
+    const iconos = { insert: "●", update: "◆", delete: "✕", error: "!" };
     const el = document.createElement("div");
     el.className = clases[tipo] || "";
     el.textContent = `${hora}  ${iconos[tipo] || "·"}  ${msg}`;

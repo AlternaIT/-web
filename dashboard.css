@@ -2743,3 +2743,191 @@ body.cfg-dark .cfg-save-status {
 body.cfg-dark .cfg-save-status.dirty {
   color: #d97706 !important;
 }
+
+/* ==========================================================================
+   DISEÑO PROFESIONAL — GRAFITO (capa final)
+   Paleta única en grises; el color queda solo para estados (vencido, en
+   proceso, terminado). Íconos SVG (Lucide) en lugar de emojis.
+   ========================================================================== */
+
+:root {
+  --g-950: #111112;
+  --g-900: #1c1c1e;
+  --g-800: #2c2c2e;
+  --g-700: #3a3a3c;
+  --g-600: #48484a;
+  --g-500: #636366;
+  --g-400: #8e8e93;
+  --g-300: #c7c7cc;
+  --g-200: #e5e5ea;
+  --g-150: #ececf0;
+  --g-100: #f2f2f5;
+  --g-50:  #f7f7f9;
+  --ui-bg: #f5f5f7;
+  --ui-primary: var(--g-900);
+  --ui-primary-hover: var(--g-700);
+  --ui-primary-soft: var(--g-100);
+  --ui-border: var(--g-200);
+  --ui-border-strong: #d1d1d6;
+  --ui-text: var(--g-900);
+  --ui-text-soft: var(--g-700);
+  --ui-muted: var(--g-500);
+  --ui-faint: var(--g-400);
+}
+body:not(.cfg-dark) { background: var(--ui-bg) !important; }
+::selection { background: rgba(28,28,30,.14) !important; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid rgba(28,28,30,.35) !important; outline-offset: 2px !important;
+}
+
+/* ── Íconos SVG ───────────────────────────────────────────────────────── */
+svg.lucide { width: 16px; height: 16px; stroke-width: 1.9; flex: none; }
+.btn-primary, .btn-secondary, .btn-danger, .btn-edit, .share-box-btn,
+.view-toggle-btn, .panel-action, .notif-btn, .drawer-close {
+  display: inline-flex !important; align-items: center !important; justify-content: center; gap: 7px !important;
+}
+:is(.btn-primary, .btn-secondary, .btn-danger, .share-box-btn, .view-toggle-btn) svg.lucide { width: 15px; height: 15px; }
+.btn-edit svg.lucide, .panel-action svg.lucide { width: 14px; height: 14px; }
+.panel-title svg.lucide, .ticket-section-title svg.lucide { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; color: var(--g-500); }
+.drawer-close svg.lucide { width: 18px; height: 18px; }
+.notif-btn svg.lucide { width: 18px; height: 18px; color: var(--g-700); }
+
+/* ── Barra lateral ────────────────────────────────────────────────────── */
+.sidebar { background: var(--g-950) !important; }
+.menu-item.active, body:not(.cfg-dark) .sidebar .menu-item.active {
+  background: rgba(255,255,255,.08) !important; color: #fff !important;
+  box-shadow: inset 2px 0 0 #f5f5f7 !important;
+}
+.menu-item.active .menu-icon, body:not(.cfg-dark) .sidebar .menu-item.active .menu-icon { color: #fff !important; }
+.submenu-item.active, body:not(.cfg-dark) .sidebar .submenu-item.active { color: #fff !important; background: rgba(255,255,255,.06) !important; }
+.avatar { background: var(--g-700) !important; color: #fff !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08) !important; }
+
+/* ── Barra superior ───────────────────────────────────────────────────── */
+body:not(.cfg-dark) .topbar { background: rgba(255,255,255,.92) !important; border-bottom: 1px solid var(--g-200) !important; box-shadow: none !important; backdrop-filter: saturate(1.4) blur(12px); }
+.page-title { letter-spacing: -.02em !important; }
+.notif-btn { width: 38px !important; height: 38px !important; border-radius: 10px !important; border: 1px solid var(--g-200) !important; background: #fff !important; }
+.notif-btn:hover { background: var(--g-100) !important; }
+.notif-badge { background: var(--g-900) !important; color: #fff !important; box-shadow: 0 0 0 2px #fff !important; }
+.notif-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: #d97706; }
+.notif-dot.vencida { background: #dc2626; }
+
+/* ── Bienvenida ───────────────────────────────────────────────────────── */
+body:not(.cfg-dark) .welcome {
+  background: linear-gradient(135deg, var(--g-900) 0%, var(--g-700) 100%) !important;
+  border: 0 !important; box-shadow: 0 10px 30px rgba(17,17,18,.12) !important;
+}
+body:not(.cfg-dark) .welcome::after { background: radial-gradient(circle, rgba(255,255,255,.10), rgba(255,255,255,0)) !important; }
+body:not(.cfg-dark) .welcome h2 { color: #fff !important; }
+body:not(.cfg-dark) .welcome p { color: rgba(255,255,255,.7) !important; }
+
+/* ── Tarjetas de métricas: sin franjas de color ───────────────────────── */
+.card { border: 1px solid var(--g-200) !important; box-shadow: 0 1px 2px rgba(17,17,18,.04) !important; }
+.card::before { display: none !important; }
+.card.clickable:hover { border-color: var(--g-300) !important; box-shadow: 0 8px 24px rgba(17,17,18,.07) !important; }
+.card-icon,
+.card.accent-blue .card-icon, .card.accent-yellow .card-icon,
+.card.accent-green .card-icon, .card.accent-purple .card-icon {
+  background: var(--g-100) !important; color: var(--g-800) !important;
+  border: 1px solid var(--g-150) !important; border-radius: 10px !important;
+}
+.card-icon svg.lucide { width: 18px; height: 18px; }
+.card-title { color: var(--g-500) !important; text-transform: uppercase; font-size: 10.5px !important; letter-spacing: .07em !important; font-weight: 650 !important; }
+.card-number { color: var(--g-900) !important; font-weight: 750 !important; }
+.card-description { color: var(--g-400) !important; }
+.mant-stat-card { border: 1px solid var(--g-200) !important; border-top: 1px solid var(--g-200) !important; box-shadow: 0 1px 2px rgba(17,17,18,.04) !important; }
+
+/* Íconos destacados en cabeceras */
+.hero-icon { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; flex: none; background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.14); }
+.hero-icon svg.lucide { width: 24px; height: 24px; }
+.hero-icon.claro { width: 42px; height: 42px; border-radius: 10px; background: var(--g-100); color: var(--g-800); border-color: var(--g-200); }
+.hero-icon.claro svg.lucide { width: 20px; height: 20px; }
+
+/* ── Paneles y listas ─────────────────────────────────────────────────── */
+.panel { border: 1px solid var(--g-200) !important; box-shadow: 0 1px 2px rgba(17,17,18,.04) !important; }
+.panel-header { border-bottom: 1px solid var(--g-150) !important; }
+.panel-action { color: var(--g-700) !important; font-weight: 600 !important; gap: 4px !important; }
+.panel-action:hover { color: var(--g-900) !important; }
+.activity-icon { background: var(--g-100) !important; color: var(--g-700) !important; border: 1px solid var(--g-150) !important; }
+.activity-icon svg.lucide { width: 15px; height: 15px; }
+.history-dot { background: var(--g-600) !important; }
+
+/* ── Botones ──────────────────────────────────────────────────────────── */
+.btn-primary, .btn-comment {
+  background: var(--g-900) !important; border: 1px solid var(--g-900) !important; color: #fff !important;
+  box-shadow: 0 1px 2px rgba(17,17,18,.12) !important; border-radius: 9px !important; font-weight: 600 !important;
+}
+.btn-primary:hover, .btn-comment:hover { background: var(--g-700) !important; border-color: var(--g-700) !important; transform: none !important; box-shadow: 0 4px 12px rgba(17,17,18,.16) !important; }
+.btn-primary:disabled { background: var(--g-300) !important; border-color: var(--g-300) !important; box-shadow: none !important; }
+.btn-secondary { background: #fff !important; border: 1px solid #d1d1d6 !important; color: var(--g-800) !important; border-radius: 9px !important; font-weight: 550 !important; }
+.btn-secondary:hover { background: var(--g-100) !important; border-color: var(--g-300) !important; color: var(--g-900) !important; }
+.btn-danger { background: #fff !important; border: 1px solid #f1c4c4 !important; color: #b42318 !important; border-radius: 9px !important; font-weight: 550 !important; }
+.btn-danger:hover { background: #fef3f2 !important; border-color: #e8a3a3 !important; }
+.btn-edit { background: var(--g-100) !important; color: var(--g-800) !important; border: 1px solid var(--g-200) !important; border-radius: 8px !important; font-weight: 550 !important; }
+.btn-edit:hover { background: var(--g-200) !important; color: var(--g-900) !important; }
+
+/* Botones de vista, periodo y paginación */
+.view-toggle-btn.active, .vista-toggle-btn.active, .periodo-btn.active, .pg-btn.active {
+  background: var(--g-900) !important; color: #fff !important; border-color: var(--g-900) !important;
+}
+.vista-toggle-btn:hover, .periodo-btn:hover, .pg-btn:hover:not(:disabled) { background: var(--g-100) !important; color: var(--g-900) !important; border-color: var(--g-300) !important; }
+
+/* ── Formularios ──────────────────────────────────────────────────────── */
+.filter-input:focus, .filter-select:focus, .comment-input:focus,
+.modal-input:focus, .modal-select:focus, .modal-textarea:focus {
+  border-color: var(--g-600) !important; box-shadow: 0 0 0 3px rgba(28,28,30,.08) !important; outline: none !important;
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────── */
+.table-wrap { border: 1px solid var(--g-200) !important; box-shadow: 0 1px 2px rgba(17,17,18,.04) !important; }
+body:not(.cfg-dark) thead th { background: var(--g-50) !important; color: var(--g-500) !important; border-bottom: 1px solid var(--g-200) !important; }
+body:not(.cfg-dark) tbody tr:hover { background: var(--g-50) !important; }
+thead th.sortable:hover { background: var(--g-100) !important; color: var(--g-900) !important; }
+.asignado-chip { background: var(--g-100) !important; color: var(--g-700) !important; border: 1px solid var(--g-200); }
+
+/* ── Ventanas y panel lateral ─────────────────────────────────────────── */
+.modal { border-radius: 16px !important; border: 1px solid var(--g-200) !important; box-shadow: 0 24px 60px rgba(17,17,18,.18) !important; }
+.modal-title { font-size: 18px !important; font-weight: 700 !important; letter-spacing: -.015em !important; color: var(--g-900) !important; }
+.ticket-num, .share-box-link { color: var(--g-800) !important; }
+.ticket-num { background: var(--g-100) !important; border: 1px solid var(--g-200) !important; }
+body.cfg-dark .ticket-num { background: #2c2c2e !important; border-color: #3a3a3c !important; }
+.share-box-btn { background: var(--g-900) !important; color: #fff !important; border-radius: 8px !important; }
+.share-box-btn:hover { background: var(--g-700) !important; }
+.cal-day.today { background: var(--g-50) !important; border-color: var(--g-400) !important; }
+.cal-day.today .cal-day-num { display: inline-grid !important; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 6px; background: var(--g-900) !important; color: #fff !important; }
+.cal-event.programado, .badge-programado { background: var(--g-150) !important; color: var(--g-700) !important; }
+body.cfg-dark .cal-event.programado, body.cfg-dark .badge-programado { background: #2c2c2e !important; color: #d1d1d6 !important; }
+
+/* ── Modo oscuro (mismo sistema, invertido) ───────────────────────────── */
+body.cfg-dark .notif-btn { background: #1c1c1e !important; border-color: #2c2c2f !important; }
+body.cfg-dark .notif-btn svg.lucide { color: #d1d1d6; }
+body.cfg-dark .notif-badge { background: #f5f5f7 !important; color: #111 !important; box-shadow: 0 0 0 2px #1c1c1e !important; }
+body.cfg-dark .card-icon,
+body.cfg-dark .card.accent-blue .card-icon, body.cfg-dark .card.accent-yellow .card-icon,
+body.cfg-dark .card.accent-green .card-icon, body.cfg-dark .card.accent-purple .card-icon,
+body.cfg-dark .activity-icon, body.cfg-dark .hero-icon.claro {
+  background: #2c2c2e !important; color: #e5e5ea !important; border-color: #3a3a3c !important;
+}
+body.cfg-dark .card, body.cfg-dark .panel, body.cfg-dark .table-wrap, body.cfg-dark .mant-stat-card { border-color: #2c2c2f !important; }
+body.cfg-dark .btn-primary, body.cfg-dark .btn-comment,
+body.cfg-dark .view-toggle-btn.active, body.cfg-dark .vista-toggle-btn.active,
+body.cfg-dark .periodo-btn.active, body.cfg-dark .pg-btn.active, body.cfg-dark .share-box-btn {
+  background: #f5f5f7 !important; border-color: #f5f5f7 !important; color: #111112 !important;
+}
+body.cfg-dark .btn-primary:hover, body.cfg-dark .btn-comment:hover, body.cfg-dark .share-box-btn:hover { background: #d1d1d6 !important; border-color: #d1d1d6 !important; }
+body.cfg-dark .btn-secondary, body.cfg-dark .btn-edit { background: #2c2c2e !important; border-color: #3a3a3c !important; color: #e5e5ea !important; }
+body.cfg-dark .btn-secondary:hover, body.cfg-dark .btn-edit:hover { background: #3a3a3c !important; color: #fff !important; }
+body.cfg-dark .btn-danger { background: transparent !important; border-color: #5c2b2b !important; color: #f4a7a7 !important; }
+body.cfg-dark .asignado-chip { background: #2c2c2e !important; color: #d1d1d6 !important; border-color: #3a3a3c; }
+body.cfg-dark .panel-action, body.cfg-dark .ticket-num, body.cfg-dark .share-box-link { color: #e5e5ea !important; }
+body.cfg-dark thead th.sortable:hover { background: #2c2c2f !important; color: #fff !important; }
+body.cfg-dark .modal { border-color: #2c2c2f !important; }
+body.cfg-dark .cal-day.today .cal-day-num { background: #f5f5f7 !important; color: #111 !important; }
+
+/* Botón sobre cabeceras oscuras */
+.btn-primary.sobre-oscuro, body.cfg-dark .btn-primary.sobre-oscuro { background: #f5f5f7 !important; border-color: #f5f5f7 !important; color: #111112 !important; }
+.btn-primary.sobre-oscuro:hover, body.cfg-dark .btn-primary.sobre-oscuro:hover { background: #fff !important; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--g-900); }
+body.cfg-dark input[type="checkbox"], body.cfg-dark input[type="radio"] { accent-color: #e5e5ea; }
+.periodo-badge { background: var(--g-100) !important; color: var(--g-700) !important; border: 1px solid var(--g-200) !important; }
+body.cfg-dark .periodo-badge { background: #2c2c2e !important; color: #d1d1d6 !important; border-color: #3a3a3c !important; }
