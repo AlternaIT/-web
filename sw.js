@@ -6,7 +6,7 @@
    → Al volver a abrir la app, SIEMPRE se sirve la red.
 ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME = "alterna-v1";
+const CACHE_NAME = "alterna-v2";
 
 // Archivos que se cachean para modo offline
 const OFFLINE_ASSETS = [
@@ -60,7 +60,9 @@ self.addEventListener("fetch", (event) => {
   if (url.hostname.includes("supabase.co")) return;
 
   event.respondWith(
-    fetch(event.request)
+    // no-cache: el navegador siempre pregunta al servidor si hay versión nueva
+    // (GitHub Pages permite reutilizar copias 10 min y se veían versiones viejas tras publicar)
+    fetch(event.request, { cache: "no-cache" })
       .then((networkResponse) => {
         // Si la red responde bien, actualiza el caché y devuelve la respuesta fresca
         if (networkResponse && networkResponse.status === 200) {
