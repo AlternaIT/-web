@@ -10,8 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="dashboard.css?v=20261102c">
-    <link rel="stylesheet" href="ai-assistant.css?v=20261102c">
+    <link rel="stylesheet" href="dashboard.css?v=20261102d">
+    <link rel="stylesheet" href="ai-assistant.css?v=20261102d">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
 
             <div class="menu-item" data-page="apps" onclick="window.location.href='apps.html'">
                 <span class="menu-icon"><i data-lucide="layout-grid"></i></span>
-                <span class="menu-text">Aplicaciones</span>
+                <span class="menu-text">Cambiar de aplicación</span>
             </div>
 
             <div class="menu-item" data-page="ia" onclick="window.location.href='ia.html'">
@@ -129,6 +129,11 @@
             <div class="menu-item" data-page="configuracion" onclick="navegar('configuracion')">
                 <span class="menu-icon"><i data-lucide="settings"></i></span>
                 <span class="menu-text">Configuración</span>
+            </div>
+
+            <div class="menu-item" data-page="aplicaciones" onclick="navegar('aplicaciones')">
+                <span class="menu-icon"><i data-lucide="app-window"></i></span>
+                <span class="menu-text">Aplicaciones</span>
             </div>
 
             <div class="menu-item" data-page="basedatos" onclick="navegar('basedatos')">
@@ -526,6 +531,40 @@
                     </thead>
                     <tbody id="usuariosBody">
                         <tr class="loading-row"><td colspan="4">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: APLICACIONES (catálogo del selector, solo admin)
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-aplicaciones">
+
+            <div class="users-header">
+                <div>
+                    <div class="section-title">Aplicaciones del sistema</div>
+                    <div style="font-size:12px;color:#6b7280;margin-top:4px">Lo que aparece en la pantalla de selección después del login. Los accesos de cada persona se asignan en su ficha de Usuarios.</div>
+                </div>
+                <button class="btn-primary" onclick="abrirModalAplicacion()">＋ Nueva aplicación</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aplicación</th>
+                            <th>Enlace</th>
+                            <th>Orden</th>
+                            <th>Usuarios con acceso</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="aplicacionesBody">
+                        <tr class="loading-row"><td colspan="6">Cargando aplicaciones...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1623,6 +1662,63 @@
 </div>
 
 <!-- MODAL NUEVO USUARIO -->
+<!-- MODAL APLICACIÓN (nueva / editar) -->
+<div class="modal-overlay" id="modalAplicacion">
+    <div class="modal modal-wide">
+        <div class="modal-title" id="apTitulo">Nueva aplicación</div>
+        <input type="hidden" id="apId" />
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+            <div id="apVista" style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-weight:700;color:#fff;overflow:hidden;flex:none"></div>
+            <div style="font-size:12px;color:#6b7280">Así se verá el icono en la pantalla de selección.</div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label">Nombre *</label>
+                <input class="modal-input" id="apNombre" type="text" placeholder="Ej. Recursos Humanos" oninput="vistaPreviaAplicacion()" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Clave * <span style="font-weight:400;color:#9ca3af">(identificador corto, sin espacios)</span></label>
+                <input class="modal-input" id="apClave" type="text" placeholder="Ej. rrhh" oninput="vistaPreviaAplicacion()" />
+            </div>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Descripción</label>
+            <textarea class="modal-textarea" id="apDescripcion" style="min-height:60px" placeholder="Para qué sirve, en una o dos líneas"></textarea>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Enlace * <span style="font-weight:400;color:#9ca3af">(página del sitio, ej. rrhh.html, o dirección https://…)</span></label>
+            <input class="modal-input" id="apUrl" type="text" placeholder="rrhh.html" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Logo <span style="font-weight:400;color:#9ca3af">(dirección de una imagen; vacío = muestra la clave)</span></label>
+            <input class="modal-input" id="apLogo" type="text" placeholder="https://…/logo.png" oninput="vistaPreviaAplicacion()" />
+        </div>
+        <div class="modal-grid-3">
+            <div class="modal-field">
+                <label class="modal-label">Color del icono</label>
+                <input class="modal-input" id="apColor" type="color" value="#3a3a3c" style="height:38px;padding:4px" oninput="vistaPreviaAplicacion()" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Orden</label>
+                <input class="modal-input" id="apOrden" type="number" min="0" value="0" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Estado</label>
+                <select class="modal-select" id="apActiva">
+                    <option value="true">Activa</option>
+                    <option value="false">Inactiva (oculta para todos)</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-msg" id="apMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-danger" id="apEliminar" onclick="eliminarAplicacion()">🗑 Eliminar</button>
+            <button class="btn-secondary" onclick="cerrarModalAplicacion()">Cancelar</button>
+            <button class="btn-primary" id="apGuardar" onclick="guardarAplicacion()">Guardar</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="modalNuevoUsuario">
     <div class="modal">
         <div class="modal-title">👤 Nuevo Usuario</div>
@@ -2241,8 +2337,8 @@
 </div>
 
 
-<script src="dashboard.js?v=20261102c"></script>
-<script src="ai-assistant.js?v=20261102c"></script>
+<script src="dashboard.js?v=20261102d"></script>
+<script src="ai-assistant.js?v=20261102d"></script>
 
 
 </body>

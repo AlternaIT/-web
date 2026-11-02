@@ -121,7 +121,7 @@
     const grid = document.getElementById("grid");
 
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-    const iniciales = t => String(t || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase();
+    const iniciales = t => String(t || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase().replace(/[^\p{L}\p{N}]/gu, "") || "?";
     // Solo enlaces del propio sitio o https (evita javascript: u otros esquemas en la configuración)
     const urlSegura = u => /^https:\/\//i.test(u) || /^[\w./-]+(\?[^"'<>]*)?(#[^"'<>]*)?$/.test(u) ? u : "#";
 

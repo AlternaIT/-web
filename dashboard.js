@@ -50,6 +50,7 @@
         "licencias-kanva":  { titulo: "Licencias — Canva",   subtitulo: "Gestión de licencias de diseño Canva" },
         mantenimientos:     { titulo: "Mantenimientos",      subtitulo: "Calendario y tickets de mantenimiento de equipos" },
         basedatos:          { titulo: "Base de datos",       subtitulo: "Vista en tiempo real de todas las tablas" },
+        aplicaciones:       { titulo: "Aplicaciones",        subtitulo: "Aplicaciones disponibles después del login" },
     };
 
     function navegar(pagina, filtroEstado) {
@@ -103,6 +104,7 @@
         if (pagina === "licencias-kanva")  cargarLicenciasKanva();
         if (pagina === "mantenimientos")   cargarMantenimientos();
         if (pagina === "basedatos")        dbIniciar();
+        if (pagina === "aplicaciones")     cargarAplicacionesAdmin();
     }
 
 
@@ -999,6 +1001,126 @@
         document.getElementById("modalFichaUsuario").classList.add("open");
         cargarAccesosUsuario(u.id);
     }
+
+    /* ═══════════════════════════════════════════
+       APLICACIONES (catálogo del selector apps.html)
+    ═══════════════════════════════════════════ */
+    let todasAplicaciones = [];
+    // it e ia son las apps de este sitio: su clave la usan dashboard.js e ia.js para validar el acceso
+    const CLAVES_FIJAS = ["it", "ia"];
+
+    function iconoAplicacion(a, tam = 36) {
+        const fondo = /^#[0-9a-f]{3,8}$/i.test(a.color || "") ? a.color : "#3a3a3c";
+        const texto = (a.clave && a.clave.length <= 3 ? a.clave.toUpperCase() : (a.nombre || "?").split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase()).replace(/[^\p{L}\p{N}]/gu, "");
+        const img = a.logo_url ? `<img src="${esc(a.logo_url)}" alt="" style="width:70%;height:70%;object-fit:contain" onerror="this.replaceWith(document.createTextNode('${texto}'))">` : texto;
+        return `<div style="width:${tam}px;height:${tam}px;border-radius:10px;background:${fondo};color:#fff;display:grid;place-items:center;font-size:${Math.round(tam / 3)}px;font-weight:700;overflow:hidden;flex:none">${img}</div>`;
+    }
+
+    async function cargarAplicacionesAdmin() {
+        const tbody = document.getElementById("aplicacionesBody");
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Cargando aplicaciones...</td></tr>`;
+        const [{ data, error }, { data: accesos }] = await Promise.all([
+            supabaseClient.from("aplicaciones").select("*").order("orden").order("nombre"),
+            supabaseClient.from("usuarios_aplicaciones").select("aplicacion_id"),
+        ]);
+        if (error) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">❌ ${esc(error.message)}</div></td></tr>`; return; }
+        todasAplicaciones = data || [];
+        const cuenta = {};
+        (accesos || []).forEach(a => { cuenta[a.aplicacion_id] = (cuenta[a.aplicacion_id] || 0) + 1; });
+        if (!todasAplicaciones.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No hay aplicaciones registradas.</div></td></tr>`; return; }
+        tbody.innerHTML = todasAplicaciones.map(a => `
+            <tr class="ticket-row" onclick="abrirModalAplicacion(${a.id})">
+                <td data-label="Aplicación"><div style="display:flex;align-items:center;gap:12px">${iconoAplicacion(a)}
+                    <div><strong style="font-size:13px">${esc(a.nombre)}</strong><br><span style="font-size:11px;color:#9ca3af">${esc((a.descripcion || "").substring(0, 70))}${(a.descripcion || "").length > 70 ? "…" : ""}</span></div></div></td>
+                <td data-label="Enlace" style="font-size:12px">${esc(a.url)}</td>
+                <td data-label="Orden">${a.orden}</td>
+                <td data-label="Usuarios con acceso" style="font-size:12px">${cuenta[a.id] || 0} + administradores</td>
+                <td data-label="Estado"><span class="badge ${a.activa ? "badge-terminado" : "badge-no-iniciado"}">${a.activa ? "Activa" : "Inactiva"}</span></td>
+                <td onclick="event.stopPropagation()"><button class="btn-edit" onclick="abrirModalAplicacion(${a.id})">✏ Editar</button></td>
+            </tr>`).join("");
+    }
+
+    function vistaPreviaAplicacion() {
+        document.getElementById("apVista").outerHTML = iconoAplicacion({
+            nombre: document.getElementById("apNombre").value, clave: document.getElementById("apClave").value.trim().toLowerCase(),
+            logo_url: document.getElementById("apLogo").value.trim(), color: document.getElementById("apColor").value,
+        }, 52).replace("<div ", '<div id="apVista" ');
+    }
+
+    function abrirModalAplicacion(id) {
+        const a = id ? todasAplicaciones.find(x => x.id === id) : null;
+        const fija = !!a && CLAVES_FIJAS.includes(a.clave);
+        document.getElementById("apTitulo").textContent  = a ? "Editar aplicación" : "Nueva aplicación";
+        document.getElementById("apId").value            = a?.id || "";
+        document.getElementById("apNombre").value        = a?.nombre || "";
+        document.getElementById("apClave").value         = a?.clave || "";
+        document.getElementById("apClave").disabled      = fija;
+        document.getElementById("apDescripcion").value   = a?.descripcion || "";
+        document.getElementById("apUrl").value           = a?.url || "";
+        document.getElementById("apLogo").value          = a?.logo_url || "";
+        document.getElementById("apColor").value         = /^#[0-9a-f]{6}$/i.test(a?.color || "") ? a.color : "#3a3a3c";
+        document.getElementById("apOrden").value         = a?.orden ?? (todasAplicaciones.length + 1);
+        document.getElementById("apActiva").value        = String(a?.activa ?? true);
+        document.getElementById("apEliminar").style.display = a && !fija ? "" : "none";
+        document.getElementById("apMsg").textContent     = fija ? "La clave de esta aplicación no se puede cambiar: el sistema la usa para validar el acceso." : "";
+        document.getElementById("apMsg").style.color     = "#6b7280";
+        document.getElementById("apGuardar").disabled    = false;
+        vistaPreviaAplicacion();
+        document.getElementById("modalAplicacion").classList.add("open");
+    }
+
+    function cerrarModalAplicacion() {
+        document.getElementById("modalAplicacion").classList.remove("open");
+    }
+
+    async function guardarAplicacion() {
+        const id  = parseInt(document.getElementById("apId").value) || null;
+        const msg = document.getElementById("apMsg");
+        const payload = {
+            nombre:      document.getElementById("apNombre").value.trim(),
+            clave:       document.getElementById("apClave").value.trim().toLowerCase(),
+            descripcion: document.getElementById("apDescripcion").value.trim() || null,
+            url:         document.getElementById("apUrl").value.trim(),
+            logo_url:    document.getElementById("apLogo").value.trim() || null,
+            color:       document.getElementById("apColor").value,
+            orden:       parseInt(document.getElementById("apOrden").value) || 0,
+            activa:      document.getElementById("apActiva").value === "true",
+        };
+        const error = (t) => { msg.textContent = "⚠ " + t; msg.style.color = "#ef4444"; };
+        if (!payload.nombre || !payload.clave || !payload.url) return error("Nombre, clave y enlace son obligatorios.");
+        if (!/^[a-z0-9_-]{2,30}$/.test(payload.clave)) return error("La clave solo admite letras minúsculas, números, guion y guion bajo (2 a 30).");
+        // Mismo criterio que apps.html: páginas del sitio o https (nada de javascript: u otros esquemas)
+        if (!/^https:\/\//i.test(payload.url) && !/^[\w./-]+(\?[^"'<>]*)?(#[^"'<>]*)?$/.test(payload.url)) return error("El enlace debe ser una página del sitio (ej. rrhh.html) o empezar con https://");
+        if (payload.logo_url && !/^https:\/\//i.test(payload.logo_url) && !/^[\w./-]+$/.test(payload.logo_url)) return error("El logo debe ser una imagen del sitio o una dirección https://");
+
+        const btn = document.getElementById("apGuardar"); btn.disabled = true;
+        msg.textContent = "Guardando..."; msg.style.color = "#6b7280";
+        const { error: err } = id
+            ? await supabaseClient.from("aplicaciones").update(payload).eq("id", id)
+            : await supabaseClient.from("aplicaciones").insert([payload]);
+        if (err) {
+            btn.disabled = false;
+            return error(err.code === "23505" ? "Ya existe una aplicación con esa clave." : err.message);
+        }
+        msg.textContent = "✅ Guardado."; msg.style.color = "#10b981";
+        await cargarAplicacionesAdmin();
+        setTimeout(cerrarModalAplicacion, 600);
+    }
+
+    async function eliminarAplicacion() {
+        const id = parseInt(document.getElementById("apId").value);
+        const a = todasAplicaciones.find(x => x.id === id);
+        if (!a || CLAVES_FIJAS.includes(a.clave)) return;
+        if (!confirm(`¿Eliminar la aplicación «${a.nombre}»? También se quitan los accesos de los usuarios a ella. Esta acción no se puede deshacer.\n\nSi solo quieres ocultarla, márcala como Inactiva.`)) return;
+        const { error } = await supabaseClient.from("aplicaciones").delete().eq("id", id);
+        if (error) { alert("Error al eliminar: " + error.message); return; }
+        cerrarModalAplicacion();
+        await cargarAplicacionesAdmin();
+    }
+
+    document.getElementById("modalAplicacion").addEventListener("click", function(e) {
+        if (e.target === this) cerrarModalAplicacion();
+    });
 
     /* Accesos a aplicaciones (tablas aplicaciones / usuarios_aplicaciones) */
     async function cargarAccesosUsuario(id) {
@@ -3172,6 +3294,8 @@
         if (accesoIT !== true) { window.location.replace("apps.html"); return; }
         if (accesoIA !== true) document.querySelector('.menu-item[data-page="ia"]')?.remove();
         await cargarUsuario();
+        // Gestionar el catálogo de aplicaciones es solo de administradores (la BD también lo exige)
+        if (usuario?.rol !== "admin") document.querySelector('.menu-item[data-page="aplicaciones"]')?.remove();
         await cargarConfiguracionUsuario();
         await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
         aplicarAjustes();
