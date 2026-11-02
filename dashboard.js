@@ -3,7 +3,12 @@
     ═══════════════════════════════════════════ */
     const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _tokenSesion = (() => { try { return JSON.parse(localStorage.getItem("usuario"))?.token || ""; } catch { return ""; } })();
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { headers: { "x-app-token": _tokenSesion } } });
+
+    // Dirección pública donde está publicada la web (para los links que se comparten a usuarios).
+    // Si el dashboard ya se abre desde esa web (http/https) se usa su propia dirección.
+    const URL_PUBLICA_APP = "https://alternait.github.io/-web/";
 
 
     /* ═══════════════════════════════════════════
@@ -15,6 +20,7 @@
     let usuario = null;
     try {
         usuario = JSON.parse(usuarioGuardado);
+        if (!usuario?.token) { localStorage.removeItem("usuario"); window.location.href = "index.html"; }
     } catch {
         localStorage.removeItem("usuario");
         window.location.href = "index.html";
@@ -121,7 +127,7 @@
             return;
         }
 
-        usuario = data;
+        usuario = { ...data, token: usuario.token };
         localStorage.setItem("usuario", JSON.stringify(usuario));
         mostrarUsuario();
     }
@@ -892,7 +898,7 @@
 
         const { data, error } = await supabaseClient
             .from("usuarios")
-            .select("id, nombre, correo, rol, activo, contraseña")
+            .select("id, nombre, correo, rol, activo")
             .order("nombre");
 
         if (error) {
@@ -1530,14 +1536,19 @@
         if (nueva.length < 8)           { msg.textContent = "La nueva contraseña debe tener al menos 8 caracteres."; return; }
         if (nueva !== conf)             { msg.textContent = "La confirmación no coincide."; return; }
 
-        const { data, error } = await supabaseClient
-            .from("usuarios").select("contraseña").eq("id", usuario.id).single();
-        if (error || !data) { msg.textContent = "No se pudo verificar la contraseña actual."; return; }
-        if (data.contraseña !== actual) { msg.textContent = "La contraseña actual no es correcta."; return; }
-
-        const { error: errUpd } = await supabaseClient
-            .from("usuarios").update({ contraseña: nueva }).eq("id", usuario.id);
-        if (errUpd) { msg.textContent = "❌ " + errUpd.message; return; }
+        const { data: okPw, error: errRpc } = await supabaseClient.rpc("cambiar_contrasena", { p_actual: actual, p_nueva: nueva });
+        if (!errRpc) {
+            if (!okPw) { msg.textContent = "La contraseña actual no es correcta."; return; }
+        } else if (errRpc.code === "PGRST202") {
+            // Compatibilidad: la función segura aún no está instalada en la base de datos.
+            const { data, error } = await supabaseClient
+                .from("usuarios").select("contraseña").eq("id", usuario.id).single();
+            if (error || !data) { msg.textContent = "No se pudo verificar la contraseña actual."; return; }
+            if (data.contraseña !== actual) { msg.textContent = "La contraseña actual no es correcta."; return; }
+            const { error: errUpd } = await supabaseClient
+                .from("usuarios").update({ contraseña: nueva }).eq("id", usuario.id);
+            if (errUpd) { msg.textContent = "❌ " + errUpd.message; return; }
+        } else { msg.textContent = "❌ " + errRpc.message; return; }
 
         msg.style.color = "#10b981";
         msg.textContent = "✅ Contraseña actualizada.";
@@ -2270,7 +2281,8 @@
     /* ═══════════════════════════════════════════
        CERRAR SESIÓN
     ═══════════════════════════════════════════ */
-    function cerrarSesion() {
+    async function cerrarSesion() {
+        try { await supabaseClient.rpc("cerrar_sesion"); } catch { /* sin conexión: se cierra igual */ }
         localStorage.removeItem("usuario");
         window.location.href = "index.html";
     }
@@ -2606,9 +2618,15 @@
     async function cargarMantenimientos() {
         const [mRes, eRes, uRes] = await Promise.all([
             supabaseClient.from("mantenimientos").select("*").order("fecha_programada"),
-            supabaseClient.from("equipos").select("*").order("asignado_a"),
+            supabaseClient.from("inventario_equipos").select("*").order("asignado_a"),
             supabaseClient.from("usuarios").select("id,nombre,correo").order("nombre"),
         ]);
+        const errCarga = mRes.error || eRes.error || uRes.error;
+        if (errCarga) {
+            console.error("Mantenimientos:", errCarga);
+            const grid = document.getElementById("calGrid");
+            if (grid) grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">❌ No se pudieron cargar los mantenimientos: ${esc(errCarga.message)}</div>`;
+        }
         todosMantenimientos = mRes.data || [];
         todosEquipos_mant   = eRes.data || [];
         todosUsuarios_mant  = uRes.data || [];
@@ -2845,9 +2863,13 @@
 
         const eid = document.getElementById("ntmEquipo").value || null;
 
+        // Siguiente consecutivo del año a partir del último ticket (no del conteo, que se repite al eliminar)
         const año    = new Date().getFullYear();
-        const { count } = await supabaseClient.from("mantenimientos").select("id", { count:"exact", head:true });
-        const seq    = String((count||0)+1).padStart(4,"0");
+        const { data: ultimo } = await supabaseClient.from("mantenimientos")
+            .select("numero_ticket").like("numero_ticket", `MANT-${año}-%`)
+            .order("numero_ticket", { ascending:false }).limit(1);
+        const ultSeq = parseInt((ultimo?.[0]?.numero_ticket || "").split("-")[2]) || 0;
+        const seq    = String(ultSeq + 1).padStart(4,"0");
         const numTkt = `MANT-${año}-${seq}`;
 
         const payload = {
@@ -2860,7 +2882,9 @@
             estado:           "Programado",
             tecnico:          document.getElementById("ntmTecnico").value.trim() || null,
             fecha_programada: fecha,
+            hora_programada:  document.getElementById("ntmHora").value || null,
             descripcion:      document.getElementById("ntmDescripcion").value.trim() || null,
+            creado_por:       usuario?.nombre || usuario?.correo || null,
         };
 
         const { data, error } = await supabaseClient.from("mantenimientos").insert([payload]).select().single();
@@ -2893,7 +2917,7 @@
         document.getElementById("vtTipo").textContent        = t.tipo || "—";
         document.getElementById("vtPrioridad").innerHTML     = badgePrioridad(t.prioridad);
         document.getElementById("vtTecnico").textContent     = t.tecnico || "Sin asignar";
-        document.getElementById("vtFechaProg").textContent   = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + t.hora_programada : "");
+        document.getElementById("vtFechaProg").textContent   = formatFecha(t.fecha_programada) + (t.hora_programada ? " " + String(t.hora_programada).substring(0,5) : "");
         document.getElementById("vtCreadoPor").textContent   = t.creado_por || "—";
         document.getElementById("vtUsuario").textContent     = uObjV?.nombre || "—";
         document.getElementById("vtCorreo").textContent      = uObjV?.correo || "—";
@@ -2917,8 +2941,11 @@
         const chips = chipsCampos.filter(c=>compData[c.k]).map(c=>`<span class="comp-chip">${esc(c.l)}: <strong>${esc(String(compData[c.k]))}</strong></span>`).join("");
         vtComp.innerHTML = chips || `<span style="font-size:12px;color:#9ca3af">Sin componentes registrados</span>`;
 
-        const link = window.location.href.split("#")[0] + "#ticket=" + encodeURIComponent(t.numero_ticket||id);
-        document.getElementById("vtLink").textContent    = link;
+        const link = linkPublicoTicket(t);
+        document.getElementById("vtLink").textContent    = link || "Configura URL_PUBLICA_APP en dashboard.js para generar el link";
+        document.getElementById("vtLinkBtn").disabled    = !link;
+        document.getElementById("vtLinkAbrir").style.display = link ? "" : "none";
+        if (link) document.getElementById("vtLinkAbrir").href = link;
         document.getElementById("vtLinkMsg").textContent = "";
 
         document.getElementById("modalVerTicket").classList.add("open");
@@ -2931,6 +2958,18 @@
     }
 
     document.getElementById("modalVerTicket").addEventListener("click", function(e){ if(e.target===this) cerrarModalVerTicket(); });
+
+    // Link para el usuario: página pública ticket.html con el enlace secreto del ticket (no requiere sesión)
+    function linkPublicoTicket(t) {
+        if (!t?.enlace_publico) return "";
+        // "https://sitio.com/app" se trata como carpeta: ticket.html queda dentro de ella
+        const base = location.protocol.startsWith("http") ? location.href
+                   : URL_PUBLICA_APP && URL_PUBLICA_APP.replace(/\/?$/, "/");
+        if (!base) return "";
+        const url = new URL("ticket.html", base);
+        url.searchParams.set("t", t.enlace_publico);
+        return url.toString();
+    }
 
     function copiarLinkTicket() {
         const link = document.getElementById("vtLink").textContent;
@@ -3207,7 +3246,10 @@ function dbRenderStats() {
     statsEl.innerHTML = html;
 }
 
+let dbPoll = null;
 function dbSuscribir() {
+    clearInterval(dbPoll);
+    dbPoll = setInterval(() => { if (paginaActual === "basedatos") dbCargarDatos(); }, 15000);
     dbSuscripcion = supabaseClient
         .channel(`db-realtime-${dbTablaActual}`)
         .on("postgres_changes", { event: "*", schema: "public", table: dbTablaActual }, (payload) => {

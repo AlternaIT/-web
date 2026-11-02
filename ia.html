@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alterna IA</title>
+    <link rel="icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ia.css">
+</head>
+<body>
+<div class="app" id="app">
+    <aside class="sb" id="sb">
+        <div class="sb-top">
+            <div class="sb-brand"><img src="logo-alterna.png" alt="Alterna"><span class="tag">IA</span></div>
+            <button class="btn-new" id="btnNew">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Nueva conversación
+            </button>
+            <div class="search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input id="buscar" type="search" placeholder="Buscar conversaciones" autocomplete="off">
+            </div>
+        </div>
+        <div class="convs" id="convs"></div>
+        <div class="sb-foot">
+            <div class="me">
+                <div class="av" id="meAv">--</div>
+                <div><div class="nm" id="meNm">Cargando…</div><div class="rl" id="meRl"></div></div>
+            </div>
+            <button class="btn-admin" id="btnAdmin" style="display:none">Administración · uso de la IA</button>
+            <button class="btn-admin" id="btnKB" style="display:block" onclick="window.location.href='kb.html'">Base de conocimiento · guías de Alterna</button>
+            <div class="foot-links">
+                <button id="btnVolver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Sistema</button>
+                <button id="btnSalir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Salir</button>
+            </div>
+        </div>
+    </aside>
+    <div class="overlay" id="overlay"></div>
+
+    <main class="main">
+        <header class="topbar">
+            <button class="icon-btn menu-btn" id="btnMenu" aria-label="Menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+            <div class="title" id="titulo">Nueva conversación</div>
+            <span class="badge">Alterna IA</span>
+            <div class="sp"></div>
+            <button class="icon-btn" id="btnExp" title="Exportar conversación" aria-label="Exportar conversación"></button>
+            <button class="icon-btn" id="btnTema" title="Cambiar tema" aria-label="Cambiar tema"></button>
+        </header>
+
+        <div class="scroll" id="scroll"><div id="vista"></div></div>
+
+        <div class="composer-wrap">
+            <form class="composer" id="form">
+                <div class="adjs" id="adjs"></div>
+                <div class="crow">
+                    <button type="button" class="attach" id="btnAdj" title="Adjuntar imagen" aria-label="Adjuntar imagen"></button>
+                    <input type="file" id="fileAdj" accept="image/png,image/jpeg,image/webp" multiple hidden>
+                    <textarea id="entrada" rows="1" maxlength="6000" placeholder="Escribe tu mensaje, pega una imagen o pide que genere una…"></textarea>
+                    <button class="send" id="btnEnviar" type="submit" title="Enviar" disabled></button>
+                </div>
+            </form>
+            <div class="hint">Alterna IA usa los datos en vivo del sistema, analiza imágenes y puede generarlas. Puede cometer errores: verifica lo importante.</div>
+        </div>
+    </main>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="adminModal"><div class="modal-card"><div class="modal-h"><b>Administración · uso de la IA</b><button data-admin-x aria-label="Cerrar">&times;</button></div><div class="modal-b" id="adminBody"></div></div></div>
+<div class="modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="cfTitulo"><div class="modal-card cf-card"><div class="cf-b"><h3 id="cfTitulo"></h3><p id="cfMensaje"></p></div><div class="cf-btns"><button type="button" class="cf-no" id="cfNo">Cancelar</button><button type="button" class="cf-ok" id="cfOk">Aceptar</button></div></div></div>
+<div class="lightbox" id="lb"><button class="lb-x" aria-label="Cerrar">&times;</button><img alt=""></div>
+<div class="dropzone" id="drop">Suelta la imagen para adjuntarla</div>
+
+<script src="ia.js"></script>
+</body>
+</html>

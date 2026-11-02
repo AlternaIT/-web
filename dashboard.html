@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="ai-assistant.css">
 </head>
 <body>
 
@@ -33,6 +34,16 @@
             <div class="menu-item active" data-page="dashboard" onclick="navegar('dashboard')">
                 <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
                 <span class="menu-text">Dashboard</span>
+            </div>
+
+            <div class="menu-item" data-page="ia" onclick="window.location.href='ia.html'">
+                <span class="menu-icon"><i data-lucide="sparkles"></i></span>
+                <span class="menu-text">Alterna IA</span>
+            </div>
+
+            <div class="menu-item" data-page="kb" onclick="window.location.href='kb.html'">
+                <span class="menu-icon"><i data-lucide="book-open"></i></span>
+                <span class="menu-text">Base de conocimiento</span>
             </div>
 
             <div class="menu-item" data-page="actividades" onclick="toggleSubmenu(this, 'actividades')">
@@ -2148,7 +2159,8 @@
             <div class="ticket-section-title">🔗 Compartir ticket</div>
             <div class="share-box">
                 <span class="share-box-link" id="vtLink">—</span>
-                <button class="share-box-btn" onclick="copiarLinkTicket()">📋 Copiar</button>
+                <a class="share-box-btn" id="vtLinkAbrir" target="_blank" rel="noopener" style="text-decoration:none">↗ Abrir</a>
+                <button class="share-box-btn" id="vtLinkBtn" onclick="copiarLinkTicket()">📋 Copiar</button>
             </div>
             <div id="vtLinkMsg" style="font-size:11px;color:#10b981;margin-top:4px;height:14px"></div>
         </div>
@@ -2223,6 +2235,7 @@
 
 
 <script src="dashboard.js"></script>
+<script src="ai-assistant.js"></script>
 
 
 </body>

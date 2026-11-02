@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Alterna | Seguimiento de mantenimiento</title>
+    <meta name="theme-color" content="#0f0f0f">
+    <link rel="icon" href="icons/icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:       #f4f5f7;
+            --surface:  #ffffff;
+            --border:   #e5e7eb;
+            --text:     #111827;
+            --muted:    #6b7280;
+            --faint:    #9ca3af;
+            --accent:   #6366f1;
+            --done:     #10b981;
+            --active:   #f59e0b;
+            --cancel:   #ef4444;
+            --track:    #e5e7eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg:      #0f0f0f;
+                --surface: #1c1c1e;
+                --border:  rgba(255,255,255,.08);
+                --text:    #f5f5f7;
+                --muted:   #a1a1aa;
+                --faint:   #71717a;
+                --track:   #2c2c2e;
+            }
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            padding: 32px 16px 48px;
+        }
+
+        .wrap { max-width: 560px; margin: 0 auto; }
+
+        .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .brand img { height: 26px; width: auto; }
+        .brand span { font-size: 13px; color: var(--muted); }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 14px;
+        }
+
+        .num   { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .04em; }
+        .title { font-size: 20px; font-weight: 700; margin: 6px 0 4px; line-height: 1.3; }
+        .sub   { font-size: 13px; color: var(--muted); }
+
+        .badge {
+            display: inline-block; margin-top: 14px;
+            font-size: 12px; font-weight: 600;
+            padding: 4px 10px; border-radius: 999px;
+            background: color-mix(in srgb, var(--badge) 14%, transparent);
+            color: var(--badge);
+        }
+
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin-bottom: 16px; }
+
+        /* Progreso */
+        .steps { list-style: none; position: relative; }
+        .step { display: flex; gap: 14px; position: relative; padding-bottom: 22px; }
+        .step:last-child { padding-bottom: 0; }
+        .step::before {
+            content: ""; position: absolute; left: 11px; top: 24px; bottom: 0;
+            width: 2px; background: var(--track);
+        }
+        .step:last-child::before { display: none; }
+        .step.done::before { background: var(--done); }
+        .dot {
+            flex: 0 0 24px; height: 24px; border-radius: 50%;
+            border: 2px solid var(--track); background: var(--surface);
+            display: grid; place-items: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+            position: relative; z-index: 1;
+        }
+        .step.done   .dot { background: var(--done);   border-color: var(--done); }
+        .step.active .dot { background: var(--active); border-color: var(--active); box-shadow: 0 0 0 5px color-mix(in srgb, var(--active) 20%, transparent); }
+        .step.cancel .dot { background: var(--cancel); border-color: var(--cancel); }
+        .step-name { font-size: 14px; font-weight: 600; line-height: 24px; }
+        .step.pending .step-name { color: var(--faint); font-weight: 500; }
+        .step-date { font-size: 12px; color: var(--muted); }
+        .step-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        /* Detalles */
+        .row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
+        .row:first-of-type { border-top: none; padding-top: 0; }
+        .row .k { color: var(--muted); }
+        .row .v { font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+        .desc { font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+        .state { text-align: center; padding: 48px 24px; }
+        .state h1 { font-size: 18px; margin-bottom: 8px; }
+        .state p  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+        .foot { text-align: center; font-size: 12px; color: var(--faint); margin-top: 18px; }
+        .foot button {
+            background: none; border: 1px solid var(--border); color: var(--muted);
+            font: inherit; padding: 6px 12px; border-radius: 8px; cursor: pointer; margin-top: 8px;
+        }
+        .foot button:hover { color: var(--text); }
+
+        .skeleton { height: 14px; border-radius: 6px; background: var(--track); margin: 10px 0; animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes pulse { 50% { opacity: .5; } }
+    </style>
+</head>
+<body>
+<main class="wrap">
+    <div class="brand">
+        <img src="logo-alterna.png" alt="Alterna" onerror="this.remove()">
+        <span>Seguimiento de mantenimiento</span>
+    </div>
+    <div id="app">
+        <div class="card">
+            <div class="skeleton" style="width:30%"></div>
+            <div class="skeleton" style="width:80%;height:20px"></div>
+            <div class="skeleton" style="width:50%"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+    const PASOS = [
+        { estado: "Programado", desc: "Tu mantenimiento fue registrado y agendado." },
+        { estado: "En proceso", desc: "El técnico está trabajando en tu equipo." },
+        { estado: "Completado", desc: "El mantenimiento terminó." },
+    ];
+    const COLOR_ESTADO = { "Programado":"var(--accent)", "En proceso":"var(--active)", "Completado":"var(--done)", "Cancelado":"var(--cancel)" };
+
+    const app = document.getElementById("app");
+
+    function esc(s) {
+        return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    }
+    function fechaCorta(iso) {
+        if (!iso) return "";
+        // Las fechas "AAAA-MM-DD" se interpretan como día local, no UTC
+        const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + "T00:00:00") : new Date(iso);
+        return d.toLocaleDateString("es-GT", { day:"numeric", month:"long", year:"numeric" });
+    }
+    function fechaHora(iso) {
+        if (!iso) return "";
+        return new Date(iso).toLocaleString("es-GT", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    }
+
+    function mostrarEstado(titulo, texto) {
+        app.innerHTML = `<div class="card state"><h1>${esc(titulo)}</h1><p>${esc(texto)}</p></div>`;
+    }
+
+    function renderProgreso(t) {
+        // Última vez que el ticket entró a cada estado
+        const fechas = {};
+        (t.historial || []).forEach(h => { fechas[h.estado] = h.fecha; });
+
+        if (t.estado === "Cancelado") {
+            return `<li class="step cancel"><div class="dot">✕</div><div>
+                <div class="step-name">Cancelado</div>
+                ${fechas["Cancelado"] ? `<div class="step-date">${esc(fechaHora(fechas["Cancelado"]))}</div>` : ""}
+                <div class="step-desc">Este mantenimiento fue cancelado. Si tienes dudas, comunícate con soporte.</div>
+            </div></li>`;
+        }
+
+        const actual = Math.max(0, PASOS.findIndex(p => p.estado === t.estado));
+        return PASOS.map((p, i) => {
+            const cls  = i < actual || t.estado === "Completado" ? "done" : i === actual ? "active" : "pending";
+            const icon = cls === "done" ? "✓" : "";
+            const fecha = fechas[p.estado];
+            return `<li class="step ${cls}"><div class="dot">${icon}</div><div>
+                <div class="step-name">${esc(p.estado)}</div>
+                ${fecha && cls !== "pending" ? `<div class="step-date">${esc(fechaHora(fecha))}</div>` : ""}
+                ${cls === "active" || (cls === "done" && i === PASOS.length - 1) ? `<div class="step-desc">${esc(p.desc)}</div>` : ""}
+            </div></li>`;
+        }).join("");
+    }
+
+    function render(t) {
+        document.title = `${t.numero_ticket || "Ticket"} | Alterna`;
+        const programado = [fechaCorta(t.fecha_programada), t.hora_programada].filter(Boolean).join(" · ");
+        const filas = [
+            ["Tipo",             t.tipo],
+            ["Prioridad",        t.prioridad],
+            ["Fecha programada", programado],
+            ["Técnico",          t.tecnico || "Por asignar"],
+            ["Equipo",           t.equipo],
+            ["No. de serie",     t.numero_serie],
+            ["Solicitante",      t.usuario],
+            ["Realizado el",     fechaCorta(t.fecha_realizada)],
+        ].filter(([, v]) => v);
+
+        app.innerHTML = `
+            <div class="card">
+                <div class="num">${esc(t.numero_ticket || "")}</div>
+                <div class="title">${esc(t.titulo || "Mantenimiento")}</div>
+                <div class="sub">Creado el ${esc(fechaCorta(t.creado))}</div>
+                <span class="badge" style="--badge:${COLOR_ESTADO[t.estado] || "var(--accent)"}">${esc(t.estado || "Programado")}</span>
+            </div>
+            <div class="card">
+                <div class="section-title">Progreso</div>
+                <ol class="steps">${renderProgreso(t)}</ol>
+            </div>
+            <div class="card">
+                <div class="section-title">Detalles</div>
+                ${filas.map(([k, v]) => `<div class="row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join("")}
+            </div>
+            ${t.descripcion ? `<div class="card"><div class="section-title">Descripción</div><div class="desc">${esc(t.descripcion)}</div></div>` : ""}
+            <div class="foot">
+                Actualizado ${esc(fechaHora(new Date().toISOString()))}<br>
+                <button onclick="cargar()">Actualizar</button>
+            </div>`;
+    }
+
+    async function cargar() {
+        const enlace = new URLSearchParams(location.search).get("t") || "";
+        if (!/^[0-9a-f-]{36}$/i.test(enlace)) {
+            mostrarEstado("Enlace no válido", "Revisa que hayas copiado el enlace completo que te compartieron.");
+            return;
+        }
+        const { data, error } = await sb.rpc("ver_ticket_publico", { p_enlace: enlace });
+        if (error) {
+            console.error(error);
+            mostrarEstado("No se pudo cargar el ticket", "Revisa tu conexión e inténtalo de nuevo en unos minutos.");
+            return;
+        }
+        if (!data) {
+            mostrarEstado("Ticket no encontrado", "Este enlace no corresponde a ningún mantenimiento, o el ticket fue eliminado.");
+            return;
+        }
+        render(data);
+    }
+
+    cargar();
+    // Refresca solo al volver a la pestaña, para ver cambios de estado sin recargar
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) cargar(); });
+</script>
+</body>
+</html>
