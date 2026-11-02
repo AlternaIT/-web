@@ -1,7 +1,7 @@
 /* Alterna IA — mini chat compacto: el botón flotante abre una ventanita de chat sobre la página.
    Usa el mismo backend que ia.html (Edge Function "alterna-ai"); la conversación queda guardada
    y se puede continuar en la página completa. */
-(function () {
+(async function () {
     const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
     const ENDPOINT = SUPABASE_URL + "/functions/v1/alterna-ai";
@@ -10,6 +10,15 @@
     let usuario = null;
     try { usuario = JSON.parse(localStorage.getItem("usuario")); } catch { /* sin sesión */ }
     if (!usuario?.id) return;
+
+    // Sin acceso a la aplicación de IA (tabla usuarios_aplicaciones) no se muestra el botón
+    try {
+        const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/app_tiene_acceso", {
+            method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": usuario.token || "" },
+            body: JSON.stringify({ p_clave: "ia" })
+        });
+        if (!r.ok || (await r.json()) !== true) return;
+    } catch { return; }
 
     const ICONO = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zm7 11l.9 2.6L22.5 16.5l-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13zM5 14l.7 2 2 .7-2 .7L5 19.5l-.7-2.1-2-.7 2-.7L5 14z"/></svg>';
     const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;

@@ -841,7 +841,7 @@
             const usuario = data[0];
             if (usuario.activo !== true) { showError("Tu usuario se encuentra desactivado."); return; }
             localStorage.setItem("usuario", JSON.stringify(usuario));
-            window.location.href = "dashboard.html";
+            window.location.href = "apps.html";
         } catch(e) {
             showError("Ocurrió un error inesperado.");
         } finally {

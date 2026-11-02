@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Alterna | Aplicaciones</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f0f0f">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:      #0f0f0f;
+            --surface: #1c1c1e;
+            --hover:   #242427;
+            --border:  rgba(255,255,255,.08);
+            --border-h: rgba(255,255,255,.18);
+            --text:    #f5f5f7;
+            --muted:   #8e8e93;
+            --error:   #ff453a;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            display: flex; flex-direction: column;
+        }
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 50% at 30% 30%, rgba(255,255,255,.035) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 80% 85%, rgba(255,255,255,.02) 0%, transparent 60%);
+        }
+
+        header {
+            position: relative; display: flex; align-items: center; gap: 14px;
+            padding: 20px 32px; border-bottom: 1px solid var(--border);
+        }
+        header img { height: 26px; width: auto; filter: brightness(0) invert(1); }
+        header .sp { flex: 1; }
+        .me { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+        .me .av { width: 32px; height: 32px; border-radius: 50%; background: #3a3a3c; color: var(--text); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+        .me b { color: var(--text); font-weight: 500; }
+        .salir {
+            background: none; border: 1px solid var(--border); color: var(--muted);
+            font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 9px; cursor: pointer;
+        }
+        .salir:hover { color: var(--text); border-color: var(--border-h); }
+
+        main { position: relative; flex: 1; width: 100%; max-width: 920px; margin: 0 auto; padding: 64px 32px; }
+        h1 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+        .sub { margin-top: 8px; font-size: 15px; color: var(--muted); }
+
+        .grid { margin-top: 36px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .app {
+            display: flex; flex-direction: column; gap: 16px; text-align: left;
+            padding: 22px; border-radius: 16px; border: 1px solid var(--border);
+            background: var(--surface); color: inherit; text-decoration: none;
+            transition: border-color .15s, background .15s, transform .15s;
+        }
+        .app:hover, .app:focus-visible { border-color: var(--border-h); background: var(--hover); transform: translateY(-2px); outline: none; }
+        .ico {
+            width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+            font-size: 18px; font-weight: 700; color: #fff; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .ico img { width: 70%; height: 70%; object-fit: contain; }
+        .app h2 { font-size: 17px; font-weight: 600; }
+        .app p { margin-top: 4px; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+        .app .ir { margin-top: auto; font-size: 13px; color: var(--text); opacity: .7; }
+        .app:hover .ir { opacity: 1; }
+
+        .estado { margin-top: 36px; padding: 28px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--muted); line-height: 1.6; }
+        .estado b { color: var(--text); }
+        .skel { height: 168px; border-radius: 16px; background: var(--surface); animation: pulso 1.2s ease-in-out infinite; }
+        @keyframes pulso { 50% { opacity: .55; } }
+
+        @media (max-width: 600px) {
+            header { padding: 16px; }
+            .me span { display: none; }
+            main { padding: 36px 16px; }
+            h1 { font-size: 23px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <img src="logo-alterna.png" alt="Alterna">
+    <div class="sp"></div>
+    <div class="me"><div class="av" id="av">--</div><span><b id="nombre">—</b></span></div>
+    <button class="salir" id="salir">Cerrar sesión</button>
+</header>
+
+<main>
+    <h1 id="titulo">Elige una aplicación</h1>
+    <p class="sub">Entra a la herramienta que necesitas.</p>
+    <div class="grid" id="grid">
+        <div class="skel"></div><div class="skel"></div>
+    </div>
+</main>
+
+<script>
+    const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+
+    let usuario = null;
+    try { usuario = JSON.parse(localStorage.getItem("usuario")); } catch { /* sin sesión */ }
+    if (!usuario?.token) { localStorage.removeItem("usuario"); location.replace("index.html"); }
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { headers: { "x-app-token": usuario?.token || "" } } });
+    const grid = document.getElementById("grid");
+
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    const iniciales = t => String(t || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase();
+    // Solo enlaces del propio sitio o https (evita javascript: u otros esquemas en la configuración)
+    const urlSegura = u => /^https:\/\//i.test(u) || /^[\w./-]+(\?[^"'<>]*)?(#[^"'<>]*)?$/.test(u) ? u : "#";
+
+    const nombre = usuario?.nombre || usuario?.correo || "";
+    document.getElementById("nombre").textContent = nombre;
+    document.getElementById("av").textContent = iniciales(nombre);
+    const primerNombre = nombre.split(/\s+/)[0];
+    if (primerNombre) document.getElementById("titulo").textContent = `Hola, ${primerNombre}. ¿A dónde vamos?`;
+
+    function icono(app) {
+        const fondo = /^#[0-9a-f]{3,8}$/i.test(app.color || "") ? app.color : "#3a3a3c";
+        // Sin logo: la clave corta ("IA", "IT") distingue mejor que las iniciales del nombre
+        const texto = esc(app.clave && app.clave.length <= 3 ? app.clave.toUpperCase() : iniciales(app.nombre));
+        const img = app.logo_url ? `<img src="${esc(urlSegura(app.logo_url))}" alt="" onerror="this.replaceWith(document.createTextNode('${texto}'))">` : texto;
+        return `<div class="ico" style="background:${fondo}">${img}</div>`;
+    }
+
+    async function cargar() {
+        const { data, error } = await sb.rpc("mis_aplicaciones");
+        if (error) {
+            // Sesión vencida o cerrada en otro lugar
+            if (error.code === "28000" || /sesion_invalida/.test(error.message || "")) {
+                localStorage.removeItem("usuario"); location.replace("index.html"); return;
+            }
+            grid.innerHTML = `<div class="estado" style="grid-column:1/-1">No se pudieron cargar tus aplicaciones. Revisa tu conexión y recarga la página.</div>`;
+            return;
+        }
+        const apps = data || [];
+        if (apps.length === 1) { location.replace(urlSegura(apps[0].url)); return; }
+        if (!apps.length) {
+            grid.innerHTML = `<div class="estado" style="grid-column:1/-1"><b>Aún no tienes acceso a ninguna aplicación.</b><br>Pide acceso al área de IT.</div>`;
+            return;
+        }
+        grid.innerHTML = apps.map(a => `
+            <a class="app" href="${esc(urlSegura(a.url))}">
+                ${icono(a)}
+                <div><h2>${esc(a.nombre)}</h2>${a.descripcion ? `<p>${esc(a.descripcion)}</p>` : ""}</div>
+                <span class="ir">Entrar →</span>
+            </a>`).join("");
+    }
+
+    document.getElementById("salir").addEventListener("click", async () => {
+        try { await sb.rpc("cerrar_sesion"); } catch { /* sin conexión: se cierra igual */ }
+        localStorage.removeItem("usuario"); location.href = "index.html";
+    });
+
+    if (usuario?.token) cargar();
+</script>
+</body>
+</html>

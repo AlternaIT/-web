@@ -10,8 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="dashboard.css?v=20261102b">
-    <link rel="stylesheet" href="ai-assistant.css?v=20261102b">
+    <link rel="stylesheet" href="dashboard.css?v=20261102c">
+    <link rel="stylesheet" href="ai-assistant.css?v=20261102c">
 </head>
 <body>
 
@@ -34,6 +34,11 @@
             <div class="menu-item active" data-page="dashboard" onclick="navegar('dashboard')">
                 <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
                 <span class="menu-text">Dashboard</span>
+            </div>
+
+            <div class="menu-item" data-page="apps" onclick="window.location.href='apps.html'">
+                <span class="menu-icon"><i data-lucide="layout-grid"></i></span>
+                <span class="menu-text">Aplicaciones</span>
             </div>
 
             <div class="menu-item" data-page="ia" onclick="window.location.href='ia.html'">
@@ -1452,6 +1457,7 @@
                 <option value="actividades">actividades</option>
                 <option value="activities">activities</option>
                 <option value="activity_history">activity_history</option>
+                <option value="aplicaciones">aplicaciones</option>
                 <option value="areas">areas</option>
                 <option value="configuraciones_usuario">configuraciones_usuario</option>
                 <option value="inventario_equipos">inventario_equipos</option>
@@ -1459,6 +1465,7 @@
                 <option value="profiles">profiles</option>
                 <option value="projects">projects</option>
                 <option value="usuarios">usuarios</option>
+                <option value="usuarios_aplicaciones">usuarios_aplicaciones</option>
             </select>
             <button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="dbRefrescarManual()">↻ Refrescar</button>
         </div>
@@ -1680,6 +1687,11 @@
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
             </select>
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">Acceso a aplicaciones</label>
+            <div id="fuApps" style="display:flex;flex-wrap:wrap;gap:8px 18px;padding:4px 0"></div>
+            <div id="fuAppsNota" style="font-size:12px;color:#6b7280;margin-top:4px"></div>
         </div>
         <div class="modal-msg" id="fuMsg"></div>
         <div class="modal-footer">
@@ -2229,8 +2241,8 @@
 </div>
 
 
-<script src="dashboard.js?v=20261102b"></script>
-<script src="ai-assistant.js?v=20261102b"></script>
+<script src="dashboard.js?v=20261102c"></script>
+<script src="ai-assistant.js?v=20261102c"></script>
 
 
 </body>

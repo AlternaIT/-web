@@ -614,7 +614,7 @@ $("entrada").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shif
 $("btnNew").onclick = () => { nueva(); cerrarMenu(); };
 $("btnExp").innerHTML = I.exp; $("btnExp").onclick = exportar;
 $("buscar").addEventListener("input", e => { filtro = e.target.value; pintarLista(); });
-$("btnVolver").onclick = () => { window.location.href = "dashboard.html"; };
+$("btnVolver").onclick = () => { window.location.href = "apps.html"; };
 $("btnSalir").onclick = async () => {
     try { await fetch(SUPABASE_URL + "/rest/v1/rpc/cerrar_sesion", { method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": usuario.token || "" }, body: "{}" }); } catch { /* sin conexión: se cierra igual en el navegador */ }
     localStorage.removeItem("usuario"); window.location.href = "index.html";
@@ -637,7 +637,19 @@ $("btnTema").onclick = () => {
 };
 
 /* ── Inicio ── */
+// Acceso por aplicación (tabla aplicaciones / usuarios_aplicaciones)
+async function tieneAcceso(clave) {
+    try {
+        const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/app_tiene_acceso", {
+            method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": usuario.token || "" },
+            body: JSON.stringify({ p_clave: clave })
+        });
+        return r.ok && (await r.json()) === true;
+    } catch { return true; /* sin conexión: el servidor de la IA vuelve a validar */ }
+}
+
 (async function init() {
+    if (!(await tieneAcceso("ia"))) { window.location.replace("apps.html"); return; }
     aplicarTema();
     $("meAv").textContent = iniciales; $("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
     if (usuario.rol === "admin") { $("btnAdmin").style.display = ""; $("btnAdmin").onclick = abrirAdmin; }

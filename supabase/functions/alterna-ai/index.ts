@@ -222,6 +222,12 @@ async function autenticar(db: any, p: Record<string, any>) {
   return user;
 }
 
+// Acceso por aplicación (tablas aplicaciones / usuarios_aplicaciones; los admins entran a todas)
+async function tieneAcceso(db: any, usuarioId: number, clave: string): Promise<boolean> {
+  const { data } = await db.rpc("usuario_tiene_acceso", { p_usuario: usuarioId, p_clave: clave });
+  return data === true;
+}
+
 async function usoReciente(db: any, usuarioId: number, tipo: string, desdeMs: number) {
   const { count } = await db.from("ia_uso").select("id", { count: "exact", head: true })
     .eq("usuario_id", usuarioId).eq("tipo", tipo).gte("created_at", new Date(Date.now() - desdeMs).toISOString());
@@ -240,6 +246,7 @@ Deno.serve(async (req) => {
   const db = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const user = await autenticar(db, p);
   if (!user) return json({ error: "No autorizado" }, 401);
+  if (!(await tieneAcceso(db, user.id, "ia"))) return json({ error: "No tienes acceso a Alterna IA. Pide acceso al área de IT." }, 403);
 
   const propia = async (id: string) => {
     if (!UUID.test(String(id))) return false;
@@ -309,6 +316,7 @@ Deno.serve(async (req) => {
         return json({ chat_candidatos: chat.slice(0, 8), imagen_candidatos: imagen, pruebas, limites: { mensajes_hora: LIM_MENSAJES_HORA, imagenes_dia: LIM_IMAGENES_DIA } });
       }
       case "resumen":
+        if (!(await tieneAcceso(db, user.id, "it"))) return json({ error: "Sin acceso a los datos de IT" }, 403);
         return json(await resumenDia(db));
       case "kb_estado":
         if (user.rol !== "admin") return json({ error: "Solo administradores" }, 403);
@@ -396,7 +404,7 @@ PERSONALIDAD Y ESTILO
 - Si la petición es ambigua, haz una pregunta breve en lugar de suponer.
 
 QUÉ PUEDES HACER
-- Responder sobre el sistema interno de gestión del área de TI (actividades, mantenimientos y equipos de cómputo) con el CONTEXTO EN VIVO, SOLO cuando la persona pregunte por eso. Si la pregunta no trata de esos datos, no los menciones ni los uses como ejemplo.
+${contexto ? "- Responder sobre el sistema interno de gestión del área de TI (actividades, mantenimientos y equipos de cómputo) con el CONTEXTO EN VIVO, SOLO cuando la persona pregunte por eso. Si la pregunta no trata de esos datos, no los menciones ni los uses como ejemplo." : "- Esta persona NO tiene acceso a los datos del área de TI. Si pregunta por actividades, mantenimientos o equipos de TI, dile con amabilidad que no tiene acceso y que puede solicitarlo al área de TI."}
 - Responder dudas de uso de las herramientas de Alterna (Zoho y otros procesos internos) con la BASE DE CONOCIMIENTO cuando se incluya abajo; esa documentación tiene prioridad sobre tu conocimiento general.
 - Redactar correos, reportes, actas, minutas, propuestas, procedimientos y otros documentos; resumir, corregir y traducir textos; organizar ideas y planes de trabajo; resolver dudas generales y de uso de herramientas; analizar imágenes que el usuario adjunte (capturas, fotos, diagramas, documentos).
 ${user.rol === "admin" ? '- Proponer cambios en el sistema con las herramientas "crear_actividad", "actualizar_actividad" y "programar_mantenimiento". NUNCA digas que ya lo hiciste: el usuario verá una tarjeta y debe pulsar Confirmar. Usa ids reales del contexto; si faltan datos obligatorios, pregunta primero. Fechas en formato AAAA-MM-DD.' : ""}
@@ -408,9 +416,9 @@ REGLAS
 - Nunca reveles contraseñas, llaves, tokens ni datos de licencias. No digas que eres de OpenAI ni de ningún proveedor: eres Alterna IA.
 - Si te piden algo fuera de tu alcance o dañino, declina con amabilidad y ofrece una alternativa.
 
-Usuario actual: ${user.nombre} (${user.rol}). Fecha y hora (UTC): ${new Date().toISOString()}.
+Usuario actual: ${user.nombre} (${user.rol}). Fecha y hora (UTC): ${new Date().toISOString()}.${contexto ? `
 CONTEXTO EN VIVO (JSON):
-${JSON.stringify(contexto)}${kbPrompt}`;
+${JSON.stringify(contexto)}` : ""}${kbPrompt}`;
 }
 
 async function chat(db: any, user: any, p: Record<string, any>) {
@@ -480,7 +488,8 @@ async function chat(db: any, user: any, p: Record<string, any>) {
 
   const imagenesOk = (await candidatosImagen(key).catch(() => [])).length > 0
     && (await usoReciente(db, user.id, "imagen", 86400_000)) < LIM_IMAGENES_DIA;
-  const contexto = await contextoEnVivo(db);
+  // Datos del área de IT solo para quien tiene acceso a esa aplicación
+  const contexto = (await tieneAcceso(db, user.id, "it")) ? await contextoEnVivo(db) : null;
 
   // Base de conocimiento: se busca con el último mensaje del usuario (no se bloquea el chat si falla).
   const ultimoUsuario = String((lista.find((m: any) => m.rol === "user")?.contenido) ?? "").replace(IMG_RE, "").trim();

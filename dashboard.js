@@ -997,6 +997,43 @@
         document.getElementById("fuMsg").textContent         = "";
         document.getElementById("fuGuardar").disabled        = false;
         document.getElementById("modalFichaUsuario").classList.add("open");
+        cargarAccesosUsuario(u.id);
+    }
+
+    /* Accesos a aplicaciones (tablas aplicaciones / usuarios_aplicaciones) */
+    async function cargarAccesosUsuario(id) {
+        const cont = document.getElementById("fuApps");
+        cont.innerHTML = `<span style="font-size:12px;color:#9ca3af">Cargando…</span>`;
+        const [{ data: apps, error }, { data: accesos }] = await Promise.all([
+            supabaseClient.from("aplicaciones").select("id, nombre, activa").order("orden"),
+            supabaseClient.from("usuarios_aplicaciones").select("aplicacion_id").eq("usuario_id", id),
+        ]);
+        if (error) { cont.innerHTML = `<span style="font-size:12px;color:#ef4444">No se pudieron cargar las aplicaciones.</span>`; return; }
+        const tiene = new Set((accesos || []).map(a => a.aplicacion_id));
+        cont.innerHTML = (apps || []).map(a => `
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" class="fu-app" value="${a.id}" ${tiene.has(a.id) ? "checked" : ""}>
+                ${esc(a.nombre)}${a.activa ? "" : ' <span style="color:#9ca3af">(inactiva)</span>'}
+            </label>`).join("") || `<span style="font-size:12px;color:#9ca3af">No hay aplicaciones registradas.</span>`;
+        actualizarNotaAccesos();
+    }
+
+    function actualizarNotaAccesos() {
+        const admin = document.getElementById("fuRol").value === "admin";
+        document.getElementById("fuAppsNota").textContent = admin
+            ? "Los administradores (IT) entran a todas las aplicaciones activas, aunque no estén marcadas."
+            : "Si solo tiene una aplicación, al iniciar sesión entra directo a ella.";
+    }
+    document.getElementById("fuRol").addEventListener("change", actualizarNotaAccesos);
+
+    async function guardarAccesosUsuario(id) {
+        const marcadas = [...document.querySelectorAll("#fuApps .fu-app:checked")].map(c => Number(c.value));
+        const { error: errDel } = await supabaseClient.from("usuarios_aplicaciones").delete().eq("usuario_id", id);
+        if (errDel) return errDel;
+        if (!marcadas.length) return null;
+        const { error } = await supabaseClient.from("usuarios_aplicaciones")
+            .insert(marcadas.map(aplicacion_id => ({ usuario_id: id, aplicacion_id })));
+        return error;
     }
 
     function cerrarModalFichaUsuario() {
@@ -1025,7 +1062,8 @@
         const payload = { nombre, correo, rol, activo };
         if (pass) payload.contraseña = pass;
 
-        const { error } = await supabaseClient.from("usuarios").update(payload).eq("id", id);
+        const { error: errUsuario } = await supabaseClient.from("usuarios").update(payload).eq("id", id);
+        const error = errUsuario || await guardarAccesosUsuario(id);
 
         if (error) {
             document.getElementById("fuMsg").textContent = "❌ " + error.message;
@@ -3126,6 +3164,13 @@
        INIT
     ═══════════════════════════════════════════ */
     async function iniciarDashboard() {
+        // Acceso por aplicación (tabla aplicaciones / usuarios_aplicaciones): sin acceso a IT, vuelve al selector
+        const [{ data: accesoIT }, { data: accesoIA }] = await Promise.all([
+            supabaseClient.rpc("app_tiene_acceso", { p_clave: "it" }),
+            supabaseClient.rpc("app_tiene_acceso", { p_clave: "ia" }),
+        ]);
+        if (accesoIT !== true) { window.location.replace("apps.html"); return; }
+        if (accesoIA !== true) document.querySelector('.menu-item[data-page="ia"]')?.remove();
         await cargarUsuario();
         await cargarConfiguracionUsuario();
         await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
@@ -3171,6 +3216,8 @@ const DB_TABLAS_COLS = {
     actividades:             ["id","actividad","area","estado","prioridad","asignado","fecha_limite","created_at"],
     activities:              ["id","title","status","priority","importance","assigned_to","due_date","created_at"],
     activity_history:        ["id","activity_id","action","changed_by","created_at"],
+    aplicaciones:            ["id","clave","nombre","descripcion","url","logo_url","color","orden","activa"],
+    usuarios_aplicaciones:   ["usuario_id","aplicacion_id","created_at"],
     areas:                   ["id","nombre","created_at"],
     configuraciones_usuario: ["user_id","updated_at"],
     inventario_equipos:      ["id","tipo","marca","modelo","estado","asignado_a","numero_serie"],
