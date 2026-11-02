@@ -22,8 +22,8 @@
     };
     const SUGERENCIAS = [
         "¿Qué actividades están vencidas?",
-        "¿Qué mantenimientos vienen esta semana?",
-        "Redacta un correo para avisar de un mantenimiento",
+        "Ayúdame a organizar mi semana",
+        "Ayúdame a redactar un correo",
     ];
 
     /* ── Estructura ── */
@@ -37,7 +37,7 @@
     caja.innerHTML = `
         <header class="aai-head">
             <span class="aai-logo">${ICONO}</span>
-            <div class="aai-titulo"><b>Alterna IA</b><small>Pregunta sobre actividades, equipos y más</small></div>
+            <div class="aai-titulo"><b>Alterna IA</b><small>Tu asistente para el día a día</small></div>
             <button type="button" class="aai-btn" data-nueva title="Nueva conversación" aria-label="Nueva conversación">${I.nueva}</button>
             <a class="aai-btn" data-completa href="ia.html" title="Abrir en Alterna IA" aria-label="Abrir en Alterna IA">${I.abrir}</a>
             <button type="button" class="aai-btn" data-cerrar title="Cerrar" aria-label="Cerrar">${I.cerrar}</button>

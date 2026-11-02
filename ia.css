@@ -213,14 +213,14 @@ body.dark .send:not(.stop) { color: #fff; }
 /* ── Resumen del día ── */
 .brief { margin-top: 26px; text-align: left; }
 .bf-t { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-.bf-g { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.bf-g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .bf { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: border-color .15s, transform .15s; }
 .bf:hover { border-color: var(--primary); transform: translateY(-2px); }
 .bf b { font-size: 22px; font-weight: 700; line-height: 1.1; }
 .bf span { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
 .bf.warn b { color: #d97706; } .bf.good b { color: #059669; }
 body.dark .bf.warn b { color: #fbbf24; } body.dark .bf.good b { color: #34d399; }
-@media (max-width: 860px) { .bf-g { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 860px) { .bf-g { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px) { .bf-g { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Tarjetas de acción (confirmación) ── */

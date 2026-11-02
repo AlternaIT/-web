@@ -45,11 +45,11 @@ const I = {
 
 const SUGERENCIAS = [
     { i: I.cal,   t: "Actividades vencidas",   d: "Qué está atrasado y qué priorizar.",        p: "¿Qué actividades están vencidas y cuáles debería priorizar?" },
-    { i: I.chart, t: "Reporte semanal",        d: "Con tablas; descárgalo en PDF o Excel.",     p: "Genera el reporte semanal de TI con tablas: resumen por estado y prioridad, actividades vencidas, próximos mantenimientos, equipos con garantía por vencer y recomendaciones." },
-    { i: I.tool,  t: "Mantenimientos",         d: "Lo programado y lo que viene pronto.",       p: "¿Qué mantenimientos están programados próximamente?" },
-    { i: I.pc,    t: "Inventario de equipos",  d: "Equipos por departamento y su estado.",      p: "¿Cuántos equipos hay por departamento y en qué estado están?" },
-    { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",   p: "Genera una imagen profesional de un banner horizontal para el área de TI de una empresa, estilo minimalista en tonos grises." },
-    { i: I.mail,  t: "Redactar un correo",     d: "Comunicados y reportes listos para enviar.", p: "Redacta un correo profesional para avisar al equipo sobre un mantenimiento programado de equipos de cómputo esta semana." },
+    { i: I.chart, t: "Reporte semanal",        d: "Con tablas; descárgalo en PDF o Excel.",     p: "Genera un reporte semanal con tablas: actividades por estado y prioridad, vencidas, próximas entregas por responsable y recomendaciones." },
+    { i: I.cal,   t: "Organizar mi semana",    d: "Un plan con tus pendientes y entregas.",     p: "Ayúdame a organizar mi semana: con mis actividades abiertas y sus fechas de entrega, propón qué hacer cada día." },
+    { i: I.edit,  t: "Resumir un texto",       d: "Puntos clave y próximos pasos.",             p: "Voy a pegarte un texto. Resúmelo en puntos clave y dime qué acciones o pendientes se desprenden de él." },
+    { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",   p: "Genera una imagen profesional de un banner horizontal para una campaña de Alterna, estilo moderno, cálido y cercano." },
+    { i: I.mail,  t: "Redactar un correo",     d: "Comunicados y reportes listos para enviar.", p: "Redacta un correo profesional para invitar al equipo a la reunión mensual de seguimiento de esta semana." },
 ];
 
 /* ── Utilidades ── */
@@ -233,7 +233,7 @@ const SALUDOS = {
     viernes: ["Feliz viernes, {n}. Vamos a cerrar la semana a lo grande"],
 };
 const SUBTITULOS = [
-    "Soy <strong>Alterna IA</strong>, tu asistente de TI. Conozco tus actividades, mantenimientos y equipos en tiempo real, analizo imágenes y también puedo crearlas.",
+    "Soy <strong>Alterna IA</strong>, tu asistente en Alterna. Conozco las actividades del equipo en tiempo real, redacto, resumo, analizo imágenes y también puedo crearlas.",
     "Cuenta conmigo para revisar pendientes, redactar correos o armar reportes. A tu ritmo, sin prisa.",
     "Pídeme un resumen, un reporte o una imagen. Lo que necesites para avanzar hoy.",
     "Estoy aquí para quitarte trabajo de encima: consultas, reportes, correos, imágenes y mucho más.",
@@ -604,9 +604,7 @@ async function cargarResumen() {
             it(r.vencidas, "Vencidas", "Detalla las actividades vencidas: responsable, días de atraso y qué hacer primero.", r.vencidas ? "warn" : "good") +
             it(r.abiertas, "Abiertas", "Muéstrame las actividades abiertas agrupadas por responsable.") +
             it(r.alta_prioridad, "Prioridad alta", "Lista las actividades abiertas de prioridad alta con su estado y responsable.") +
-            it(r.vencen_7_dias, "Vencen en 7 días", "¿Qué actividades vencen en los próximos 7 días?", r.vencen_7_dias ? "warn" : "") +
-            it(r.mantenimientos_7_dias, "Mantenimientos 7 días", "¿Qué mantenimientos están programados en los próximos 7 días?") +
-            it(r.garantias_30_dias, "Garantías 30 días", "¿Qué garantías de equipos vencen en los próximos 30 días?") + `</div>`;
+            it(r.vencen_7_dias, "Vencen en 7 días", "¿Qué actividades vencen en los próximos 7 días?", r.vencen_7_dias ? "warn" : "") + `</div>`;
     } catch { $("brief")?.remove(); }
 }
 
