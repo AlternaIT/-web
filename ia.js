@@ -106,10 +106,9 @@ function bloques(texto) {
 }
 
 function md(src) {
-    let fuentes = [];
-    src = src.replace(/\n*\u27E6fuentes:([0-9a-f,-]+)\u27E7/g, (_, ids) => { fuentes = ids.split(","); return ""; }).replace(/\u27E6fuentes:[0-9a-f,-]*$/, "");
-    const cuerpo = mdSinFuentes(src);
-    return cuerpo + (fuentes.length ? `<div class="fuentes"><span>Fuentes</span>${fuentes.map(id => `<a class="fuente" data-fuente="${id}" href="kb.html#${id}" target="_blank" rel="noopener">Artículo</a>`).join("")}</div>` : "");
+    // Mensajes antiguos pueden traer la marca ⟦fuentes:…⟧ de la base de conocimiento (ya retirada): se oculta
+    src = src.replace(/\n*⟦fuentes:[0-9a-f,-]*⟧?/g, "");
+    return mdSinFuentes(src);
 }
 
 function mdSinFuentes(src) {
@@ -322,7 +321,7 @@ function pintarConversacion() {
     $("vista").innerHTML = '<div class="col" id="col"></div>';
     const col = $("col");
     mensajes.forEach(m => col.appendChild(m.rol === "user" ? nodoUsuario(m.contenido) : nodoAsistente(m.contenido)));
-    marcarUltimo(); hidratarAcciones(); hidratarFuentes(); bajar(true);
+    marcarUltimo(); hidratarAcciones(); bajar(true);
 }
 
 function bajar(forzar) {
@@ -456,7 +455,7 @@ async function ejecutar({ texto = "", regen = false }) {
             const c = convs.find(x => x.id === actual); if (c) { c.updated_at = new Date().toISOString(); convs = [c, ...convs.filter(x => x !== c)]; pintarLista(); }
             if (esNueva && actual) titular(actual);
         } else if (!cuerpo.querySelector(".err")) { nodo.remove(); }
-        enCurso = false; abortar = null; estadoBoton(); marcarUltimo(); hidratarAcciones(); hidratarFuentes(); $("entrada").focus(); bajar();
+        enCurso = false; abortar = null; estadoBoton(); marcarUltimo(); hidratarAcciones(); $("entrada").focus(); bajar();
     }
 }
 
@@ -483,18 +482,6 @@ function exportar() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = (t.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 50) || "conversacion") + ".md";
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-}
-
-/* ── Fuentes de la base de conocimiento (chips con el título del artículo) ── */
-let kbTitulos = null;
-async function hidratarFuentes() {
-    const chips = [...document.querySelectorAll(".fuente:not([data-h])")]; if (!chips.length) return;
-    chips.forEach(c => c.dataset.h = "1");
-    try {
-        if (!kbTitulos) kbTitulos = new Map((await api("kb_listar")).notas.map(n => [n.id, n.titulo]));
-        chips.forEach(c => { const t = kbTitulos.get(c.dataset.fuente); if (t) c.textContent = t; else c.remove(); });
-        document.querySelectorAll(".fuentes").forEach(f => { if (!f.querySelector(".fuente")) f.remove(); });
-    } catch { /* los chips quedan con el texto genérico */ }
 }
 
 /* ── Acciones propuestas por la IA (tarjetas de confirmación) ── */
