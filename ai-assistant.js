@@ -21,9 +21,9 @@
         parar:  '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
     };
     const SUGERENCIAS = [
-        "¿Qué actividades están vencidas?",
-        "Ayúdame a organizar mi semana",
         "Ayúdame a redactar un correo",
+        "Resume un texto que te voy a pegar",
+        "Ayúdame a preparar una reunión",
     ];
 
     /* ── Estructura ── */

@@ -44,12 +44,12 @@ const I = {
 };
 
 const SUGERENCIAS = [
-    { i: I.cal,   t: "Actividades vencidas",   d: "Qué está atrasado y qué priorizar.",        p: "¿Qué actividades están vencidas y cuáles debería priorizar?" },
-    { i: I.chart, t: "Reporte semanal",        d: "Con tablas; descárgalo en PDF o Excel.",     p: "Genera un reporte semanal con tablas: actividades por estado y prioridad, vencidas, próximas entregas por responsable y recomendaciones." },
-    { i: I.cal,   t: "Organizar mi semana",    d: "Un plan con tus pendientes y entregas.",     p: "Ayúdame a organizar mi semana: con mis actividades abiertas y sus fechas de entrega, propón qué hacer cada día." },
-    { i: I.edit,  t: "Resumir un texto",       d: "Puntos clave y próximos pasos.",             p: "Voy a pegarte un texto. Resúmelo en puntos clave y dime qué acciones o pendientes se desprenden de él." },
-    { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",   p: "Genera una imagen profesional de un banner horizontal para una campaña de Alterna, estilo moderno, cálido y cercano." },
-    { i: I.mail,  t: "Redactar un correo",     d: "Comunicados y reportes listos para enviar.", p: "Redacta un correo profesional para invitar al equipo a la reunión mensual de seguimiento de esta semana." },
+    { i: I.mail,  t: "Redactar un correo",     d: "Comunicados y respuestas listos para enviar.", p: "Ayúdame a redactar un correo profesional. Primero pregúntame a quién va dirigido y qué necesito comunicar." },
+    { i: I.pdf,   t: "Resumir un texto",       d: "Puntos clave y próximos pasos.",               p: "Voy a pegarte un texto. Resúmelo en puntos clave y dime qué acciones o pendientes se desprenden de él." },
+    { i: I.edit,  t: "Corregir un texto",      d: "Ortografía, tono y claridad.",                 p: "Voy a pegarte un texto. Corrige ortografía y redacción, mejora la claridad y dime qué cambiaste." },
+    { i: I.cal,   t: "Preparar una reunión",   d: "Agenda, puntos clave y minuta.",               p: "Ayúdame a preparar una reunión: propón una agenda clara y una plantilla de minuta para anotar acuerdos, responsables y fechas." },
+    { i: I.chart, t: "Armar un reporte",       d: "Con tablas; descárgalo en PDF o Excel.",       p: "Ayúdame a armar un reporte con tablas a partir de unos datos que te voy a pegar. Pregúntame primero qué quiero mostrar." },
+    { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",     p: "Genera una imagen profesional de un banner horizontal para una campaña de Alterna, estilo moderno, cálido y cercano." },
 ];
 
 /* ── Utilidades ── */
@@ -233,8 +233,8 @@ const SALUDOS = {
     viernes: ["Feliz viernes, {n}. Vamos a cerrar la semana a lo grande"],
 };
 const SUBTITULOS = [
-    "Soy <strong>Alterna IA</strong>, tu asistente en Alterna. Conozco las actividades del equipo en tiempo real, redacto, resumo, analizo imágenes y también puedo crearlas.",
-    "Cuenta conmigo para revisar pendientes, redactar correos o armar reportes. A tu ritmo, sin prisa.",
+    "Soy <strong>Alterna IA</strong>, tu asistente en Alterna. Redacto, resumo, corrijo, preparo reuniones y reportes, analizo imágenes y también puedo crearlas.",
+    "Cuenta conmigo para redactar correos, preparar reuniones o armar reportes. A tu ritmo, sin prisa.",
     "Pídeme un resumen, un reporte o una imagen. Lo que necesites para avanzar hoy.",
     "Estoy aquí para quitarte trabajo de encima: consultas, reportes, correos, imágenes y mucho más.",
     "Pregúntame lo que quieras, aunque suene a pregunta tonta. Para eso estoy.",
@@ -263,7 +263,7 @@ function inicio() {
         `<div class="hero"><div class="logo">${I.spark}</div>` +
         `<h1>${s.titulo}</h1>` +
         `<p>${s.sub}</p>` +
-        `<div class="brief" id="brief"></div>` + `<div class="cards">` + SUGERENCIAS.map((s, k) => `<button class="card" data-k="${k}"><span class="ci">${s.i}</span><span><div class="ct">${s.t}</div><div class="cd">${s.d}</div></span></button>`).join("") + `</div></div>`;
+        `<div class="cards">` + SUGERENCIAS.map((s, k) => `<button class="card" data-k="${k}"><span class="ci">${s.i}</span><span><div class="ct">${s.t}</div><div class="cd">${s.d}</div></span></button>`).join("") + `</div></div>`;
 }
 
 $("vista").addEventListener("click", e => {
@@ -271,7 +271,6 @@ $("vista").addEventListener("click", e => {
     const cp = e.target.closest("[data-copy]"); if (cp) return copiar(cp.closest("pre").querySelector("code").textContent);
     const ct = e.target.closest("[data-copymsg]"); if (ct) return copiar(sinImagenes(ct.closest(".msg").dataset.raw || ""));
     const rg = e.target.closest("[data-regen]"); if (rg) return regenerar();
-    const bf = e.target.closest("[data-brief]"); if (bf) return ejecutar({ texto: bf.dataset.brief });
     const ok = e.target.closest("[data-acc-ok]"); if (ok) return resolverAccion(ok.closest(".acc").dataset.acc, true);
     const no = e.target.closest("[data-acc-no]"); if (no) return resolverAccion(no.closest(".acc").dataset.acc, false);
     const pf = e.target.closest("[data-pdf]"); if (pf) return descargarPDF(pf.closest(".msg").dataset.raw || "");
@@ -332,7 +331,7 @@ function bajar(forzar) {
 function nueva() {
     if (enCurso) abortar?.abort();
     actual = null; mensajes = []; adjuntos = []; pintarAdjuntos(); history.replaceState(null, "", location.pathname);
-    $("titulo").textContent = "Nueva conversación"; pintarLista(); pintarConversacion(); cargarResumen(); $("entrada").focus();
+    $("titulo").textContent = "Nueva conversación"; pintarLista(); pintarConversacion(); $("entrada").focus();
 }
 
 async function abrir(id) {
@@ -591,23 +590,6 @@ async function descargarPDF(raw) {
     } catch (e) { toast(e.message || "No se pudo generar el PDF."); }
 }
 
-/* ── Resumen del día (pantalla de inicio) ── */
-let resumenCache = null;
-async function cargarResumen() {
-    if (!$("brief")) return;
-    try {
-        const r = resumenCache && Date.now() - resumenCache.t < 120000 ? resumenCache.d : await api("resumen");
-        resumenCache = { t: Date.now(), d: r };
-        if (!$("brief")) return;
-        const it = (n, t, p, tono) => `<button class="bf ${tono || ""}" data-brief="${esc(p)}"><b>${n}</b><span>${t}</span></button>`;
-        $("brief").innerHTML = `<div class="bf-t">Resumen de hoy</div><div class="bf-g">` +
-            it(r.vencidas, "Vencidas", "Detalla las actividades vencidas: responsable, días de atraso y qué hacer primero.", r.vencidas ? "warn" : "good") +
-            it(r.abiertas, "Abiertas", "Muéstrame las actividades abiertas agrupadas por responsable.") +
-            it(r.alta_prioridad, "Prioridad alta", "Lista las actividades abiertas de prioridad alta con su estado y responsable.") +
-            it(r.vencen_7_dias, "Vencen en 7 días", "¿Qué actividades vencen en los próximos 7 días?", r.vencen_7_dias ? "warn" : "") + `</div>`;
-    } catch { $("brief")?.remove(); }
-}
-
 /* ── Panel de administración (solo admin) ── */
 async function abrirAdmin() {
     $("adminModal").classList.add("open");
@@ -659,7 +641,7 @@ $("btnTema").onclick = () => {
     aplicarTema();
     $("meAv").textContent = iniciales; $("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
     if (usuario.rol === "admin") { $("btnAdmin").style.display = ""; $("btnAdmin").onclick = abrirAdmin; }
-    pintarAdjuntos(); estadoBoton(); inicio(); pintarLista(); cargarResumen();
+    pintarAdjuntos(); estadoBoton(); inicio(); pintarLista();
     const preguntaInicial = new URLSearchParams(location.search).get("q");
     if (preguntaInicial) { history.replaceState(null, "", location.pathname + location.hash); setTimeout(() => ejecutar({ texto: preguntaInicial.slice(0, 2000) }), 300); }
     try {
