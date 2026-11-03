@@ -87,10 +87,54 @@ async function buscarUsuario(base: SupabaseClient, correo: string): Promise<Usua
   return data as Usuario | null;
 }
 
-async function abrirSesion(base: SupabaseClient, usuario: Usuario, via: string) {
-  const { data, error } = await base.from("sesiones_app").insert({ usuario_id: usuario.id }).select("token").single();
+/* ───────────── Datos del inicio de sesión: dispositivo y ubicación aproximada ───────────── */
+
+function leerDispositivo(ua: string) {
+  const dispositivo = /iPad|Tablet|PlayBook|Silk/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua)) ? "Tablet"
+    : /Mobi|iPhone|iPod|Android/i.test(ua) ? "Celular" : "PC";
+  const sistema = /Windows/i.test(ua) ? "Windows"
+    : /iPhone|iPad|iPod/i.test(ua) ? "iOS"
+    : /Android/i.test(ua) ? "Android"
+    : /CrOS/i.test(ua) ? "ChromeOS"
+    : /Mac OS X|Macintosh/i.test(ua) ? "macOS"
+    : /Linux/i.test(ua) ? "Linux" : null;
+  const navegador = /Claude\//.test(ua) ? "App de Claude"
+    : /Edg\//.test(ua) ? "Edge"
+    : /OPR\/|Opera/.test(ua) ? "Opera"
+    : /Firefox\/|FxiOS/.test(ua) ? "Firefox"
+    : /Chrome\/|CriOS/.test(ua) ? "Chrome"
+    : /Safari\//.test(ua) ? "Safari" : null;
+  return { dispositivo, sistema, navegador };
+}
+
+// País, departamento/estado y ciudad a partir de la IP (ipwho.is; solo recibe la IP). Aproximado.
+async function ubicar(ip: string | null) {
+  if (!ip) return null;
+  try {
+    const r = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,country_code,region,city`,
+      { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    return d?.success ? { pais: d.country ?? null, pais_codigo: d.country_code ?? null, region: d.region ?? null, ciudad: d.city ?? null } : null;
+  } catch (e) {
+    log("warn", "ubicar_fallo", { error: String(e) });
+    return null;
+  }
+}
+
+async function abrirSesion(base: SupabaseClient, usuario: Usuario, via: string, req: Request) {
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("cf-connecting-ip") || null;
+  const ua = (req.headers.get("user-agent") ?? "").slice(0, 400);
+  const geo = await ubicar(ip);
+  // El historial es informativo: si falla, igual se abre la sesión
+  const { data: inicio, error: errI } = await base.from("inicios_sesion").insert({
+    usuario_id: usuario.id, via, ip, user_agent: ua, ...leerDispositivo(ua), ...(geo ?? {}),
+  }).select("id").single();
+  if (errI) log("warn", "guardar_inicio", { error: errI.message });
+
+  const { data, error } = await base.from("sesiones_app")
+    .insert({ usuario_id: usuario.id, inicio_id: inicio?.id ?? null }).select("token").single();
   if (error) { log("error", "crear_sesion", { error: error.message }); return json({ error: "Error del servidor." }, 500); }
-  log("info", "login_ok", { usuario_id: usuario.id, via, foto: !!usuario.foto });
+  log("info", "login_ok", { usuario_id: usuario.id, via, foto: !!usuario.foto, pais: geo?.pais_codigo ?? null });
   return json({ ...usuario, token: String(data.token) });
 }
 
@@ -136,7 +180,7 @@ async function imapAcepta(correo: string, contrasena: string): Promise<Resultado
   }
 }
 
-async function loginConContrasena(correoBruto: string, contrasena: string) {
+async function loginConContrasena(correoBruto: string, contrasena: string, req: Request) {
   const correo = correoBruto.trim().toLowerCase();
   if (!correo || !contrasena) return json({ error: "Ingresa tu correo y contraseña." }, 400);
   if (!correo.endsWith("@" + DOMINIO) || /[\r\n\0]/.test(correo + contrasena) || contrasena.length > 256) {
@@ -165,7 +209,7 @@ async function loginConContrasena(correoBruto: string, contrasena: string) {
   const resultado = await imapAcepta(correo, contrasena);
   if (resultado === "ok") {
     await base.from("login_intentos").delete().eq("correo", correo);
-    return abrirSesion(base, usuario, "password");
+    return abrirSesion(base, usuario, "password", req);
   }
   if (resultado === "invalida") {
     await base.from("login_intentos").insert({ correo });
@@ -178,7 +222,7 @@ async function loginConContrasena(correoBruto: string, contrasena: string) {
 
 /* ───────────── Camino 2: regreso desde la página de Zoho (OAuth / OpenID) ───────────── */
 
-async function loginConZoho(cuerpo: Record<string, unknown>) {
+async function loginConZoho(cuerpo: Record<string, unknown>, req: Request) {
   const clientId = Deno.env.get("ZOHO_CLIENT_ID") || "1000.I12TCLUMS0P0H4HH33UE9FLXMRSBRH";
   const clientSecret = Deno.env.get("ZOHO_CLIENT_SECRET");
   if (!clientSecret) {
@@ -260,7 +304,7 @@ async function loginConZoho(cuerpo: Record<string, unknown>) {
   // Entró con su contraseña y verificación de Zoho: se limpian los fallos anteriores
   await base.from("login_intentos").delete().eq("correo", correo);
 
-  return abrirSesion(base, usuario, "zoho");
+  return abrirSesion(base, usuario, "zoho", req);
 }
 
 Deno.serve(async (req) => {
@@ -270,6 +314,6 @@ Deno.serve(async (req) => {
   let cuerpo: Record<string, unknown>;
   try { cuerpo = await req.json(); } catch { return json({ error: "Solicitud inválida" }, 400); }
 
-  if (cuerpo.accion === "password") return loginConContrasena(String(cuerpo.correo ?? ""), String(cuerpo.contrasena ?? ""));
-  return loginConZoho(cuerpo);
+  if (cuerpo.accion === "password") return loginConContrasena(String(cuerpo.correo ?? ""), String(cuerpo.contrasena ?? ""), req);
+  return loginConZoho(cuerpo, req);
 });

@@ -523,14 +523,16 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Nombre</th>
-                            <th>Correo</th>
+                            <th>Usuario</th>
                             <th>Rol</th>
                             <th>Estado</th>
+                            <th>Conexión</th>
+                            <th>Último inicio de sesión</th>
+                            <th>Ubicación</th>
                         </tr>
                     </thead>
                     <tbody id="usuariosBody">
-                        <tr class="loading-row"><td colspan="4">Cargando usuarios...</td></tr>
+                        <tr class="loading-row"><td colspan="6">Cargando usuarios...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1797,6 +1799,10 @@
             </div>
         </div>
         <div class="modal-field">
+            <label class="modal-label">Últimos inicios de sesión</label>
+            <div id="fuHistorial" style="font-size:13px;max-height:190px;overflow:auto"></div>
+        </div>
+        <div class="modal-field">
             <label class="modal-label">Acceso a aplicaciones</label>
             <div id="fuApps" style="display:flex;flex-wrap:wrap;gap:8px 18px;padding:4px 0"></div>
             <div id="fuAppsNota" style="font-size:12px;color:#6b7280;margin-top:4px"></div>
@@ -2349,8 +2355,8 @@
 </div>
 
 
-<script src="sesion.js?v=20261103a"></script>
-<script src="dashboard.js?v=20261103d"></script>
+<script src="sesion.js?v=20261103b"></script>
+<script src="dashboard.js?v=20261103e"></script>
 <script src="ai-assistant.js?v=20261103a"></script>
 
 

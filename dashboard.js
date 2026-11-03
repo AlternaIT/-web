@@ -897,38 +897,80 @@
     ═══════════════════════════════════════════ */
     let todosUsuarios = [];
 
+    /* Datos de conexión (panel_usuarios / historial_inicios, solo admin) */
+    const nombrePais = (() => {
+        let dn = null; try { dn = new Intl.DisplayNames(["es"], { type: "region" }); } catch { /* navegador viejo */ }
+        return (codigo, respaldo) => { try { return (codigo && dn?.of(codigo)) || respaldo || ""; } catch { return respaldo || ""; } };
+    })();
+
+    function haceCuanto(fecha) {
+        if (!fecha) return "";
+        const seg = Math.max(0, (Date.now() - new Date(fecha).getTime()) / 1000);
+        if (seg < 60) return "hace un momento";
+        if (seg < 3600) return `hace ${Math.floor(seg / 60)} min`;
+        if (seg < 86400) return `hace ${Math.floor(seg / 3600)} h`;
+        if (seg < 172800) return "ayer";
+        return `hace ${Math.floor(seg / 86400)} días`;
+    }
+
+    const fechaHora = f => f ? new Date(f).toLocaleString("es", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    const textoDispositivo = c => [c?.dispositivo, c?.sistema, c?.navegador].filter(Boolean).join(" · ");
+    const textoUbicacion = c => [c?.ciudad, c?.region, nombrePais(c?.pais_codigo, c?.pais)].filter(Boolean)
+        .filter((v, i, a) => a.indexOf(v) === i).join(", ");   // sin repetir (ciudad = departamento)
+
+    function celdaConexion(c) {
+        if (c?.en_linea) return `<span class="status-dot dot-active"></span>En línea`;
+        if (c?.ultima_actividad) return `<span class="status-dot dot-inactive"></span>Visto ${haceCuanto(c.ultima_actividad)}`;
+        return `<span class="status-dot dot-inactive"></span><span style="color:#9ca3af">Desconectado</span>`;
+    }
+
     async function cargarTablaUsuarios() {
         const tbody = document.getElementById("usuariosBody");
-        tbody.innerHTML = `<tr class="loading-row"><td colspan="4">Cargando...</td></tr>`;
+        if (!todosUsuarios.length) tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Cargando...</td></tr>`;
 
-        const { data, error } = await supabaseClient
-            .from("usuarios")
-            .select("id, nombre, correo, rol, activo")
-            .order("nombre");
+        const [{ data, error }, { data: conexiones }] = await Promise.all([
+            supabaseClient.from("usuarios").select("id, nombre, correo, rol, activo, foto").order("nombre"),
+            supabaseClient.rpc("panel_usuarios"),
+        ]);
 
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="4" style="color:#ef4444;padding:20px 16px">Error al cargar usuarios.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444;padding:20px 16px">Error al cargar usuarios.</td></tr>`;
             return;
         }
 
         if (!data || !data.length) {
-            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No hay usuarios registrados.</div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No hay usuarios registrados.</div></td></tr>`;
             return;
         }
 
-        todosUsuarios = data;
+        const porUsuario = new Map((conexiones || []).map(c => [c.usuario_id, c]));
+        todosUsuarios = data.map(u => ({ ...u, conexion: porUsuario.get(u.id) || null }));
 
-        tbody.innerHTML = data.map(u => `
+        tbody.innerHTML = todosUsuarios.map(u => {
+            const c = u.conexion;
+            return `
             <tr class="clickable-row" onclick="abrirFichaUsuario(${u.id})" style="cursor:pointer">
-                <td data-label="Nombre"><strong>${esc(u.nombre||"—")}</strong></td>
-                <td data-label="Correo" style="color:#6b7280">${esc(u.correo||"—")}</td>
+                <td data-label="Usuario"><strong>${esc(u.nombre||"—")}</strong><div style="color:#6b7280;font-size:12px">${esc(u.correo||"—")}</div></td>
                 <td data-label="Rol"><span class="asignado-chip">${esc(u.rol||"—")}</span></td>
-                <td data-label="Estado">
+                <td data-label="Estado" style="white-space:nowrap">
                     <span class="status-dot ${u.activo ? 'dot-active' : 'dot-inactive'}"></span>
-                    ${u.activo ? "Activo" : "Inactivo"}
+                    ${u.activo ? "Activo" : "Bloqueado"}
                 </td>
-            </tr>`).join("");
+                <td data-label="Conexión" style="white-space:nowrap">${celdaConexion(c)}</td>
+                <td data-label="Último inicio">${c?.ultimo_inicio
+                    ? `${esc(fechaHora(c.ultimo_inicio))}<div style="color:#6b7280;font-size:12px">${esc(textoDispositivo(c) || "—")}</div>`
+                    : `<span style="color:#9ca3af">Nunca</span>`}</td>
+                <td data-label="Ubicación">${c?.ultimo_inicio
+                    ? `${esc(textoUbicacion(c) || "—")}<div style="color:#6b7280;font-size:12px">${esc(c.ip || "")}</div>`
+                    : `<span style="color:#9ca3af">—</span>`}</td>
+            </tr>`;
+        }).join("");
     }
+
+    // Con la página de usuarios abierta, la columna Conexión se refresca sola cada 30 s
+    setInterval(() => {
+        if (paginaActual === "usuarios" && document.visibilityState === "visible") cargarTablaUsuarios();
+    }, 30_000);
 
     /* ═══════════════════════════════════════════
        NUEVO USUARIO
@@ -1023,10 +1065,32 @@
         span.textContent = "Consultando…";
         const { data, error } = await supabaseClient.rpc("sesiones_activas", { p_usuario_id: u.id });
         if (String(document.getElementById("fuId").value) !== String(u.id)) return;   // ya abrieron otra ficha
+        const linea = u.conexion?.en_linea ? " · en línea ahora"
+            : u.conexion?.ultima_actividad ? ` · visto ${haceCuanto(u.conexion.ultima_actividad)}` : "";
         span.textContent = error || data == null ? "—"
-            : data === 0 ? "Sin sesiones abiertas"
-            : data === 1 ? "1 sesión abierta" : `${data} sesiones abiertas`;
+            : (data === 0 ? "Sin sesiones abiertas" : data === 1 ? "1 sesión abierta" : `${data} sesiones abiertas`) + (data ? linea : "");
         document.getElementById("fuCerrarSesiones").disabled = !data;
+        pintarHistorialFicha(u.id);
+    }
+
+    async function pintarHistorialFicha(id) {
+        const caja = document.getElementById("fuHistorial");
+        caja.innerHTML = `<span style="color:#9ca3af">Cargando…</span>`;
+        const { data, error } = await supabaseClient.rpc("historial_inicios", { p_usuario_id: id, p_limite: 10 });
+        if (String(document.getElementById("fuId").value) !== String(id)) return;
+        if (error) { caja.innerHTML = `<span style="color:#ef4444">No se pudo cargar el historial.</span>`; return; }
+        if (!data?.length) { caja.innerHTML = `<span style="color:#9ca3af">Sin inicios de sesión registrados todavía.</span>`; return; }
+        caja.innerHTML = data.map(h => `
+            <div style="display:flex;gap:10px;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06)">
+                <div style="min-width:0">
+                    <div><strong>${esc(fechaHora(h.created_at))}</strong>${h.activa ? ` <span class="asignado-chip" style="margin-left:4px">sesión abierta</span>` : ""}</div>
+                    <div style="color:#6b7280;font-size:12px">${esc(textoDispositivo(h) || "Dispositivo desconocido")}</div>
+                </div>
+                <div style="text-align:right;flex:none;max-width:55%">
+                    <div>${esc(textoUbicacion(h) || "Ubicación desconocida")}</div>
+                    <div style="color:#6b7280;font-size:12px">${esc(h.ip || "")}</div>
+                </div>
+            </div>`).join("");
     }
 
     function mensajeFicha(texto, color) {
