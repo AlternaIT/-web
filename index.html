@@ -841,7 +841,8 @@
     ═══════════════════════════════════════════ */
     // Siempre entra con Zoho (la cuenta y contraseña de Zoho las pide Zoho, no esta página)
     // Correo y contraseña de Zoho: el servidor los comprueba con Zoho Mail.
-    // Si Zoho no los acepta así (contraseña mal o verificación en dos pasos), se pasa a la página de Zoho.
+    // Contraseña mal → mensaje aquí. Si Zoho responde otra cosa (p. ej. verificación en dos pasos),
+    // se pasa a la página de Zoho.
     async function handleLogin() {
         hideError();
         const correo     = document.getElementById("correo").value.trim();
@@ -874,10 +875,10 @@
 
     /* ═══════════════════════════════════════════
        LOGIN EN LA PÁGINA DE ZOHO
-       Solo cuando la contraseña no se pudo comprobar aquí (verificación en dos pasos, contraseña
-       mal, etc.). Zoho no permite exigir la contraseña si ya hay sesión abierta, así que primero
-       se cierra la sesión de Zoho en este navegador: Zoho pide contraseña y código sí o sí.
-       Acceso "online" y sin prompt=consent: el permiso de la app solo se pide la primera vez.
+       Solo cuando Zoho Mail no pudo decir si la contraseña es correcta (p. ej. verificación en
+       dos pasos). Acceso "online" y sin prompt=consent: el permiso de la app solo se pide la
+       primera vez. (Cerrar antes la sesión de Zoho no sirve: Zoho no regresa a la web y deja al
+       usuario en Zoho Mail.)
     ═══════════════════════════════════════════ */
     function loginZoho(correo) {
         hideError();
@@ -893,8 +894,7 @@
             state
         };
         if (correo) params.login_hint = correo;   // Zoho trae el correo ya puesto
-        const autorizar = ZOHO_ACCOUNTS + "/oauth/v2/auth?" + new URLSearchParams(params);
-        location.href = ZOHO_ACCOUNTS + "/logout?" + new URLSearchParams({ serviceurl: autorizar });
+        location.href = ZOHO_ACCOUNTS + "/oauth/v2/auth?" + new URLSearchParams(params);
     }
 
     // Si vuelven con "Atrás" desde Zoho, el botón no debe quedarse en "Conectando…"

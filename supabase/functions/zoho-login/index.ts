@@ -1,8 +1,8 @@
 // Alterna — inicio de sesión con la cuenta de Zoho.
 //  • accion "password": el correo y la contraseña de Zoho se escriben en nuestra pantalla y se
 //    comprueban contra Zoho Mail (IMAP). Si Zoho los acepta, entra sin ver ninguna página de Zoho.
-//    Si no (contraseña mal, verificación en dos pasos o IMAP apagado) responde { zoho: true } y la
-//    página manda a Zoho, que pide contraseña y código.
+//    Contraseña mal → "Correo o contraseña incorrectos". Otra respuesta de Zoho (p. ej. verificación
+//    en dos pasos) → { zoho: true } y la página manda a Zoho.
 //  • accion "oauth" (por defecto): el "code" que devuelve Zoho se cambia por la identidad (OpenID).
 //  • Solo entran correos @alterna.pro dados de alta y activos en public.usuarios.
 //  • Devuelve la misma forma que login_usuario (id, correo, nombre, rol, activo, token) + foto.
@@ -96,8 +96,12 @@ async function abrirSesion(base: SupabaseClient, usuario: Usuario, via: string) 
 
 /* ───────────── Camino 1: contraseña de Zoho comprobada en Zoho Mail (IMAP) ───────────── */
 
-// true = Zoho aceptó la contraseña · false = la rechazó · null = no se pudo comprobar
-async function imapAcepta(correo: string, contrasena: string): Promise<boolean | null> {
+// "ok" = Zoho aceptó la contraseña · "invalida" = la rechazó · "otro" = respuesta distinta
+// (p. ej. verificación en dos pasos) · null = no se pudo comprobar.
+// Si el usuario no tiene IMAP activado, Zoho valida primero la contraseña y solo con la correcta
+// responde "You are yet to enable IMAP" (con la incorrecta: AUTHENTICATIONFAILED): eso cuenta como "ok".
+type ResultadoImap = "ok" | "invalida" | "otro" | null;
+async function imapAcepta(correo: string, contrasena: string): Promise<ResultadoImap> {
   let con: Deno.TlsConn | null = null;
   const temporizador = setTimeout(() => { try { con?.close(); } catch { /* ya cerrada */ } }, 10_000);
   try {
@@ -118,10 +122,11 @@ async function imapAcepta(correo: string, contrasena: string): Promise<boolean |
     texto = "";
     await con.write(enc.encode(`A1 AUTHENTICATE PLAIN ${credencial}\r\n`));
     await leerHasta(/^A1 (OK|NO|BAD)[^\r\n]*\r\n/m);
-    const ok = /^A1 OK/m.test(texto);
-    if (!ok) log("info", "imap_rechazo", { respuesta: (texto.match(/^A1 [^\r\n]*/m)?.[0] ?? "").slice(0, 160) });
+    const respuesta = texto.match(/^A1 [^\r\n]*/m)?.[0] ?? "";
     try { await con.write(enc.encode("A2 LOGOUT\r\n")); } catch { /* no importa */ }
-    return ok;
+    if (/^A1 OK/.test(respuesta) || /yet to enable IMAP/i.test(respuesta)) return "ok";
+    log("info", "imap_rechazo", { respuesta: respuesta.slice(0, 160) });
+    return /AUTHENTICATIONFAILED|Invalid credentials/i.test(respuesta) ? "invalida" : "otro";
   } catch (e) {
     log("warn", "imap_fallo", { error: String(e) });
     return null;
@@ -151,21 +156,24 @@ async function loginConContrasena(correoBruto: string, contrasena: string) {
   const desde = new Date(Date.now() - VENTANA_FALLOS_MIN * 60_000).toISOString();
   const { count } = await base.from("login_intentos").select("id", { count: "exact", head: true })
     .eq("correo", correo).gte("created_at", desde);
-  // Demasiados fallos: ya no se prueba en Zoho Mail (evita que Zoho bloquee la cuenta); va a Zoho
+  // Demasiados fallos: ya no se prueba en Zoho Mail (evita que Zoho bloquee la cuenta)
   if ((count ?? 0) >= MAX_FALLOS) {
     log("info", "password_limite", { usuario_id: usuario.id });
-    return json({ zoho: true, motivo: "limite" });
+    return json({ error: `Demasiados intentos fallidos. Espera ${VENTANA_FALLOS_MIN} minutos e intenta de nuevo.` }, 429);
   }
 
-  const acepta = await imapAcepta(correo, contrasena);
-  if (acepta === true) {
+  const resultado = await imapAcepta(correo, contrasena);
+  if (resultado === "ok") {
     await base.from("login_intentos").delete().eq("correo", correo);
     return abrirSesion(base, usuario, "password");
   }
-  if (acepta === false) await base.from("login_intentos").insert({ correo });
-  // Rechazada o sin comprobar: puede ser contraseña mal, verificación en dos pasos o IMAP apagado.
-  // Zoho decide en su página (pide contraseña y código).
-  return json({ zoho: true, motivo: acepta === false ? "rechazada" : "sin_comprobar" });
+  if (resultado === "invalida") {
+    await base.from("login_intentos").insert({ correo });
+    return json({ error: "Correo o contraseña incorrectos." }, 401);
+  }
+  if (resultado === null) return json({ error: "No se pudo comprobar tu contraseña con Zoho. Intenta de nuevo." }, 503);
+  // Respuesta distinta (p. ej. verificación en dos pasos): lo resuelve Zoho en su página
+  return json({ zoho: true });
 }
 
 /* ───────────── Camino 2: regreso desde la página de Zoho (OAuth / OpenID) ───────────── */
