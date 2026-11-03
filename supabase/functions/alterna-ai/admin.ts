@@ -46,7 +46,7 @@ export async function usoAdmin(db: any) {
   for (const r of uso ?? []) {
     const f = por.get(r.usuario_id); if (!f) continue;
     if (r.tipo === "mensaje") { f.mensajes++; const d = String(r.created_at).slice(0, 10); if (d in dias) dias[d]++; }
-    else f.imagenes++;
+    else if (r.tipo === "imagen") f.imagenes++;
     f.tokens_entrada += r.tokens_entrada ?? 0; f.tokens_salida += r.tokens_salida ?? 0;
     if (!f.ultimo || r.created_at > f.ultimo) f.ultimo = r.created_at;
   }

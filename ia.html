@@ -7,7 +7,7 @@
     <link rel="icon" href="img/logo-ia.webp?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="ia.css?v=20261103g">
+    <link rel="stylesheet" href="ia.css?v=20261103h">
 </head>
 <body>
 <div class="app" id="app">
@@ -30,6 +30,7 @@
                 <div><div class="nm" id="meNm">Cargando…</div><div class="rl" id="meRl"></div></div>
             </div>
             <div class="quota" id="quota" style="display:none"></div>
+            <button class="btn-perfil" id="btnPerfil">Personalizar</button>
             <button class="btn-admin" id="btnAdmin" style="display:none">Administración · uso de la IA</button>
             <div class="foot-links">
                 <button id="btnVolver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Aplicaciones</button>
@@ -55,25 +56,28 @@
             <form class="composer" id="form">
                 <div class="adjs" id="adjs"></div>
                 <div class="crow">
-                    <button type="button" class="attach" id="btnAdj" title="Adjuntar imagen" aria-label="Adjuntar imagen"></button>
-                    <input type="file" id="fileAdj" accept="image/png,image/jpeg,image/webp" multiple hidden>
+                    <button type="button" class="attach" id="btnAdj" title="Adjuntar imagen o documento (PDF, Word, Excel, PowerPoint, CSV, texto)" aria-label="Adjuntar imagen o documento"></button>
+                    <input type="file" id="fileAdj" accept="image/png,image/jpeg,image/webp,.pdf,.docx,.xlsx,.xlsm,.xls,.ods,.csv,.tsv,.pptx,.txt,.md,.json,.xml,.html,.log,.sql,.yml,.yaml" multiple hidden>
                     <div class="nivel"><button type="button" class="nivel-btn" id="btnNivel" aria-haspopup="menu" aria-expanded="false" title="Elegir el nivel de la IA"></button><div class="nivel-menu" id="menuNivel" role="menu" hidden></div></div>
-                    <textarea id="entrada" rows="1" maxlength="6000" placeholder="Escribe tu mensaje, pega una imagen o pide que genere una…"></textarea>
+                    <div class="grab" id="grab" hidden><span class="g-dot"></span><span id="grabT">0:00</span><span class="gb" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="g-t">Escuchando… toca ■ para terminar</span><button type="button" id="grabX" aria-label="Cancelar grabación">Cancelar</button></div>
+                    <textarea id="entrada" rows="1" maxlength="6000" placeholder="Escribe tu mensaje o adjunta un documento…"></textarea>
+                    <button type="button" class="mic" id="btnMic" hidden aria-label="Dictar por voz"></button>
                     <button class="send" id="btnEnviar" type="submit" title="Enviar" disabled></button>
                 </div>
             </form>
-            <div class="hint">Alterna IA analiza imágenes y puede generarlas. Puede cometer errores: verifica lo importante.</div>
+            <div class="hint">Alterna IA lee documentos e imágenes, crea gráficas y te escucha. Puede cometer errores: verifica lo importante.</div>
         </div>
     </main>
 </div>
 <div class="toast" id="toast"></div>
-<div class="modal" id="adminModal"><div class="modal-card"><div class="modal-h"><b>Administración · uso de la IA</b><button data-admin-x aria-label="Cerrar">&times;</button></div><div class="ad-tabs" id="adminTabs" role="tablist"><button data-tab="cuotas" role="tab">Usuarios y cuotas</button><button data-tab="planes" role="tab">Planes</button><button data-tab="uso" role="tab">Consumo (30 días)</button></div><div class="modal-b" id="adminBody"></div></div></div>
+<div class="modal" id="adminModal"><div class="modal-card"><div class="modal-h"><b>Administración · uso de la IA</b><button data-admin-x aria-label="Cerrar">&times;</button></div><div class="ad-tabs" id="adminTabs" role="tablist"><button data-tab="cuotas" role="tab">Usuarios y cuotas</button><button data-tab="planes" role="tab">Planes</button><button data-tab="uso" role="tab">Consumo (30 días)</button><button data-tab="calidad" role="tab">Calidad</button></div><div class="modal-b" id="adminBody"></div></div></div>
+<div class="modal" id="perfilModal" role="dialog" aria-modal="true" aria-labelledby="pfTitulo"><div class="modal-card pf-card"><div class="modal-h"><b id="pfTitulo">Personalizar Alterna IA</b><button data-perfil-x aria-label="Cerrar">&times;</button></div><div class="modal-b" id="perfilBody"></div></div></div>
 <div class="modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="cfTitulo"><div class="modal-card cf-card"><div class="cf-b"><h3 id="cfTitulo"></h3><p id="cfMensaje"></p></div><div class="cf-btns"><button type="button" class="cf-no" id="cfNo">Cancelar</button><button type="button" class="cf-ok" id="cfOk">Aceptar</button></div></div></div>
 <div class="modal" id="pvModal"><div class="modal-card pv-card"><div class="modal-h"><b>Vista previa</b><button data-pv-x aria-label="Cerrar">&times;</button></div><iframe id="pvFrame" title="Vista previa del código" sandbox="allow-scripts allow-forms allow-modals"></iframe></div></div>
 <div class="lightbox" id="lb"><button class="lb-x" aria-label="Cerrar">&times;</button><img alt=""></div>
-<div class="dropzone" id="drop">Suelta la imagen para adjuntarla</div>
+<div class="dropzone" id="drop">Suelta el archivo para adjuntarlo</div>
 
 <script src="sesion.js?v=20261103b"></script>
-<script src="ia.js?v=20261103g"></script>
+<script src="ia.js?v=20261103h"></script>
 </body>
 </html>

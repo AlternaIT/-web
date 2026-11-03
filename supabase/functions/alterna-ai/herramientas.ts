@@ -64,11 +64,12 @@ function cuerpo(modelo: string, tipo: string, instrucciones: string, input: any[
 export async function responderConHerramienta(
   key: string, candidatos: string[], nombre: string, args: Record<string, any>,
   instrucciones: string, messages: any[], emitir: (t: string) => void, maxSalida?: number,
+  subir?: (bytes: Uint8Array, mime: string) => Promise<string>,
 ): Promise<Resultado | null> {
   const web = nombre === "buscar_web";
   const guia = web
     ? `\n\nBÚSQUEDA EN INTERNET: busca "${String(args.consulta ?? "").slice(0, 300)}" y responde con lo que encuentres. Prioriza fuentes oficiales y recientes, indica la fecha de los datos cuando importe y no inventes nada que no esté en los resultados.`
-    : `\n\nEJECUCIÓN DE CÓDIGO: escribe y ejecuta Python para: ${String(args.tarea ?? "").slice(0, 500)}. Después explica el resultado en español, de forma breve y clara.`;
+    : `\n\nEJECUCIÓN DE CÓDIGO: escribe y ejecuta Python para: ${String(args.tarea ?? "").slice(0, 500)}. Después explica el resultado en español, de forma breve y clara. Si la persona pidió una gráfica, calcula los datos con Python y al final entrega un bloque \`\`\`grafica con el JSON (tipo, titulo, etiquetas, series, ejeX, ejeY, formato) en lugar de dibujarla con matplotlib, salvo que pida expresamente una imagen.`;
   const tipos = web ? ["web_search", "web_search_preview"] : ["code_interpreter"];
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${key}` };
   const input = aEntrada(messages);
@@ -82,17 +83,41 @@ export async function responderConHerramienta(
         if (r.status === 401 || /insufficient_quota|billing/i.test(txt)) return null;
         continue; // otro tipo de herramienta u otro modelo
       }
-      return await transmitir(r, modelo, web, emitir);
+      return await transmitir(r, modelo, web, emitir, key, subir);
     }
   }
   return null;
 }
 
-async function transmitir(r: Response, modelo: string, web: boolean, emitir: (t: string) => void): Promise<Resultado> {
+// Imagen producida por el código (p. ej. una gráfica de matplotlib): se guarda y se muestra en el chat.
+async function imagenDeCodigo(key: string, subir: ((b: Uint8Array, m: string) => Promise<string>) | undefined, fuente: { url?: string; container_id?: string; file_id?: string }): Promise<string | null> {
+  if (!subir) return null;
+  try {
+    let bytes: Uint8Array | null = null, mime = "image/png";
+    if (fuente.url?.startsWith("data:image/")) {
+      const [cab, b64] = fuente.url.split(",");
+      mime = cab.slice(5, cab.indexOf(";")) || "image/png";
+      const bin = atob(b64); bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    } else {
+      const url = fuente.container_id && fuente.file_id ? `${OPENAI}/containers/${fuente.container_id}/files/${fuente.file_id}/content` : fuente.url;
+      if (!url) return null;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
+      if (!r.ok) return null;
+      mime = (r.headers.get("content-type") || "").split(";")[0];
+      if (!/^image\/(png|jpeg|webp)$/.test(mime)) return null;
+      bytes = new Uint8Array(await r.arrayBuffer());
+    }
+    if (!bytes || bytes.length > 8 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp"].includes(mime)) return null;
+    return await subir(bytes, mime);
+  } catch { return null; }
+}
+
+async function transmitir(r: Response, modelo: string, web: boolean, emitir: (t: string) => void, key: string, subir?: (b: Uint8Array, m: string) => Promise<string>): Promise<Resultado> {
   const rd = r.body!.getReader(), dec = new TextDecoder();
   let buf = "", hayTexto = false;
   const res: Resultado = { entrada: 0, salida: 0, modelo };
   const fuentes = new Map<string, string>();
+  const archivos = new Set<string>(); // imágenes ya mostradas
 
   while (true) {
     const { done, value } = await rd.read(); if (done) break;
@@ -108,6 +133,14 @@ async function transmitir(r: Response, modelo: string, web: boolean, emitir: (t:
         const logs = (j.item.outputs ?? []).filter((o: any) => o.type === "logs" && o.logs).map((o: any) => o.logs).join("\n").trim();
         emitir(`${hayTexto ? "\n\n" : ""}**Código ejecutado**\n\n\`\`\`python\n${j.item.code.trim()}\n\`\`\`\n` + (logs ? `\n**Resultado**\n\n\`\`\`text\n${logs.slice(0, 4000)}\n\`\`\`\n` : "") + "\n");
         hayTexto = true;
+        for (const o of j.item.outputs ?? []) if (o.type === "image" && o.url && !archivos.has(o.url)) {
+          archivos.add(o.url);
+          const u = await imagenDeCodigo(key, subir, { url: o.url });
+          if (u) emitir(`![Gráfica generada](${u})\n\n`);
+        }
+      } else if (j.type === "response.output_text.annotation.added" && j.annotation?.type === "container_file_citation" && /\.(png|jpe?g|webp)$/i.test(j.annotation.filename ?? "")) {
+        const a = j.annotation, k = a.container_id + "/" + a.file_id;
+        if (!archivos.has(k)) { archivos.add(k); const u = await imagenDeCodigo(key, subir, a); if (u) { emitir(`\n\n![${String(a.filename).replace(/[\[\]]/g, "")}](${u})\n\n`); hayTexto = true; } }
       } else if (j.type === "response.completed" || j.type === "response.incomplete") {
         const u = j.response?.usage; if (u) { res.entrada = u.input_tokens ?? 0; res.salida = u.output_tokens ?? 0; }
         for (const it of j.response?.output ?? []) for (const c of it.content ?? []) for (const a of c.annotations ?? [])

@@ -41,14 +41,28 @@ const I = {
     xls: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>', 14),
     play: svg('<path d="M7 5l12 7-12 7V5z"/>', 13),
     shield: svg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/>', 16),
+    mic: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>', 19),
+    up: svg('<path d="M7 10v11H4V10h3zM7 10l4-7a2 2 0 012.6 1.9V9h5.6a2 2 0 012 2.3l-1.4 8A2 2 0 0117.8 21H7"/>', 14),
+    down: svg('<path d="M17 14V3h3v11h-3zM17 14l-4 7a2 2 0 01-2.6-1.9V15H4.8a2 2 0 01-2-2.3l1.4-8A2 2 0 016.2 3H17"/>', 14),
+    voz: svg('<path d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/>', 14),
+    pausa: svg('<path d="M9 5v14M15 5v14"/>', 14, 'stroke-width="2.6"'),
+    yo: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>', 15),
+    doc: svg('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5zM14 3v5h5"/>', 18),
+    tabla: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>', 14),
+    png: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>', 14),
+};
+// Icono y color de cada tipo de documento
+const TIPO_DOC = {
+    pdf: { e: "PDF", c: "#dc2626" }, word: { e: "DOC", c: "#2563eb" }, excel: { e: "XLS", c: "#059669" },
+    csv: { e: "CSV", c: "#059669" }, presentacion: { e: "PPT", c: "#ea580c" }, texto: { e: "TXT", c: "#6b7280" },
 };
 
 const SUGERENCIAS = [
     { i: I.mail,  t: "Redactar un correo",     d: "Comunicados y respuestas listos para enviar.", p: "Ayúdame a redactar un correo profesional. Primero pregúntame a quién va dirigido y qué necesito comunicar." },
-    { i: I.pdf,   t: "Resumir un texto",       d: "Puntos clave y próximos pasos.",               p: "Voy a pegarte un texto. Resúmelo en puntos clave y dime qué acciones o pendientes se desprenden de él." },
+    { i: I.pdf,   t: "Analizar un documento",  d: "PDF, Word, Excel o PowerPoint.",               adj: true },
     { i: I.edit,  t: "Corregir un texto",      d: "Ortografía, tono y claridad.",                 p: "Voy a pegarte un texto. Corrige ortografía y redacción, mejora la claridad y dime qué cambiaste." },
     { i: I.cal,   t: "Preparar una reunión",   d: "Agenda, puntos clave y minuta.",               p: "Ayúdame a preparar una reunión: propón una agenda clara y una plantilla de minuta para anotar acuerdos, responsables y fechas." },
-    { i: I.chart, t: "Armar un reporte",       d: "Con tablas; descárgalo en Excel.",       p: "Ayúdame a armar un reporte con tablas a partir de unos datos que te voy a pegar. Pregúntame primero qué quiero mostrar." },
+    { i: I.chart, t: "Crear una gráfica",      d: "A partir de tus datos o de un Excel.",          p: "Quiero crear una gráfica. Pregúntame qué datos quiero mostrar (puedo pegarlos o adjuntar un Excel) y qué tipo de gráfica me conviene." },
     { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",     p: "Genera una imagen profesional de un banner horizontal para una campaña de Alterna, estilo moderno, cálido y cercano." },
 ];
 
@@ -105,10 +119,13 @@ function bloques(texto) {
     return out;
 }
 
-function md(src) {
+// vivo = la respuesta aún está llegando (las gráficas se dibujan al terminar)
+let renderVivo = false;
+function md(src, vivo = false) {
     // Mensajes antiguos pueden traer la marca ⟦fuentes:…⟧ de la base de conocimiento (ya retirada): se oculta
     src = src.replace(/\n*⟦fuentes:[0-9a-f,-]*⟧?/g, "");
-    return mdSinFuentes(src);
+    renderVivo = vivo;
+    try { return mdSinFuentes(src); } finally { renderVivo = false; }
 }
 
 function mdSinFuentes(src) {
@@ -118,7 +135,8 @@ function mdSinFuentes(src) {
 
 // Marcas de progreso del backend: solo se muestran mientras son lo último que llegó.
 const MARCAS_RE = /⟦(imagen|buscando|ejecutando)⟧/g;
-const quitarMarcas = t => t.replace(MARCAS_RE, "");
+const MSG_RE = /⟦msg:(\d+)⟧/;
+const quitarMarcas = t => t.replace(MARCAS_RE, "").replace(/⟦msg:\d+⟧/g, "");
 const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando)⟧$/) || [])[1] || null;
 const PROGRESO = {
     buscando: `<div class="prog">${svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>', 16, 'class="prog-ic gira"')}<span>Buscando en internet</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
@@ -139,6 +157,12 @@ function mdTexto(src) {
         const lang = (nl >= 0 ? seg.slice(0, nl) : "").trim().slice(0, 20).toLowerCase();
         const code = nl >= 0 ? seg.slice(nl + 1).replace(/\n$/, "") : seg;
         const cerrado = k < partes.length - 1; // mientras llega, el último bloque aún no tiene cierre
+        if (lang === "grafica" || lang === "chart") {
+            out += cerrado && !renderVivo
+                ? `<div class="graf" data-spec="${esc(code).replace(/"/g, "&quot;")}"><div class="graf-load"><span class="shimmer"></span><span>Dibujando gráfica…</span></div></div>`
+                : `<div class="graf"><div class="graf-load"><span class="shimmer"></span><span>Preparando gráfica…</span></div></div>`;
+            return;
+        }
         out += `<pre data-lang="${esc(lang)}"><div class="ph"><span>${esc(lang || "código")}</span><span class="ph-b">` +
             (cerrado && conVistaPrevia(lang) ? `<button type="button" data-preview>${I.play} Vista previa</button>` : "") +
             (cerrado ? `<button type="button" data-dlcode>${I.dl} Descargar</button>` : "") +
@@ -175,6 +199,115 @@ function vistaPrevia(pre) {
     $("pvFrame").srcdoc = lang === "svg" ? `<!doctype html><body style="margin:0;display:grid;place-items:center;min-height:100vh">${texto}</body>` : texto;
     $("pvModal").classList.add("open");
 }
+/* ── Gráficas: bloques ```grafica con JSON → Chart.js ── */
+const CHARTJS = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js";
+// Paleta categórica validada para daltonismo (orden fijo, nunca se cicla) — claro / oscuro
+const SERIES_CLARO = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
+const SERIES_OSCURO = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"];
+const TIPOS_GRAF = { barras: "bar", barras_horizontales: "bar", barras_apiladas: "bar", lineas: "line", area: "line", pastel: "pie", dona: "doughnut", dispersion: "scatter" };
+const graficas = new Map(); // nodo .graf → instancia de Chart
+
+function formateador(spec) {
+    const f = spec.formato, moneda = /^[A-Z]{3}$/.test(spec.moneda || "") ? spec.moneda : "GTQ";
+    const nf = f === "moneda" ? new Intl.NumberFormat("es-GT", { style: "currency", currency: moneda, maximumFractionDigits: 2 })
+        : new Intl.NumberFormat("es-GT", { maximumFractionDigits: 2 });
+    return v => v == null || isNaN(v) ? "—" : f === "porcentaje" ? nf.format(v) + " %" : nf.format(v);
+}
+function validarSpec(s) {
+    if (!s || typeof s !== "object" || !TIPOS_GRAF[s.tipo] || !Array.isArray(s.series) || !s.series.length) throw new Error("formato");
+    s.series = s.series.slice(0, 8).map((x, i) => ({ nombre: String(x?.nombre ?? `Serie ${i + 1}`).slice(0, 60), datos: Array.isArray(x?.datos) ? x.datos.slice(0, 500) : [] }));
+    s.etiquetas = Array.isArray(s.etiquetas) ? s.etiquetas.slice(0, 500).map(e => String(e).slice(0, 60)) : [];
+    if (/pastel|dona/.test(s.tipo)) s.series = s.series.slice(0, 1);
+    return s;
+}
+function tablaGrafica(s, fmt) {
+    if (s.tipo === "dispersion") return `<table><thead><tr><th>Serie</th><th>${esc(s.ejeX || "X")}</th><th>${esc(s.ejeY || "Y")}</th></tr></thead><tbody>` +
+        s.series.flatMap(x => x.datos.map(p => `<tr><td>${esc(x.nombre)}</td><td>${fmt(+p?.[0])}</td><td>${fmt(+p?.[1])}</td></tr>`)).join("") + "</tbody></table>";
+    return `<table><thead><tr><th>${esc(s.ejeX || "")}</th>${s.series.map(x => `<th>${esc(x.nombre)}</th>`).join("")}</tr></thead><tbody>` +
+        s.etiquetas.map((e, i) => `<tr><td>${esc(e)}</td>${s.series.map(x => `<td>${fmt(+x.datos[i])}</td>`).join("")}</tr>`).join("") + "</tbody></table>";
+}
+
+async function pintarGraficas(raiz = document) {
+    const nodos = [...raiz.querySelectorAll(".graf[data-spec]:not([data-ok])")]; if (!nodos.length) return;
+    try { await cargarScript(CHARTJS); } catch { nodos.forEach(n => { n.innerHTML = '<div class="err">No se pudo cargar el dibujo de gráficas. Revisa tu conexión.</div>'; }); return; }
+    for (const n of nodos) {
+        n.dataset.ok = "1";
+        let s; try { s = validarSpec(JSON.parse(n.dataset.spec)); } catch {
+            n.innerHTML = `<div class="err">No pude dibujar esta gráfica (datos con formato incorrecto). Pide a la IA que la genere de nuevo.</div>`; continue;
+        }
+        const fmt = formateador(s);
+        n.innerHTML = `<div class="graf-h"><b>${esc(s.titulo || "Gráfica")}</b><span class="graf-b">` +
+            `<button type="button" data-graf-tabla>${I.tabla} Ver datos</button><button type="button" data-graf-png>${I.png} Descargar</button></span></div>` +
+            `<div class="graf-c${/pastel|dona/.test(s.tipo) ? " circ" : ""}"><canvas role="img" aria-label="${esc(s.titulo || "Gráfica")}"></canvas></div>` +
+            `<div class="graf-t tw" hidden>${tablaGrafica(s, fmt)}</div>`;
+        n._spec = s; dibujarGrafica(n);
+    }
+}
+
+function dibujarGrafica(n) {
+    const s = n._spec; if (!s || !window.Chart) return;
+    graficas.get(n)?.destroy();
+    const oscuro = document.body.classList.contains("dark"), cs = getComputedStyle(document.body);
+    const pal = oscuro ? SERIES_OSCURO : SERIES_CLARO, sup = cs.getPropertyValue("--surface").trim() || (oscuro ? "#1c1c1e" : "#fff");
+    const texto = cs.getPropertyValue("--text-soft").trim(), muted = cs.getPropertyValue("--muted").trim(), linea = cs.getPropertyValue("--border").trim();
+    const fmt = formateador(s), tipo = TIPOS_GRAF[s.tipo], circ = /pastel|dona/.test(s.tipo), horiz = s.tipo === "barras_horizontales";
+    const apilada = s.tipo === "barras_apiladas", area = s.tipo === "area", varias = s.series.length > 1;
+    const datasets = circ
+        ? [{ label: s.series[0].nombre, data: s.series[0].datos.map(Number), backgroundColor: s.etiquetas.map((_, i) => pal[i % 8]), borderColor: sup, borderWidth: 2, hoverOffset: 6 }]
+        : s.series.map((x, i) => ({
+            label: x.nombre, data: s.tipo === "dispersion" ? x.datos.map(p => ({ x: +p?.[0], y: +p?.[1] })) : x.datos.map(v => v == null ? null : Number(v)),
+            backgroundColor: area ? pal[i] + "33" : pal[i], borderColor: pal[i],
+            borderWidth: tipo === "bar" ? 0 : 2, borderRadius: tipo === "bar" ? 4 : 0, borderSkipped: apilada ? false : "start", maxBarThickness: 44,
+            pointRadius: tipo === "scatter" ? 5 : s.etiquetas.length > 30 ? 0 : 3, pointHoverRadius: 6, pointBackgroundColor: pal[i], pointBorderColor: sup, pointBorderWidth: 2,
+            tension: .25, fill: area ? (apilada ? "stack" : "origin") : false, spanGaps: true,
+        }));
+    const eje = (titulo, valores) => ({
+        stacked: apilada, grid: { color: valores ? linea : "transparent", drawTicks: false }, border: { display: false },
+        ticks: { color: muted, padding: 8, font: { size: 11.5 }, maxRotation: 0, autoSkip: true, ...(valores ? { callback: v => fmt(v) } : {}) },
+        title: titulo ? { display: true, text: titulo, color: muted, font: { size: 12 } } : { display: false },
+        beginAtZero: tipo === "bar" || area,
+    });
+    const chart = new Chart(n.querySelector("canvas"), {
+        type: tipo,
+        data: { labels: s.tipo === "dispersion" ? undefined : s.etiquetas, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false, indexAxis: horiz ? "y" : "x", animation: { duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500 },
+            interaction: circ ? { mode: "nearest", intersect: true } : { mode: tipo === "scatter" ? "nearest" : "index", intersect: false },
+            plugins: {
+                legend: { display: circ || varias, position: "bottom", labels: { color: texto, usePointStyle: true, pointStyle: "rectRounded", boxWidth: 10, boxHeight: 10, padding: 14, font: { size: 12 } } },
+                tooltip: {
+                    backgroundColor: oscuro ? "#2c2c2e" : "#fff", titleColor: oscuro ? "#f2f2f3" : "#1f2937", bodyColor: oscuro ? "#d1d5db" : "#4b5563",
+                    borderColor: linea, borderWidth: 1, padding: 10, boxPadding: 4, usePointStyle: true,
+                    callbacks: {
+                        label: c => {
+                            if (circ) { const tot = c.dataset.data.reduce((a, b) => a + (+b || 0), 0); return ` ${c.label}: ${fmt(c.raw)} (${tot ? Math.round(c.raw / tot * 1000) / 10 : 0} %)`; }
+                            if (tipo === "scatter") return ` ${c.dataset.label}: ${fmt(c.raw.x)}, ${fmt(c.raw.y)}`;
+                            return ` ${c.dataset.label}: ${fmt(horiz ? c.raw : c.parsed.y)}`;
+                        },
+                    },
+                },
+            },
+            scales: circ ? {} : horiz ? { x: eje(s.ejeY, true), y: eje(s.ejeX, false) } : { x: eje(s.ejeX, tipo === "scatter"), y: eje(s.ejeY, true) },
+        },
+    });
+    graficas.set(n, chart);
+}
+const redibujarGraficas = () => { for (const [n] of graficas) { if (n.isConnected) dibujarGrafica(n); else { graficas.get(n).destroy(); graficas.delete(n); } } };
+
+function descargarGrafica(n) {
+    const c = n.querySelector("canvas"); if (!c) return;
+    const r = devicePixelRatio || 1, cab = Math.round(52 * r), m = Math.round(16 * r);
+    const k = document.createElement("canvas"); k.width = c.width + m * 2; k.height = c.height + cab + m;
+    const x = k.getContext("2d"), cs = getComputedStyle(document.body);
+    x.fillStyle = cs.getPropertyValue("--surface").trim() || "#fff"; x.fillRect(0, 0, k.width, k.height);
+    x.fillStyle = cs.getPropertyValue("--text").trim() || "#111"; x.font = `600 ${Math.round(16 * r)}px Inter, system-ui, sans-serif`;
+    x.fillText(n._spec?.titulo || "Gráfica", m, Math.round(34 * r));
+    x.drawImage(c, m, cab);
+    const a = document.createElement("a"); a.href = k.toDataURL("image/png");
+    a.download = ((n._spec?.titulo || "grafica").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "grafica") + ".png";
+    document.body.appendChild(a); a.click(); a.remove();
+}
+
 $("pvModal").addEventListener("click", e => { if (e.target.id === "pvModal" || e.target.closest("[data-pv-x]")) { $("pvModal").classList.remove("open"); $("pvFrame").srcdoc = ""; } });
 
 /* ── Estado ── */
@@ -312,7 +445,16 @@ function inicio() {
 }
 
 $("vista").addEventListener("click", e => {
-    const card = e.target.closest(".card"); if (card) return ejecutar({ texto: SUGERENCIAS[card.dataset.k].p });
+    const card = e.target.closest(".card");
+    if (card) { const s = SUGERENCIAS[card.dataset.k]; return s.adj ? $("fileAdj").click() : ejecutar({ texto: s.p }); }
+    const gt = e.target.closest("[data-graf-tabla]");
+    if (gt) { const t = gt.closest(".graf").querySelector(".graf-t"); t.hidden = !t.hidden; gt.innerHTML = `${I.tabla} ${t.hidden ? "Ver datos" : "Ocultar datos"}`; return; }
+    const gp = e.target.closest("[data-graf-png]"); if (gp) return descargarGrafica(gp.closest(".graf"));
+    const vu = e.target.closest("[data-val]"); if (vu) return clicValoracion(vu.closest(".msg"), +vu.dataset.val);
+    const mo = e.target.closest("[data-motivo]"); if (mo) { mo.classList.toggle("act"); mo.parentElement.querySelectorAll("[data-motivo]").forEach(b => b !== mo && b.classList.remove("act")); return; }
+    const fe = e.target.closest("[data-fb-enviar]"); if (fe) return enviarNegativa(fe.closest(".msg"));
+    const fc = e.target.closest("[data-fb-cancelar]"); if (fc) return fc.closest(".fb").remove();
+    const tt = e.target.closest("[data-tts]"); if (tt) return leerEnVoz(tt.closest(".msg"));
     const cp = e.target.closest("[data-copy]"); if (cp) return copiar(cp.closest("pre").querySelector("code").textContent);
     const ct = e.target.closest("[data-copymsg]"); if (ct) return copiar(sinImagenes(ct.closest(".msg").dataset.raw || ""));
     const rg = e.target.closest("[data-regen]"); if (rg) return regenerar();
@@ -340,20 +482,35 @@ const iniciales = (usuario.nombre || "?").split(/\s+/).map(p => p[0]).slice(0, 2
 const avatarHtml = /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(usuario.foto || "")
     ? `<img src="${usuario.foto}" alt="">` : esc(iniciales);
 
-function nodoUsuario(contenido, previews) {
+// Marca de documento guardada en el mensaje: ⟦doc:uuid|nombre|tipo[:páginas]⟧
+const DOC_MD = /⟦doc:[0-9a-f-]{36}\|([^|⟧]*)\|([^⟧]*)⟧/g;
+const docsDeMensaje = c => [...c.matchAll(DOC_MD)].map(m => { const [tipo, pag] = m[2].split(":"); return { nombre: m[1], tipo, paginas: +pag || null }; });
+const chipDoc = (d, clase = "", fin = "") => {
+    const t = TIPO_DOC[d.tipo] || TIPO_DOC.texto;
+    const info = [d.paginas ? `${d.paginas} pág.` : "", d.caracteres ? `${compacto(d.caracteres)} caracteres` : ""].filter(Boolean).join(" · ");
+    return `<div class="dchip${clase}" title="${esc(d.nombre)}"><span class="dc-ic" style="--c:${t.c}">${t.e}</span><span class="dc-t"><b>${esc(d.nombre)}</b><small>${esc(d.estado || info || t.e)}</small></span>${fin}</div>`;
+};
+
+function nodoUsuario(contenido, previews, docsLocales) {
     const urls = previews || [...contenido.matchAll(IMG_MD)].map(m => m[2]);
     const texto = previews ? contenido : sinImagenes(contenido);
+    const docs = docsLocales || docsDeMensaje(contenido);
     const d = document.createElement("div"); d.className = "msg user";
     d.innerHTML = `<div class="av">${avatarHtml}</div><div class="body"><div class="bubble">` +
         (urls.length ? `<div class="thumbs">${urls.map(u => `<img src="${u}" alt="Imagen adjunta">`).join("")}</div>` : "") +
+        (docs.length ? `<div class="dchips">${docs.map(x => chipDoc(x)).join("")}</div>` : "") +
         (texto ? `<div>${esc(texto)}</div>` : "") + `</div></div>`;
     return d;
 }
 
-function nodoAsistente(texto) {
-    const d = document.createElement("div"); d.className = "msg assistant"; d.dataset.raw = texto;
+const botonesValorar = (id, valor) => id ? `<span class="val" data-mid="${id}"><button type="button" data-val="1" class="${valor === 1 ? "act" : ""}" title="Buena respuesta" aria-label="Buena respuesta" aria-pressed="${valor === 1}">${I.up}</button>` +
+    `<button type="button" data-val="-1" class="${valor === -1 ? "act" : ""}" title="Mala respuesta" aria-label="Mala respuesta" aria-pressed="${valor === -1}">${I.down}</button></span>` : "";
+const botonVoz = () => `<button type="button" data-tts title="Escuchar en voz alta">${I.voz} Escuchar</button>`;
+
+function nodoAsistente(texto, id = null, valor = 0) {
+    const d = document.createElement("div"); d.className = "msg assistant"; d.dataset.raw = texto; if (id) d.dataset.id = id;
     d.innerHTML = `<div class="av con-img"><img src="img/logo-ia.webp?v=2" alt=""></div><div class="body"><div class="who">Alterna IA</div><div class="md">${md(texto)}</div>` +
-                  `<div class="tools"><button type="button" data-copymsg>${I.copy} Copiar</button>${botonesReporte(texto)}</div></div>`;
+                  `<div class="tools"><button type="button" data-copymsg>${I.copy} Copiar</button>${botonVoz()}${botonesReporte(texto)}${botonesValorar(id, valor)}</div></div>`;
     return d;
 }
 
@@ -368,8 +525,8 @@ function pintarConversacion() {
     if (!mensajes.length) { inicio(); return; }
     $("vista").innerHTML = '<div class="col" id="col"></div>';
     const col = $("col");
-    mensajes.forEach(m => col.appendChild(m.rol === "user" ? nodoUsuario(m.contenido) : nodoAsistente(m.contenido)));
-    marcarUltimo(); hidratarAcciones(); resaltar(col); bajar(true);
+    mensajes.forEach(m => col.appendChild(m.rol === "user" ? nodoUsuario(m.contenido) : nodoAsistente(m.contenido, m.id, m.valor)));
+    marcarUltimo(); hidratarAcciones(); resaltar(col); pintarGraficas(col).then(() => bajar(true)); bajar(true);
 }
 
 function bajar(forzar) {
@@ -379,6 +536,7 @@ function bajar(forzar) {
 
 function nueva() {
     if (enCurso) abortar?.abort();
+    pararVoz(); documentos = [];
     actual = null; mensajes = []; adjuntos = []; pintarAdjuntos(); history.replaceState(null, "", location.pathname);
     $("titulo").textContent = "Nueva conversación"; pintarLista(); pintarConversacion(); $("entrada").focus();
 }
@@ -386,12 +544,14 @@ function nueva() {
 async function abrir(id) {
     if (id === actual) return;
     if (enCurso) abortar?.abort();
+    pararVoz();
     actual = id; mensajes = []; history.replaceState(null, "", "#" + id);
     const c = convs.find(x => x.id === id); $("titulo").textContent = c ? c.titulo : "Conversación";
     pintarLista(); $("vista").innerHTML = '<div class="col"><div class="dots"><i></i><i></i><i></i></div></div>';
     try {
         const d = await api("abrir", { id }); if (actual !== id) return;
-        mensajes = d.mensajes.map(m => ({ rol: m.rol, contenido: m.contenido })); pintarConversacion();
+        const vals = new Map((d.valoraciones || []).map(v => [v.mensaje_id, v.valor]));
+        mensajes = d.mensajes.map(m => ({ id: m.id, rol: m.rol, contenido: m.contenido, valor: vals.get(m.id) || 0 })); pintarConversacion();
     } catch (e) { $("vista").innerHTML = `<div class="col"><div class="err">${esc(e.message)}</div></div>`; }
 }
 
@@ -411,23 +571,158 @@ function leerImagen(file) {
         img.src = url;
     });
 }
+/* ── Documentos: el texto se extrae aquí, en el navegador (el archivo original no se sube) ── */
+const MAX_DOCS = 5, MAX_MB_DOC = 25, MAX_TEXTO_DOC = 200000;
+const LIBS = {
+    pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+    pdfWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+    mammoth: "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js",
+    jszip: "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+    xlsx: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+};
+let documentos = []; // { id, nombre, tipo, paginas, texto, caracteres, estado, cargando }
+
+function tipoDeArchivo(f) {
+    const ext = (f.name.split(".").pop() || "").toLowerCase();
+    if (/^image\/(png|jpe?g|webp)$/.test(f.type)) return "imagen";
+    if (ext === "pdf" || f.type === "application/pdf") return "pdf";
+    if (ext === "docx") return "word";
+    if (["xlsx", "xlsm", "xls", "ods"].includes(ext)) return "excel";
+    if (ext === "csv" || ext === "tsv") return "csv";
+    if (ext === "pptx") return "presentacion";
+    if (["txt", "md", "markdown", "json", "xml", "html", "htm", "log", "sql", "yml", "yaml", "js", "ts", "py", "css", "ps1", "sh", "java", "cs", "php", "go", "rb", "ini", "conf"].includes(ext) || f.type.startsWith("text/")) return "texto";
+    if (ext === "doc" || ext === "ppt") return "antiguo";
+    return null;
+}
+
+// Convierte el HTML de mammoth en texto con títulos, listas y tablas legibles para la IA
+function htmlATexto(html) {
+    const raiz = new DOMParser().parseFromString(html, "text/html").body, out = [];
+    const txt = n => n.textContent.replace(/\s+/g, " ").trim();
+    for (const n of raiz.children) {
+        const t = n.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(t)) out.push("#".repeat(+t[1]) + " " + txt(n));
+        else if (t === "ul" || t === "ol") [...n.querySelectorAll("li")].forEach((li, i) => out.push((t === "ol" ? `${i + 1}. ` : "- ") + txt(li)));
+        else if (t === "table") {
+            const filas = [...n.querySelectorAll("tr")].map(tr => [...tr.children].map(c => txt(c).replace(/\|/g, "/")));
+            if (filas.length) out.push(["| " + filas[0].join(" | ") + " |", "|" + filas[0].map(() => " --- ").join("|") + "|", ...filas.slice(1).map(f => "| " + f.join(" | ") + " |")].join("\n"));
+        } else { const s = txt(n); if (s) out.push(s); }
+    }
+    return out.join("\n\n");
+}
+
+async function leerPdf(f, avance) {
+    await cargarScript(LIBS.pdf);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    const n = pdf.numPages, paginas = [];
+    for (let i = 1; i <= Math.min(n, 500); i++) {
+        const c = await (await pdf.getPage(i)).getTextContent();
+        let s = ""; for (const it of c.items) { s += it.str; if (it.hasEOL) s += "\n"; else if (it.str && !/\s$/.test(it.str)) s += " "; }
+        paginas.push(s.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim());
+        if (i % 10 === 0) avance(`Leyendo página ${i} de ${n}…`);
+    }
+    const texto = paginas.map((p, i) => `--- Página ${i + 1} ---\n${p}`).join("\n\n");
+    const util = paginas.join("").replace(/\s/g, "").length;
+    // PDF escaneado (sin texto): se envían las primeras páginas como imagen para que la IA las lea
+    const escaneado = util < 12 * Math.min(n, 500);
+    const imagenes = [];
+    if (escaneado) {
+        for (let i = 1; i <= Math.min(n, MAX_ADJ - adjuntos.length); i++) {
+            const pg = await pdf.getPage(i), vp0 = pg.getViewport({ scale: 1 }), k = Math.min(2, 1600 / Math.max(vp0.width, vp0.height));
+            const vp = pg.getViewport({ scale: k }), cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height;
+            const cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, cv.width, cv.height);
+            await pg.render({ canvasContext: cx, viewport: vp }).promise;
+            const data = cv.toDataURL("image/jpeg", 0.85); imagenes.push({ mime: "image/jpeg", base64: data.split(",")[1], preview: data });
+        }
+    }
+    return { texto: escaneado ? `(PDF escaneado de ${n} página(s), sin texto seleccionable. ${imagenes.length ? `Se adjuntaron las primeras ${imagenes.length} página(s) como imagen.` : ""})\n\n${texto}` : texto, paginas: n, imagenes, escaneado };
+}
+async function leerWord(f) {
+    await cargarScript(LIBS.mammoth);
+    const r = await mammoth.convertToHtml({ arrayBuffer: await f.arrayBuffer() });
+    return { texto: htmlATexto(r.value) };
+}
+async function leerExcel(f) {
+    await cargarScript(LIBS.xlsx);
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array", cellDates: true });
+    const hojas = wb.SheetNames.map(n => {
+        const csv = XLSX.utils.sheet_to_csv(wb.Sheets[n], { blankrows: false, dateNF: "yyyy-mm-dd" }).replace(/^(,\s*)+$/gm, "").replace(/\n{2,}/g, "\n").trim();
+        const filas = csv ? csv.split("\n").length : 0;
+        return `## Hoja: ${n} (${filas} fila(s))\n${csv || "(vacía)"}`;
+    });
+    return { texto: hojas.join("\n\n"), paginas: wb.SheetNames.length };
+}
+async function leerPptx(f) {
+    await cargarScript(LIBS.jszip);
+    const zip = await JSZip.loadAsync(await f.arrayBuffer());
+    const num = p => +(p.match(/(\d+)\.xml$/) || [0, 0])[1];
+    const diapos = Object.keys(zip.files).filter(p => /^ppt\/slides\/slide\d+\.xml$/.test(p)).sort((a, b) => num(a) - num(b));
+    const partes = [];
+    for (const p of diapos) {
+        const xml = new DOMParser().parseFromString(await zip.file(p).async("string"), "application/xml");
+        const parrafos = [...xml.getElementsByTagName("a:p")].map(par => [...par.getElementsByTagName("a:t")].map(t => t.textContent).join("")).filter(s => s.trim());
+        const notas = zip.file(p.replace("slides/slide", "notesSlides/notesSlide"));
+        let nt = "";
+        if (notas) { const nx = new DOMParser().parseFromString(await notas.async("string"), "application/xml"); nt = [...nx.getElementsByTagName("a:t")].map(t => t.textContent).join(" ").replace(/^\s*\d+\s*$/, "").trim(); }
+        partes.push(`--- Diapositiva ${num(p)} ---\n${parrafos.join("\n")}${nt ? `\nNotas: ${nt}` : ""}`);
+    }
+    return { texto: partes.join("\n\n"), paginas: diapos.length };
+}
+
+async function leerDocumento(f, tipo, avance) {
+    if (f.size > MAX_MB_DOC * 1024 * 1024) throw new Error(`«${f.name}» pesa más de ${MAX_MB_DOC} MB.`);
+    const r = tipo === "pdf" ? await leerPdf(f, avance) : tipo === "word" ? await leerWord(f) : tipo === "excel" ? await leerExcel(f)
+        : tipo === "presentacion" ? await leerPptx(f) : { texto: await f.text() };
+    let texto = (r.texto || "").replace(/\u0000/g, "").trim();
+    if (!texto && !r.imagenes?.length) throw new Error(`No encontré texto en «${f.name}».`);
+    const recortado = texto.length > MAX_TEXTO_DOC;
+    if (recortado) texto = texto.slice(0, MAX_TEXTO_DOC);
+    return { ...r, texto: texto || "(sin texto)", recortado };
+}
+
 async function agregarArchivos(files) {
     for (const f of [...files]) {
-        if (adjuntos.length >= MAX_ADJ) { toast(`Máximo ${MAX_ADJ} imágenes por mensaje.`); break; }
-        try { adjuntos.push(await leerImagen(f)); } catch (e) { toast(e.message); }
+        const tipo = tipoDeArchivo(f);
+        if (tipo === "imagen") {
+            if (adjuntos.length >= MAX_ADJ) { toast(`Máximo ${MAX_ADJ} imágenes por mensaje.`); continue; }
+            try { adjuntos.push(await leerImagen(f)); pintarAdjuntos(); } catch (e) { toast(e.message); }
+            continue;
+        }
+        if (tipo === "antiguo") { toast(`«${f.name}» es un formato antiguo. Guárdalo como .docx o .pptx e inténtalo de nuevo.`); continue; }
+        if (!tipo) { toast(`No puedo leer archivos de tipo «${f.name.split(".").pop()}».`); continue; }
+        if (documentos.length >= MAX_DOCS) { toast(`Máximo ${MAX_DOCS} documentos por mensaje.`); break; }
+        const d = { id: Math.random().toString(36).slice(2), nombre: f.name.slice(0, 120), tipo, cargando: true, estado: "Leyendo…" };
+        documentos.push(d); pintarAdjuntos(); estadoBoton();
+        try {
+            const r = await leerDocumento(f, tipo, t => { d.estado = t; pintarAdjuntos(); });
+            Object.assign(d, { texto: r.texto, paginas: r.paginas || null, caracteres: r.texto.length, cargando: false, estado: "" });
+            if (r.recortado) { d.estado = "Muy extenso: se analizará solo una parte"; toast(`«${f.name}» es muy extenso: la IA leerá solo una parte.`); }
+            if (r.imagenes?.length) { adjuntos.push(...r.imagenes.slice(0, MAX_ADJ - adjuntos.length)); d.estado = "Escaneado: se leerá como imagen"; }
+        } catch (e) {
+            documentos = documentos.filter(x => x !== d);
+            const propio = /^(«|No )/.test(e?.message || "");
+            toast(propio ? e.message : `No pude leer «${f.name}». ¿Está protegido con contraseña o dañado?`);
+        }
+        pintarAdjuntos(); estadoBoton();
     }
     pintarAdjuntos(); estadoBoton(); $("entrada").focus();
 }
 function pintarAdjuntos() {
-    $("adjs").innerHTML = adjuntos.map((a, i) => `<div class="adj"><img src="${a.preview}" alt="Adjunto ${i + 1}"><button type="button" data-rm="${i}" aria-label="Quitar">${I.x}</button></div>`).join("");
-    $("adjs").style.display = adjuntos.length ? "flex" : "none";
+    $("adjs").innerHTML =
+        adjuntos.map((a, i) => `<div class="adj"><img src="${a.preview}" alt="Adjunto ${i + 1}"><button type="button" data-rm="${i}" aria-label="Quitar">${I.x}</button></div>`).join("") +
+        documentos.map(d => chipDoc(d, d.cargando ? " cargando" : "", `<button type="button" class="dc-x" data-rmdoc="${d.id}" aria-label="Quitar ${esc(d.nombre)}">${I.x}</button>`)).join("");
+    $("adjs").style.display = adjuntos.length || documentos.length ? "flex" : "none";
 }
-$("adjs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) { adjuntos.splice(+b.dataset.rm, 1); pintarAdjuntos(); estadoBoton(); } });
+$("adjs").addEventListener("click", e => {
+    const b = e.target.closest("[data-rm]"); if (b) { adjuntos.splice(+b.dataset.rm, 1); pintarAdjuntos(); estadoBoton(); return; }
+    const d = e.target.closest("[data-rmdoc]"); if (d) { documentos = documentos.filter(x => x.id !== d.dataset.rmdoc); pintarAdjuntos(); estadoBoton(); }
+});
 $("btnAdj").innerHTML = I.clip;
 $("btnAdj").onclick = () => $("fileAdj").click();
 $("fileAdj").addEventListener("change", e => { agregarArchivos(e.target.files); e.target.value = ""; });
 $("entrada").addEventListener("paste", e => {
-    const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith("image/"));
+    const fs = [...(e.clipboardData?.files || [])].filter(f => tipoDeArchivo(f));
     if (fs.length) { e.preventDefault(); agregarArchivos(fs); }
 });
 let arrastres = 0;
@@ -442,21 +737,25 @@ function estadoBoton() {
     b.classList.toggle("stop", enCurso);
     b.innerHTML = enCurso ? I.stop : I.send;
     b.title = enCurso ? "Detener" : "Enviar";
-    b.disabled = !enCurso && !$("entrada").value.trim() && !adjuntos.length;
+    const leyendo = documentos.some(d => d.cargando);
+    b.disabled = !enCurso && (leyendo || (!$("entrada").value.trim() && !adjuntos.length && !documentos.length));
+    if (leyendo && !enCurso) b.title = "Espera a que termine de leer el documento";
 }
 
 async function ejecutar({ texto = "", regen = false }) {
     if (enCurso) return;
     texto = texto.trim();
-    const adj = regen ? [] : adjuntos.slice();
-    if (!regen && !texto && !adj.length) return;
+    if (!regen && documentos.some(d => d.cargando)) return toast("Espera a que termine de leer el documento.");
+    const adj = regen ? [] : adjuntos.slice(), docs = regen ? [] : documentos.slice();
+    if (!regen && !texto && !adj.length && !docs.length) return;
+    pararVoz();
 
     if (!regen && !mensajes.length) $("vista").innerHTML = '<div class="col" id="col"></div>';
     const col = $("col");
     if (!regen) {
-        col.appendChild(nodoUsuario(texto, adj.length ? adj.map(a => a.preview) : null));
+        col.appendChild(nodoUsuario(texto, adj.length || docs.length ? adj.map(a => a.preview) : null, docs.length ? docs : null));
         mensajes.push({ rol: "user", contenido: texto });
-        $("entrada").value = ""; $("entrada").style.height = "auto"; adjuntos = []; pintarAdjuntos();
+        $("entrada").value = ""; $("entrada").style.height = "auto"; adjuntos = []; documentos = []; pintarAdjuntos();
     }
     document.querySelectorAll("[data-regen]").forEach(b => b.remove());
 
@@ -470,7 +769,8 @@ async function ejecutar({ texto = "", regen = false }) {
         const r = await fetch(ENDPOINT, {
             method: "POST", signal: abortar.signal,
             headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-            body: JSON.stringify({ accion: "chat", ...credenciales(), nivel, conversacion_id: actual, mensaje: texto, regenerar: regen, adjuntos: adj.map(({ mime, base64 }) => ({ mime, base64 })) })
+            body: JSON.stringify({ accion: "chat", ...credenciales(), nivel, conversacion_id: actual, mensaje: texto, regenerar: regen, adjuntos: adj.map(({ mime, base64 }) => ({ mime, base64 })),
+                documentos: docs.map(({ nombre, tipo, paginas, texto }) => ({ nombre, tipo, paginas, texto })) })
         });
         if (!r.ok) {
             if (r.status === 401) { localStorage.removeItem("usuario"); window.location.replace("index.html"); return; }
@@ -487,7 +787,7 @@ async function ejecutar({ texto = "", regen = false }) {
         while (true) {
             const { done, value } = await rd.read(); if (done) break;
             acumulado += dec.decode(value, { stream: true });
-            cuerpo.innerHTML = md(acumulado); cuerpo.classList.toggle("cursor", !marcaFinal(acumulado)); bajar();
+            cuerpo.innerHTML = md(acumulado, true); cuerpo.classList.toggle("cursor", !marcaFinal(acumulado)); bajar();
         }
         if (!quitarMarcas(acumulado).trim()) throw new Error("La IA no devolvió respuesta. Intenta de nuevo.");
     } catch (e) {
@@ -497,10 +797,12 @@ async function ejecutar({ texto = "", regen = false }) {
         }
     } finally {
         cuerpo.classList.remove("cursor");
-        const final = quitarMarcas(acumulado);
+        const final = quitarMarcas(acumulado), idMsg = +(acumulado.match(MSG_RE) || [])[1] || null;
         if (final.trim()) {
-            nodo.dataset.raw = final; cuerpo.innerHTML = md(final); resaltar(cuerpo); tools.insertAdjacentHTML("beforeend", botonesReporte(final)); tools.style.display = "";
-            mensajes.push({ rol: "assistant", contenido: final });
+            nodo.dataset.raw = final; if (idMsg) nodo.dataset.id = idMsg;
+            cuerpo.innerHTML = md(final); resaltar(cuerpo); pintarGraficas(cuerpo).then(() => bajar());
+            tools.insertAdjacentHTML("beforeend", botonesReporte(final) + botonesValorar(idMsg, 0)); tools.style.display = "";
+            mensajes.push({ id: idMsg, rol: "assistant", contenido: final, valor: 0 });
             const c = convs.find(x => x.id === actual); if (c) { c.updated_at = new Date().toISOString(); convs = [c, ...convs.filter(x => x !== c)]; pintarLista(); }
             if (esNueva && actual) titular(actual);
         } else if (!cuerpo.querySelector(".err")) { nodo.remove(); }
@@ -522,6 +824,214 @@ function regenerar() {
     mensajes.pop(); [...document.querySelectorAll(".msg.assistant")].pop()?.remove();
     ejecutar({ regen: true });
 }
+
+/* ── Calificar respuestas (👍 / 👎) ── */
+const MOTIVOS_FB = ["Incorrecta", "Incompleta", "No entendió", "Muy larga", "Desactualizada", "Otro"];
+function pintarValor(msg, valor) {
+    msg.querySelectorAll("[data-val]").forEach(b => { const on = +b.dataset.val === valor; b.classList.toggle("act", on); b.setAttribute("aria-pressed", String(on)); });
+    const m = mensajes.find(x => x.id === +msg.dataset.id); if (m) m.valor = valor;
+}
+async function clicValoracion(msg, valor) {
+    const id = +msg.dataset.id; if (!id) return;
+    const actualV = mensajes.find(x => x.id === id)?.valor || 0;
+    msg.querySelector(".fb")?.remove();
+    if (valor === -1 && actualV !== -1) {
+        // Panel para contar qué falló (opcional)
+        msg.querySelector(".tools").insertAdjacentHTML("afterend",
+            `<div class="fb"><div class="fb-t">¿Qué falló en esta respuesta?</div><div class="fb-m">${MOTIVOS_FB.map(m => `<button type="button" data-motivo="${m}">${m}</button>`).join("")}</div>` +
+            `<textarea maxlength="600" rows="2" placeholder="Cuéntanos qué esperabas (opcional)"></textarea>` +
+            `<div class="fb-p"><small>El equipo de IT podrá revisar esta respuesta para mejorar la IA.</small><span><button type="button" class="ad-btn" data-fb-cancelar>Cancelar</button><button type="button" class="ad-btn pri" data-fb-enviar>Enviar</button></span></div></div>`);
+        msg.querySelector(".fb textarea").focus();
+        return;
+    }
+    const nuevo = actualV === valor ? 0 : valor;
+    pintarValor(msg, nuevo);
+    try { await api("valorar", { mensaje_id: id, valor: nuevo }); if (nuevo === 1) toast("¡Gracias! Nos ayuda a mejorar"); }
+    catch (e) { pintarValor(msg, actualV); toast(e.message); }
+}
+async function enviarNegativa(msg) {
+    const fb = msg.querySelector(".fb"), id = +msg.dataset.id; if (!fb || !id) return;
+    const motivo = fb.querySelector("[data-motivo].act")?.dataset.motivo || null, comentario = fb.querySelector("textarea").value.trim();
+    fb.querySelectorAll("button").forEach(b => b.disabled = true);
+    try { await api("valorar", { mensaje_id: id, valor: -1, motivo, comentario }); pintarValor(msg, -1); fb.remove(); toast("Gracias. Usaremos tu opinión para mejorar"); }
+    catch (e) { fb.querySelectorAll("button").forEach(b => b.disabled = false); toast(e.message); }
+}
+
+/* ── Voz: lectura en voz alta ── */
+let voz = null; // { msg, audio, cancelado, cola }
+function textoParaVoz(raw) {
+    return quitarMarcas(raw)
+        .replace(/```grafica[\s\S]*?```/g, " Te muestro una gráfica en pantalla. ")
+        .replace(/```[\s\S]*?```/g, " Te dejé un bloque de código en pantalla. ")
+        .replace(/⟦[^⟧]*⟧/g, "").replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+        .replace(/^\s*\|?\s*:?-{2,}.*$/gm, "").replace(/^\s*\|(.+)\|\s*$/gm, (_, f) => f.split("|").map(c => c.trim()).filter(Boolean).join(", ") + ".")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/https?:\/\/\S+/g, "el enlace")
+        .replace(/[*_`#>]+/g, "").replace(/^\s*[-•]\s+/gm, "").replace(/<br\s*\/?>/gi, " ")
+        .replace(/\p{Extended_Pictographic}/gu, "").replace(/\n{2,}/g, ".\n").replace(/\.(\s*\.)+/g, ".").replace(/[ \t]+/g, " ").trim();
+}
+function trozosVoz(t) {
+    const frases = t.match(/[^.!?¡¿\n]+[.!?]*\s*/g) || [t], out = []; let acc = "";
+    for (const f of frases) { const lim = out.length ? 1400 : 350; if (acc && (acc + f).length > lim) { out.push(acc.trim()); acc = ""; } acc += f; }
+    if (acc.trim()) out.push(acc.trim());
+    return out.slice(0, 12);
+}
+async function audioDe(texto) {
+    const r = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY }, body: JSON.stringify({ accion: "hablar", ...credenciales(), texto }) });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); if (d.cuota) pintarCuota(d.cuota); throw new Error(d.error || "No se pudo generar el audio."); }
+    return URL.createObjectURL(await r.blob());
+}
+function botonVozEstado(msg, estado) {
+    const b = msg?.querySelector("[data-tts]"); if (!b) return;
+    b.classList.toggle("act", estado !== "listo");
+    b.innerHTML = estado === "cargando" ? `<span class="mini-spin"></span> Preparando` : estado === "hablando" ? `${I.pausa} Detener` : `${I.voz} Escuchar`;
+}
+function pararVoz() {
+    if (!voz) return;
+    voz.cancelado = true; voz.audio?.pause(); window.speechSynthesis?.cancel(); voz.urls?.forEach(u => URL.revokeObjectURL(u));
+    botonVozEstado(voz.msg, "listo"); voz = null;
+}
+function vozNavegador(texto, v) {
+    // Respaldo: voz del navegador si el servidor no puede generar audio
+    if (!("speechSynthesis" in window)) { toast("Tu navegador no puede leer en voz alta."); return pararVoz(); }
+    const u = new SpeechSynthesisUtterance(texto.slice(0, 6000)); u.lang = "es-MX"; u.rate = 1.02;
+    const es = speechSynthesis.getVoices().find(x => /^es/i.test(x.lang)); if (es) u.voice = es;
+    u.onend = u.onerror = () => { if (voz === v) pararVoz(); };
+    botonVozEstado(v.msg, "hablando"); speechSynthesis.speak(u);
+}
+async function leerEnVoz(msg) {
+    if (voz?.msg === msg) return pararVoz();
+    pararVoz();
+    const texto = textoParaVoz(msg.dataset.raw || ""); if (!texto) return;
+    const v = voz = { msg, cancelado: false, urls: [] };
+    botonVozEstado(msg, "cargando");
+    const trozos = trozosVoz(texto);
+    let siguiente = audioDe(trozos[0]);
+    for (let i = 0; i < trozos.length; i++) {
+        let url;
+        try { url = await siguiente; } catch (e) { if (v.cancelado) return; if (i === 0) { vozNavegador(texto, v); return; } toast(e.message); break; }
+        if (v.cancelado) { URL.revokeObjectURL(url); return; }
+        v.urls.push(url);
+        if (i + 1 < trozos.length) siguiente = audioDe(trozos[i + 1]); // se prepara el siguiente mientras suena este
+        const a = v.audio = new Audio(url);
+        botonVozEstado(msg, "hablando");
+        try { await a.play(); } catch { toast("El navegador bloqueó el audio. Toca de nuevo «Escuchar»."); break; }
+        await new Promise(res => { a.onended = a.onerror = a.onpause = res; });
+        if (v.cancelado) return;
+    }
+    if (voz === v) pararVoz();
+}
+
+/* ── Voz: dictado (micrófono → texto) ── */
+const MAX_SEG_GRAB = 120;
+let grab = null; // { rec, stream, chunks, t0, timer, cancelado }
+const puedeGrabar = !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+function pintarMic(estado) {
+    const b = $("btnMic"); if (!b) return;
+    b.className = "mic" + (estado === "grabando" ? " rec" : estado === "procesando" ? " proc" : "");
+    b.innerHTML = estado === "procesando" ? '<span class="mini-spin"></span>' : estado === "grabando" ? I.stop : I.mic;
+    b.title = estado === "grabando" ? "Terminar y transcribir" : estado === "procesando" ? "Transcribiendo…" : "Dictar por voz";
+    b.disabled = estado === "procesando";
+    $("grab").hidden = estado !== "grabando";
+    $("form").classList.toggle("grabando", estado === "grabando");
+}
+async function iniciarDictado() {
+    if (grab) return terminarDictado(false);
+    pararVoz();
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    catch (e) { return toast(e?.name === "NotAllowedError" ? "Permite el uso del micrófono en tu navegador para dictar." : "No se encontró un micrófono disponible."); }
+    const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find(m => MediaRecorder.isTypeSupported(m)) || "";
+    const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : undefined);
+    const g = grab = { rec, stream, chunks: [], t0: Date.now(), cancelado: false };
+    rec.ondataavailable = e => { if (e.data.size) g.chunks.push(e.data); };
+    rec.onstop = () => procesarDictado(g);
+    rec.start(1000);
+    // Nivel del micrófono para la animación
+    try {
+        const ctx = g.ctx = new AudioContext(), an = ctx.createAnalyser(); an.fftSize = 64; ctx.createMediaStreamSource(stream).connect(an);
+        const buf = new Uint8Array(an.frequencyBinCount), barras = [...$("grab").querySelectorAll(".gb i")];
+        const paso = () => { if (grab !== g) return; an.getByteFrequencyData(buf); barras.forEach((b, i) => { b.style.transform = `scaleY(${Math.max(.15, (buf[i * 2 + 1] || 0) / 255)})`; }); g.raf = requestAnimationFrame(paso); };
+        paso();
+    } catch { /* sin animación */ }
+    g.timer = setInterval(() => {
+        const s = Math.floor((Date.now() - g.t0) / 1000);
+        $("grabT").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+        if (s >= MAX_SEG_GRAB) terminarDictado(false);
+    }, 250);
+    $("grabT").textContent = "0:00";
+    pintarMic("grabando");
+}
+function terminarDictado(cancelar) {
+    const g = grab; if (!g) return;
+    g.cancelado = cancelar; clearInterval(g.timer); cancelAnimationFrame(g.raf); g.ctx?.close?.();
+    try { g.rec.state !== "inactive" && g.rec.stop(); } catch { procesarDictado(g); }
+    g.stream.getTracks().forEach(t => t.stop());
+    grab = null;
+    pintarMic(cancelar ? "listo" : "procesando");
+}
+async function procesarDictado(g) {
+    if (g.cancelado) return pintarMic("listo");
+    const blob = new Blob(g.chunks, { type: (g.rec.mimeType || "audio/webm").split(";")[0] });
+    if (blob.size < 1500 || Date.now() - g.t0 < 700) { pintarMic("listo"); return toast("No se escuchó nada. Habla un poco más antes de terminar."); }
+    try {
+        const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
+        const d = await api("transcribir", { audio: b64, mime: blob.type });
+        const t = (d.texto || "").trim();
+        if (!t) toast("No entendí el audio. Intenta de nuevo, más cerca del micrófono.");
+        else {
+            const e = $("entrada"); e.value = (e.value.trim() ? e.value.trimEnd() + " " : "") + t;
+            e.dispatchEvent(new Event("input")); e.focus(); e.setSelectionRange(e.value.length, e.value.length);
+        }
+        cargarCuota();
+    } catch (e) { toast(e.message); }
+    pintarMic("listo");
+}
+
+/* ── Personalizar: perfil, instrucciones y memoria ── */
+const ATAJOS_ESTILO = ["Respuestas cortas y al grano", "Con pasos numerados", "Tono formal", "Tono cercano", "Sin tecnicismos", "Con ejemplos prácticos", "Siempre en tablas cuando haya datos"];
+let perfilDatos = null;
+async function abrirPerfil() {
+    const m = $("perfilModal"), b = $("perfilBody");
+    m.classList.add("open"); b.innerHTML = '<div class="dots"><i></i><i></i><i></i></div>';
+    try { perfilDatos = await api("perfil"); pintarPerfil(); } catch (e) { b.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function pintarPerfil() {
+    const { perfil: p, memorias } = perfilDatos, b = $("perfilBody");
+    const fecha = s => new Date(s).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
+    b.innerHTML =
+        `<form class="ad-form" id="fPerfil">` +
+        `<p class="ad-nota">Lo que escribas aquí se aplica a todas tus conversaciones. Solo tú lo ves.</p>` +
+        `<label>¿Qué debería saber Alterna IA de ti?<textarea name="sobre_mi" rows="3" maxlength="1500" placeholder="Ej.: Soy analista de Contabilidad en Alterna. Preparo el cierre mensual y reportes en Excel para gerencia."></textarea><small class="cnt" data-cnt="sobre_mi"></small></label>` +
+        `<label>¿Cómo quieres que te responda?<textarea name="instrucciones" rows="3" maxlength="1500" placeholder="Ej.: Respuestas cortas, con pasos numerados y sin tecnicismos."></textarea><small class="cnt" data-cnt="instrucciones"></small></label>` +
+        `<div class="ad-presets pf-atajos"><small>Agregar:</small>${ATAJOS_ESTILO.map(a => `<button type="button" class="ad-btn" data-atajo="${esc(a)}">${esc(a)}</button>`).join("")}</div>` +
+        `<label class="ad-sw"><input type="checkbox" name="memoria_activa"> <span><b>Memoria</b><small>Alterna IA recuerda datos útiles entre conversaciones (por ejemplo, tu área o tus preferencias). Puedes pedirle «recuerda que…» u «olvida que…».</small></span></label>` +
+        `<div class="ad-acts"><button type="submit" class="ad-btn pri">Guardar</button></div></form>` +
+        `<div class="ad-h pf-h"><span>Lo que Alterna IA recuerda de ti <small>(${memorias.length})</small></span>${memorias.length ? '<button type="button" class="ad-btn peligro" data-mem-todas>Borrar todo</button>' : ""}</div>` +
+        (memorias.length ? `<ul class="pf-mem">${memorias.map(x => `<li><span>${esc(x.texto)}<small>${fecha(x.created_at)}</small></span><button type="button" class="ad-btn" data-mem="${x.id}" aria-label="Olvidar">${I.del}</button></li>`).join("")}</ul>`
+            : `<p class="ad-nota">Todavía no recuerda nada. Cuéntale algo como «Recuerda que trabajo en Recursos Humanos».</p>`);
+    const f = $("fPerfil");
+    f.sobre_mi.value = p.sobre_mi || ""; f.instrucciones.value = p.instrucciones || ""; f.memoria_activa.checked = p.memoria_activa !== false;
+    const contar = () => f.querySelectorAll("[data-cnt]").forEach(s => { s.textContent = `${f[s.dataset.cnt].value.length} / 1500`; });
+    f.addEventListener("input", contar); contar();
+    f.querySelectorAll("[data-atajo]").forEach(x => x.onclick = () => {
+        const t = f.instrucciones, a = x.dataset.atajo; if (t.value.includes(a)) return;
+        t.value = (t.value.trim() ? t.value.trim().replace(/[.]?$/, ". ") : "") + a + "."; contar(); t.focus();
+    });
+    f.onsubmit = async e => {
+        e.preventDefault(); const btn = f.querySelector("[type=submit]"); btn.disabled = true;
+        try { perfilDatos = await api("perfil_guardar", { perfil: { sobre_mi: f.sobre_mi.value, instrucciones: f.instrucciones.value, memoria_activa: f.memoria_activa.checked } }); toast("Personalización guardada"); pintarPerfil(); }
+        catch (err) { toast(err.message); btn.disabled = false; }
+    };
+}
+$("perfilModal").addEventListener("click", async e => {
+    if (e.target.id === "perfilModal" || e.target.closest("[data-perfil-x]")) return $("perfilModal").classList.remove("open");
+    const m = e.target.closest("[data-mem]");
+    if (m) { m.disabled = true; try { perfilDatos = await api("memoria_borrar", { id: +m.dataset.mem }); pintarPerfil(); toast("Olvidado"); } catch (err) { toast(err.message); m.disabled = false; } return; }
+    if (e.target.closest("[data-mem-todas]")) {
+        if (!await confirmar({ titulo: "Borrar toda la memoria", mensaje: "Alterna IA olvidará todo lo que recuerda de ti. Tu perfil y tus conversaciones no se borran.", ok: "Borrar todo", peligro: true })) return;
+        try { perfilDatos = await api("memoria_borrar", { id: "todas" }); pintarPerfil(); toast("Memoria borrada"); } catch (err) { toast(err.message); }
+    }
+});
 
 /* ── Exportar ── */
 function exportar() {
@@ -642,6 +1152,7 @@ async function pintarTab() {
     const cont = $("adminBody"); cont.innerHTML = '<div class="dots"><i></i><i></i><i></i></div>';
     try {
         if (adTab === "uso") return await pintarUso(cont);
+        if (adTab === "calidad") return await pintarCalidad(cont);
         adDatos = await api("admin_cuotas");
         adTab === "planes" ? pintarPlanes(cont) : pintarCuotas(cont);
     } catch (e) { cont.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
@@ -761,7 +1272,7 @@ async function gestionarUsuario(id) {
         $("adHist").innerHTML =
             (h.cambios.length ? `<ul class="ad-log">${h.cambios.map(x => `<li><b>${ACCIONES_HIST[x.accion] || x.accion}</b> <small>${fecha(x.created_at)}${x.admin?.nombre ? " · " + esc(x.admin.nombre) : ""}</small>${x.accion === "cuota_editada" ? `<div>${esc(resumenCambio(x))}</div>` : ""}</li>`).join("")}</ul>` : `<p class="ad-nota">Sin cambios registrados.</p>`) +
             `<div class="ad-h">Últimos usos</div>` +
-            (h.uso.length ? `<div class="tw"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Modelo</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>${h.uso.map(x => `<tr><td>${fecha(x.created_at)}</td><td>${x.tipo === "imagen" ? "Imagen" : "Mensaje"}</td><td>${esc(x.modelo || "—")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_entrada ?? 0).toLocaleString("es")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_salida ?? 0).toLocaleString("es")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="ad-nota">Aún no ha usado la IA.</p>`);
+            (h.uso.length ? `<div class="tw"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Modelo</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>${h.uso.map(x => `<tr><td>${fecha(x.created_at)}</td><td>${{ imagen: "Imagen", voz: "Voz" }[x.tipo] || "Mensaje"}</td><td>${esc(x.modelo || "—")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_entrada ?? 0).toLocaleString("es")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_salida ?? 0).toLocaleString("es")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="ad-nota">Aún no ha usado la IA.</p>`);
     } catch (err) { $("adHist").innerHTML = `<div class="err">${esc(err.message)}</div>`; }
 }
 
@@ -856,6 +1367,30 @@ async function pintarUso(cont) {
 }
 $("adminModal").addEventListener("click", e => { if (e.target.id === "adminModal" || e.target.closest("[data-admin-x]")) $("adminModal").classList.remove("open"); });
 
+// Calidad: cómo califican los usuarios las respuestas, por nivel y modelo, y qué falla
+let calDias = 30;
+const NOMBRE_NIVEL = { bajo: "Rápido", medio: "Equilibrado", alto: "Avanzado" };
+async function pintarCalidad(cont) {
+    const d = await api("admin_calidad", { dias: calDias });
+    const pct = v => v == null ? "—" : v + " %";
+    const barra = (x, total) => `<div class="cal-row"><span>${esc(x.etiqueta)}</span><div class="cal-bar"><i style="width:${Math.round(x.n / Math.max(total, 1) * 100)}%"></i></div><b>${x.n}</b></div>`;
+    const filaGrupo = (g, nombre) => `<tr><td>${esc(nombre(g.clave))}</td><td>${g.n}</td><td>${g.pos}</td><td>${g.n - g.pos}</td><td><span class="chip ${g.satisfaccion >= 80 ? "ok" : g.satisfaccion >= 60 ? "warn" : "full"}">${g.satisfaccion} %</span></td></tr>`;
+    const tablaGrupo = (lista, titulo, nombre) => lista.length ? `<div class="ad-h">${titulo}</div><div class="tw"><table><thead><tr><th></th><th>Calificaciones</th><th>👍</th><th>👎</th><th>Satisfacción</th></tr></thead><tbody>${lista.map(g => filaGrupo(g, nombre)).join("")}</tbody></table></div>` : "";
+    cont.innerHTML =
+        `<div class="ad-bar-top"><p class="ad-nota">Calificaciones que dan los usuarios a las respuestas con 👍 y 👎.</p><select class="ad-sel" id="calDias" aria-label="Periodo">${[7, 30, 90].map(n => `<option value="${n}"${n === calDias ? " selected" : ""}>Últimos ${n} días</option>`).join("")}</select></div>` +
+        `<div class="ad-stats"><div><b>${d.total}</b><span>Calificaciones</span></div><div><b>${pct(d.satisfaccion)}</b><span>Satisfacción</span></div><div><b>${d.positivas}</b><span>👍 Buenas</span></div><div><b>${d.negativas}</b><span>👎 Malas</span></div></div>` +
+        (d.total ? "" : `<p class="ad-nota">Aún no hay calificaciones en este periodo. Aparecerán cuando los usuarios usen 👍 o 👎 debajo de cada respuesta.</p>`) +
+        tablaGrupo(d.por_nivel, "Por nivel", k => NOMBRE_NIVEL[k] || "Sin dato") +
+        tablaGrupo(d.por_modelo, "Por modelo", k => k) +
+        (d.motivos.length ? `<div class="ad-h">Por qué fallan</div><div class="cal-motivos">${d.motivos.map(m => barra({ etiqueta: m.motivo, n: m.n }, d.negativas)).join("")}</div>` : "") +
+        (d.negativas_recientes.length ? `<div class="ad-h">Respuestas mal calificadas recientes</div><div class="cal-lista">${d.negativas_recientes.map(x =>
+            `<div class="cal-item"><div class="ci-h"><b>${esc(x.usuario)}</b><small>${new Date(x.fecha).toLocaleString("es", { dateStyle: "short", timeStyle: "short" })} · ${esc(NOMBRE_NIVEL[x.nivel] || "—")}${x.modelo ? " · " + esc(x.modelo) : ""}</small>${x.motivo ? `<span class="chip full">${esc(x.motivo)}</span>` : ""}</div>` +
+            (x.comentario ? `<p class="ci-c">“${esc(x.comentario)}”</p>` : "") +
+            (x.pregunta ? `<div class="ci-q"><span>Pregunta</span>${esc(x.pregunta)}</div>` : "") +
+            `<div class="ci-r"><span>Respuesta</span>${esc(x.respuesta)}${x.respuesta.length >= 700 ? "…" : ""}</div></div>`).join("")}</div>` : "");
+    $("calDias").onchange = e => { calDias = +e.target.value; pintarTab(); };
+}
+
 /* ── Nivel de la IA: tres opciones con nombres claros; el backend elige el modelo de cada una ── */
 const NIVELES = {
     bajo:  { n: "Rápido",      d: "Respuestas al instante para preguntas sencillas y textos cortos.", i: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>', 16) },
@@ -899,7 +1434,12 @@ $("btnSalir").onclick = async () => {
 const cerrarMenu = () => $("app").classList.remove("open");
 $("btnMenu").onclick = () => $("app").classList.add("open");
 $("overlay").onclick = cerrarMenu;
-document.addEventListener("keydown", e => { if (e.key === "Escape") { cerrarMenu(); $("lb").classList.remove("open"); } });
+document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    cerrarMenu(); $("lb").classList.remove("open");
+    if (grab) terminarDictado(true);
+    if ($("perfilModal").classList.contains("open") && !$("confirmModal").classList.contains("open")) $("perfilModal").classList.remove("open");
+});
 
 /* ── Tema (comparte la preferencia del dashboard) ── */
 function aplicarTema() {
@@ -907,6 +1447,7 @@ function aplicarTema() {
     const oscuro = t === "oscuro" || (t === "sistema" && matchMedia("(prefers-color-scheme: dark)").matches);
     document.body.classList.toggle("dark", oscuro);
     $("btnTema").innerHTML = oscuro ? I.sun : I.moon;
+    redibujarGraficas();
 }
 $("btnTema").onclick = () => {
     const oscuro = document.body.classList.contains("dark");
@@ -930,6 +1471,8 @@ async function tieneAcceso(clave) {
     aplicarTema();
     $("meAv").innerHTML = avatarHtml;$("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
     if (usuario.rol === "admin") { $("btnAdmin").style.display = ""; $("btnAdmin").onclick = abrirAdmin; }
+    $("btnPerfil").innerHTML = `${I.yo} Personalizar`; $("btnPerfil").onclick = () => { abrirPerfil(); cerrarMenu(); };
+    if (puedeGrabar) { $("btnMic").hidden = false; pintarMic("listo"); $("btnMic").onclick = iniciarDictado; $("grabX").onclick = () => terminarDictado(true); }
     pintarAdjuntos(); estadoBoton(); inicio(); pintarLista(); cargarCuota();
     const preguntaInicial = new URLSearchParams(location.search).get("q");
     if (preguntaInicial) { history.replaceState(null, "", location.pathname + location.hash); setTimeout(() => ejecutar({ texto: preguntaInicial.slice(0, 2000) }), 300); }
