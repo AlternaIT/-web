@@ -658,6 +658,24 @@ function barraConsumo(c) {
     return `<div class="ad-q ${pct >= 100 ? "full" : pct >= 80 ? "warn" : ""}"><div class="q-bar"><i style="width:${pct}%"></i></div><span>${compacto(c.tokens_usados)} / ${compacto(total)}${c.tokens_extra ? ` <small>(+${compacto(c.tokens_extra)} extra)</small>` : ""}</span></div>`;
 }
 
+// Cambio rápido de plan desde la tabla: se guarda al elegir otra opción.
+function selectorPlan(u) {
+    const pred = adDatos.planes.find(p => p.predeterminado), actual = u.ajustes?.plan_id ?? "";
+    return `<select class="ad-sel" data-plan-user="${u.id}" aria-label="Plan de ${esc(u.nombre || "")}">` +
+        `<option value="">Predeterminado${pred ? ` (${esc(pred.nombre)})` : ""}</option>` +
+        adDatos.planes.map(p => `<option value="${p.id}"${p.id === actual ? " selected" : ""}>${esc(p.nombre)}</option>`).join("") + `</select>`;
+}
+$("adminBody").addEventListener("change", async e => {
+    const s = e.target.closest("[data-plan-user]"); if (!s) return;
+    const id = +s.dataset.planUser, u = adDatos.usuarios.find(x => x.id === id), previo = u?.ajustes?.plan_id ?? "";
+    s.disabled = true;
+    try {
+        await api("admin_cuota_guardar", { cuota: { usuario_id_objetivo: id, plan_id: s.value || null } });
+        toast(`Plan de ${u?.nombre || "usuario"}: ${s.options[s.selectedIndex].text}`);
+        adDatos = await api("admin_cuotas"); pintarCuotas($("adminBody")); if (id === usuario.id) cargarCuota();
+    } catch (err) { toast(err.message); s.value = previo; s.disabled = false; }
+});
+
 function pintarCuotas(cont) {
     const q = adFiltro.trim().toLowerCase();
     const us = adDatos.usuarios.filter(u => !q || (u.nombre + " " + u.correo).toLowerCase().includes(q));
@@ -667,7 +685,7 @@ function pintarCuotas(cont) {
         `<div class="ad-bar-top"><input type="search" id="adBuscar" placeholder="Buscar usuario" value="${esc(adFiltro)}" autocomplete="off"></div>` +
         `<div class="tw"><table><thead><tr><th>Usuario</th><th>Plan</th><th>Consumo del periodo</th><th>Imágenes</th><th>Se restablece</th><th>Estado</th><th></th></tr></thead><tbody>` +
         (us.map(u => { const c = u.cuota; return `<tr><td>${esc(u.nombre || "—")}<br><small>${esc(u.correo || "")}</small></td>` +
-            `<td>${esc(c?.plan_nombre || "—")}${c?.personalizado ? ' <small title="Tiene ajustes propios">· personalizado</small>' : ""}</td>` +
+            `<td>${selectorPlan(u)}${c?.personalizado ? '<br><small title="Tiene ajustes propios (Gestionar)">personalizado</small>' : ""}</td>` +
             `<td>${barraConsumo(c)}</td><td>${c ? (c.imagenes_limite == null ? `${c.imagenes_usadas} <small>/ ∞</small>` : `${c.imagenes_usadas} / ${c.imagenes_limite}`) : "—"}</td>` +
             `<td>${c ? esc(c.reinicia_texto) : "—"}</td><td>${chipEstado(c)}</td>` +
             `<td><button class="ad-btn" data-gest="${u.id}">Gestionar</button></td></tr>`; }).join("") || `<tr><td colspan="7"><small>Sin resultados.</small></td></tr>`) +
