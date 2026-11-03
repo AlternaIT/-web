@@ -290,12 +290,15 @@ function abrirLightbox(src) { $("lb").querySelector("img").src = src; $("lb").cl
 $("lb").addEventListener("click", () => $("lb").classList.remove("open"));
 
 const iniciales = (usuario.nombre || "?").split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase();
+// Foto de Zoho (solo data URL de imagen, guardada al iniciar sesión); si no hay, iniciales
+const avatarHtml = /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(usuario.foto || "")
+    ? `<img src="${usuario.foto}" alt="">` : esc(iniciales);
 
 function nodoUsuario(contenido, previews) {
     const urls = previews || [...contenido.matchAll(IMG_MD)].map(m => m[2]);
     const texto = previews ? contenido : sinImagenes(contenido);
     const d = document.createElement("div"); d.className = "msg user";
-    d.innerHTML = `<div class="av">${esc(iniciales)}</div><div class="body"><div class="bubble">` +
+    d.innerHTML = `<div class="av">${avatarHtml}</div><div class="body"><div class="bubble">` +
         (urls.length ? `<div class="thumbs">${urls.map(u => `<img src="${u}" alt="Imagen adjunta">`).join("")}</div>` : "") +
         (texto ? `<div>${esc(texto)}</div>` : "") + `</div></div>`;
     return d;
@@ -651,7 +654,7 @@ async function tieneAcceso(clave) {
 (async function init() {
     if (!(await tieneAcceso("ia"))) { window.location.replace("apps.html"); return; }
     aplicarTema();
-    $("meAv").textContent = iniciales; $("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
+    $("meAv").innerHTML = avatarHtml;$("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
     if (usuario.rol === "admin") { $("btnAdmin").style.display = ""; $("btnAdmin").onclick = abrirAdmin; }
     pintarAdjuntos(); estadoBoton(); inicio(); pintarLista();
     const preguntaInicial = new URLSearchParams(location.search).get("q");

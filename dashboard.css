@@ -40,8 +40,9 @@
         .avatar {
             width: 38px; height: 38px; border-radius: 50%; background: #3a3a3c;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: bold; flex-shrink: 0;
+            font-size: 13px; font-weight: bold; flex-shrink: 0; overflow: hidden;
         }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .user-name { font-size: 13px; font-weight: bold; }
         .user-role { color: #9ca3af; font-size: 11px; margin-top: 3px; }
         .logout {

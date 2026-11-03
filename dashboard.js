@@ -116,7 +116,7 @@
 
         const { data, error } = await supabaseClient
             .from("usuarios")
-            .select("id, correo, nombre, rol, activo")
+            .select("id, correo, nombre, rol, activo, foto")
             .eq("id", usuario.id)
             .single();
 
@@ -129,7 +129,7 @@
             return;
         }
 
-        usuario = { ...data, token: usuario.token };
+        usuario = { ...data, foto: data.foto || usuario.foto, token: usuario.token };
         localStorage.setItem("usuario", JSON.stringify(usuario));
         mostrarUsuario();
     }
@@ -151,6 +151,9 @@
             ? partes[0].charAt(0) + partes[1].charAt(0)
             : partes[0].substring(0, 2);
         document.getElementById("avatar").textContent = iniciales.toUpperCase();
+        // Foto de Zoho (solo data URL de imagen, guardada al iniciar sesión)
+        if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(usuario.foto || ""))
+            document.getElementById("avatar").innerHTML = `<img src="${usuario.foto}" alt="">`;
     }
 
 

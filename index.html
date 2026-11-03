@@ -670,6 +670,24 @@
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Cliente de api-console.zoho.com (el Client ID es público; el secreto vive solo en Supabase)
+    const ZOHO_CLIENT_ID = "1000.I12TCLUMS0P0H4HH33UE9FLXMRSBRH";
+    const ZOHO_ACCOUNTS  = "https://accounts.zoho.com";
+    const ZOHO_REDIRECT  = location.origin + location.pathname.replace(/\/(index\.html)?$/, "/index.html");
+
+    // Sesión vigente → directo al selector de apps, sin volver a pedir login
+    (async () => {
+        if (new URLSearchParams(location.search).has("code")) return;
+        let token = "";
+        try { token = JSON.parse(localStorage.getItem("usuario"))?.token || ""; } catch {}
+        if (!token) return;
+        const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/app_usuario_id", {
+            method: "POST", body: "{}",
+            headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": token }
+        }).catch(() => null);
+        if (r?.ok && (await r.json()) != null) location.replace("apps.html");
+    })();
+
     // Cargar stat
     (async () => {
         const { count } = await sb.from("actividades").select("*", { count: "exact", head: true });
@@ -689,10 +707,10 @@
         if (e.key === "Enter") handleLogin();
     });
 
-    function setLoading(on) {
+    function setLoading(on, texto = "Verificando...") {
         document.getElementById("btnLogin").disabled = on;
         document.getElementById("spinner").style.display = on ? "block" : "none";
-        document.getElementById("btnText").textContent = on ? "Verificando..." : "Iniciar sesión";
+        document.getElementById("btnText").textContent = on ? texto : "Iniciar sesión";
     }
 
     function showError(msg) {
@@ -821,33 +839,63 @@
     /* ═══════════════════════════════════════════
        LOGIN
     ═══════════════════════════════════════════ */
-    async function handleLogin() {
-        hideError();
-        const correo    = document.getElementById("correo").value.trim();
-        const contrasena = document.getElementById("contrasena").value;
+    // Siempre entra con Zoho (la cuenta y contraseña de Zoho las pide Zoho, no esta página)
+    function handleLogin() { loginZoho(); }
 
-        if (!correo || !contrasena) {
-            showError("Ingresa tu correo y contraseña.");
-            return;
-        }
-        setLoading(true);
+    /* ═══════════════════════════════════════════
+       LOGIN CON ZOHO
+       Acceso "online" y sin prompt=consent: Zoho solo pide permiso la primera vez;
+       después regresa directo si la sesión de Zoho sigue abierta.
+    ═══════════════════════════════════════════ */
+    function loginZoho() {
+        hideError();
+        if (!ZOHO_CLIENT_ID) { showError("El inicio de sesión con Zoho aún no está configurado."); return; }
+        const state = crypto.randomUUID();
+        sessionStorage.setItem("zohoState", state);
+        setLoading(true, "Conectando con Zoho...");
+        const params = {
+            response_type: "code",
+            client_id: ZOHO_CLIENT_ID,
+            scope: "openid email profile",
+            redirect_uri: ZOHO_REDIRECT,
+            access_type: "online",
+            state
+        };
+        // Si escribieron su correo, Zoho lo trae ya puesto
+        const correo = document.getElementById("correo").value.trim();
+        if (correo) params.login_hint = correo;
+        location.href = ZOHO_ACCOUNTS + "/oauth/v2/auth?" + new URLSearchParams(params);
+    }
+
+    // Si vuelven con "Atrás" desde Zoho, el botón no debe quedarse en "Conectando…"
+    window.addEventListener("pageshow", e => { if (e.persisted) setLoading(false); });
+
+    // Regreso desde Zoho: ?code=…&state=…&accounts-server=…
+    (async () => {
+        const p = new URLSearchParams(location.search);
+        if (!p.has("code") && !p.has("error")) return;
+        const esperado = sessionStorage.getItem("zohoState");
+        sessionStorage.removeItem("zohoState");
+        history.replaceState(null, "", location.pathname);   // quita el code de la barra de direcciones
+        if (p.get("error")) { showError("Cancelaste el inicio de sesión con Zoho."); return; }
+        if (!esperado || p.get("state") !== esperado) { showError("La sesión de Zoho expiró. Intenta de nuevo."); return; }
+        setLoading(true, "Conectando con Zoho...");
         try {
-            const { data, error } = await sb.rpc("login_usuario", {
-                p_correo: correo,
-                p_contraseña: contrasena
+            const r = await fetch(SUPABASE_URL + "/functions/v1/zoho-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
+                body: JSON.stringify({ code: p.get("code"), redirect_uri: ZOHO_REDIRECT, accounts_server: p.get("accounts-server") || ZOHO_ACCOUNTS })
             });
-            if (error) { showError("No fue posible conectar con el servidor."); return; }
-            if (!data || data.length === 0) { showError("Correo o contraseña incorrectos."); return; }
-            const usuario = data[0];
-            if (usuario.activo !== true) { showError("Tu usuario se encuentra desactivado."); return; }
-            localStorage.setItem("usuario", JSON.stringify(usuario));
-            window.location.href = "apps.html";
-        } catch(e) {
-            showError("Ocurrió un error inesperado.");
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || !d.token) { showError(d.error || "No fue posible iniciar sesión con Zoho."); return; }
+            localStorage.setItem("usuario", JSON.stringify(d));
+            location.replace("apps.html");
+        } catch (e) {
+            showError("No fue posible conectar con el servidor.");
         } finally {
             setLoading(false);
         }
-    }
+    })();
 </script>
 
 </body>

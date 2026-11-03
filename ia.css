@@ -103,6 +103,8 @@ svg { display: block; }
 .msg { display: flex; gap: 14px; margin: 0 0 26px; animation: up .25s ease; }
 @keyframes up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .msg .av { width: 32px; height: 32px; border-radius: 10px; flex: none; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #48484c, #1c1c1e); }
+.me .av, .msg .av { overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .msg .body { min-width: 0; flex: 1; }
 .msg .who { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
 .msg.user { flex-direction: row-reverse; }
