@@ -81,7 +81,8 @@
         let t = texto.replace(/⟦fuentes:[^⟧]*⟧?/g, "");
         // Acciones e imágenes se gestionan mejor en la página completa
         const accion = /⟦accion:[0-9a-f-]{36}⟧/.test(t);
-        const generando = enCurso && /⟦imagen⟧\s*$/.test(t);
+        const marca = enCurso && (t.match(/⟦(imagen|buscando|ejecutando)⟧\s*$/) || [])[1];
+        const generando = marca && { imagen: "Generando imagen…", buscando: "Buscando en internet…", ejecutando: "Ejecutando código…" }[marca];
         t = t.replace(/⟦[^⟧]*⟧?/g, "").trim();
 
         let html = "", lista = null;
@@ -116,7 +117,7 @@
             else if (l.trim()) html += `<p>${inline(l)}</p>`;
         }
         cerrarLista();
-        if (generando) html += `<p class="aai-nota">Generando imagen…</p>`;
+        if (generando) html += `<p class="aai-nota">${generando}</p>`;
         if (accion) html += `<a class="aai-accion" data-ver-completa href="ia.html">La IA propone un cambio que necesita tu confirmación. Revísalo en Alterna IA →</a>`;
         return html;
     }

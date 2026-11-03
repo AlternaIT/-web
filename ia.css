@@ -366,3 +366,72 @@ body.dark .chip.ok { color: #34d399; } body.dark .chip.warn { color: #fbbf24; } 
 .ad-sel:disabled { opacity: .55; cursor: wait; }
 .ad-form .ad-acts { position: sticky; bottom: -18px; margin: 0 -18px -18px; padding: 12px 18px; background: var(--surface); border-top: 1px solid var(--border); z-index: 1; }
 .hero .logo.con-img { box-shadow: 0 14px 34px rgba(3, 80, 220, .28); }
+
+/* ── Programación: botones del bloque de código, colores de sintaxis y vista previa ── */
+.md pre .ph-b { display: flex; gap: 12px; }
+.md pre .ph button { padding: 2px 4px; border-radius: 5px; transition: color .15s, background .15s; }
+.md pre .ph button:hover { background: rgba(255,255,255,.08); }
+.md pre[data-lang] .ph > span:first-child { text-transform: lowercase; letter-spacing: .02em; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-doctag { color: #c792ea; }
+.hljs-string, .hljs-attr-value, .hljs-template-tag, .hljs-regexp { color: #a5d6a7; }
+.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet { color: #f78c6c; }
+.hljs-comment, .hljs-quote { color: #6b7280; font-style: italic; }
+.hljs-title, .hljs-title.function_, .hljs-section { color: #82aaff; }
+.hljs-title.class_, .hljs-type, .hljs-class .hljs-title { color: #ffcb6b; }
+.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-property, .hljs-params { color: #f0c674; }
+.hljs-tag, .hljs-name, .hljs-selector-class, .hljs-selector-id { color: #89ddff; }
+.hljs-meta, .hljs-subst { color: #94a3b8; }
+.hljs-addition { color: #a5d6a7; } .hljs-deletion { color: #f28b82; }
+.pv-card { width: min(1100px, 100%); height: min(86vh, 900px); }
+#pvFrame { flex: 1; width: 100%; border: 0; background: #fff; }
+
+/* ── Progreso de herramientas (internet / código) ── */
+.prog { display: inline-flex; align-items: center; gap: 9px; margin: 6px 0; padding: 9px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 500; color: var(--text-soft);
+  background: linear-gradient(110deg, var(--soft) 30%, var(--hover) 50%, var(--soft) 70%); background-size: 250% 100%; border: 1px solid var(--border); animation: shim 1.8s linear infinite, aparecer .3s ease both; }
+.prog-ic { color: #2563eb; flex: none; } body.dark .prog-ic { color: #60a5fa; }
+.prog-ic.gira { animation: girar 2.4s linear infinite; }
+.prog-ic.late { animation: latir 1.1s ease-in-out infinite; }
+.prog-dots { display: inline-flex; gap: 3px; } .prog-dots b { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .4; animation: bounce 1s infinite ease-in-out; }
+.prog-dots b:nth-child(2) { animation-delay: .15s; } .prog-dots b:nth-child(3) { animation-delay: .3s; }
+
+/* ── Animaciones ── */
+@keyframes aparecer { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes desdeDerecha { from { opacity: 0; transform: translateX(14px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
+@keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes brillo { 0%, 100% { box-shadow: 0 14px 34px rgba(3, 80, 220, .25); } 50% { box-shadow: 0 18px 44px rgba(3, 120, 255, .45); } }
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes latir { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes entrarModal { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fundido { from { opacity: 0; } to { opacity: 1; } }
+
+/* Bienvenida: el logo flota y brilla; título, texto y tarjetas entran escalonados */
+.hero .logo.con-img { animation: pop .55s cubic-bezier(.2,.9,.3,1.3) both, flotar 4s ease-in-out .6s infinite, brillo 4s ease-in-out .6s infinite; }
+.hero h1 { animation: aparecer .5s ease .1s both; }
+.hero > p { animation: aparecer .5s ease .2s both; }
+.hero .card { animation: aparecer .45s ease both; }
+.hero .card:nth-child(1) { animation-delay: .28s; } .hero .card:nth-child(2) { animation-delay: .34s; } .hero .card:nth-child(3) { animation-delay: .4s; }
+.hero .card:nth-child(4) { animation-delay: .46s; } .hero .card:nth-child(5) { animation-delay: .52s; } .hero .card:nth-child(6) { animation-delay: .58s; }
+.card .ci { transition: transform .2s ease, background .2s; } .card:hover .ci { transform: rotate(-6deg) scale(1.1); }
+
+/* Mensajes: el del usuario entra desde la derecha; el avatar de la IA aparece con un pequeño rebote */
+.msg.user { animation: desdeDerecha .3s ease both; }
+.msg.assistant { animation: aparecer .35s ease both; }
+.msg.assistant .av.con-img { animation: pop .45s cubic-bezier(.2,.9,.3,1.3) both; }
+.md .imgbox img { animation: aparecer .5s ease both; }
+.tools { animation: fundido .3s ease both; }
+.tools button { transition: background .15s, color .15s, transform .15s; } .tools button:active { transform: scale(.94); }
+
+/* Barra lateral, composer y diálogos */
+.conv { transition: background .15s, transform .15s; } .conv:hover { transform: translateX(2px); }
+.send { transition: transform .15s ease, background .2s, box-shadow .2s; }
+.send:not(:disabled):hover { transform: translateY(-1px) scale(1.06); }
+.send:not(:disabled):active { transform: scale(.92); }
+.btn-new { transition: transform .15s, background .15s; } .btn-new:hover { transform: translateY(-1px); } .btn-new:active { transform: scale(.97); }
+.modal.open { animation: fundido .2s ease both; }
+.modal.open .modal-card { animation: entrarModal .28s cubic-bezier(.2,.8,.3,1) both; }
+.acc { animation: aparecer .35s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

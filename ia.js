@@ -6,7 +6,6 @@
 const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
 const ENDPOINT = SUPABASE_URL + "/functions/v1/alterna-ai";
-const MARCA_IMAGEN = "⟦imagen⟧";
 const MAX_ADJ = 3;
 
 /* ── Sesión ── */
@@ -40,6 +39,7 @@ const I = {
     x: svg('<path d="M18 6L6 18M6 6l12 12"/>', 12, 'stroke-width="2.6"'),
     pdf: svg('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5zM14 3v5h5M9 13h6M9 17h6"/>', 14),
     xls: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>', 14),
+    play: svg('<path d="M7 5l12 7-12 7V5z"/>', 13),
     shield: svg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/>', 16),
 };
 
@@ -48,7 +48,7 @@ const SUGERENCIAS = [
     { i: I.pdf,   t: "Resumir un texto",       d: "Puntos clave y próximos pasos.",               p: "Voy a pegarte un texto. Resúmelo en puntos clave y dime qué acciones o pendientes se desprenden de él." },
     { i: I.edit,  t: "Corregir un texto",      d: "Ortografía, tono y claridad.",                 p: "Voy a pegarte un texto. Corrige ortografía y redacción, mejora la claridad y dime qué cambiaste." },
     { i: I.cal,   t: "Preparar una reunión",   d: "Agenda, puntos clave y minuta.",               p: "Ayúdame a preparar una reunión: propón una agenda clara y una plantilla de minuta para anotar acuerdos, responsables y fechas." },
-    { i: I.chart, t: "Armar un reporte",       d: "Con tablas; descárgalo en PDF o Excel.",       p: "Ayúdame a armar un reporte con tablas a partir de unos datos que te voy a pegar. Pregúntame primero qué quiero mostrar." },
+    { i: I.chart, t: "Armar un reporte",       d: "Con tablas; descárgalo en Excel.",       p: "Ayúdame a armar un reporte con tablas a partir de unos datos que te voy a pegar. Pregúntame primero qué quiero mostrar." },
     { i: I.img,   t: "Crear una imagen",       d: "Logos, banners, ilustraciones y mockups.",     p: "Genera una imagen profesional de un banner horizontal para una campaña de Alterna, estilo moderno, cálido y cercano." },
 ];
 
@@ -116,21 +116,66 @@ function mdSinFuentes(src) {
     return partes.map((p, i) => i % 2 === 0 ? (p.trim() ? mdTexto(p) : "") : `<div class="acc" data-acc="${p}"><div class="acc-load">Preparando acción…</div></div>`).join("");
 }
 
+// Marcas de progreso del backend: solo se muestran mientras son lo último que llegó.
+const MARCAS_RE = /⟦(imagen|buscando|ejecutando)⟧/g;
+const quitarMarcas = t => t.replace(MARCAS_RE, "");
+const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando)⟧$/) || [])[1] || null;
+const PROGRESO = {
+    buscando: `<div class="prog">${svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>', 16, 'class="prog-ic gira"')}<span>Buscando en internet</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
+    ejecutando: `<div class="prog">${svg('<path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/>', 16, 'class="prog-ic late"')}<span>Ejecutando código</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
+};
+
+// Lenguaje del bloque → extensión al descargar
+const EXT = { javascript: "js", js: "js", typescript: "ts", ts: "ts", python: "py", py: "py", html: "html", css: "css", json: "json", sql: "sql", bash: "sh", sh: "sh", shell: "sh", powershell: "ps1", ps1: "ps1", java: "java", csharp: "cs", "c#": "cs", cs: "cs", php: "php", go: "go", rust: "rs", c: "c", cpp: "cpp", "c++": "cpp", ruby: "rb", kotlin: "kt", swift: "swift", yaml: "yml", yml: "yml", xml: "xml", markdown: "md", md: "md", jsx: "jsx", tsx: "tsx", vue: "vue", dart: "dart", r: "r", svg: "svg", text: "txt" };
+const conVistaPrevia = lang => /^(html|svg)$/i.test(lang);
+
 function mdTexto(src) {
-    // La marca ⟦imagen⟧ solo se muestra como "generando…" mientras es lo último que llegó.
-    const generando = src.trimEnd().endsWith(MARCA_IMAGEN);
-    src = src.split(MARCA_IMAGEN).join("");
+    const marca = marcaFinal(src);
+    src = quitarMarcas(src);
     const partes = src.split("```"); let out = "";
     partes.forEach((seg, k) => {
         if (k % 2 === 0) { out += bloques(seg); return; }
         const nl = seg.indexOf("\n");
-        const lang = (nl >= 0 ? seg.slice(0, nl) : "").trim().slice(0, 20);
+        const lang = (nl >= 0 ? seg.slice(0, nl) : "").trim().slice(0, 20).toLowerCase();
         const code = nl >= 0 ? seg.slice(nl + 1).replace(/\n$/, "") : seg;
-        out += `<pre><div class="ph"><span>${esc(lang || "código")}</span><button type="button" data-copy>${I.copy} Copiar</button></div><code>${esc(code)}</code></pre>`;
+        const cerrado = k < partes.length - 1; // mientras llega, el último bloque aún no tiene cierre
+        out += `<pre data-lang="${esc(lang)}"><div class="ph"><span>${esc(lang || "código")}</span><span class="ph-b">` +
+            (cerrado && conVistaPrevia(lang) ? `<button type="button" data-preview>${I.play} Vista previa</button>` : "") +
+            (cerrado ? `<button type="button" data-dlcode>${I.dl} Descargar</button>` : "") +
+            `<button type="button" data-copy>${I.copy} Copiar</button></span></div><code class="${lang ? "language-" + esc(lang) : ""}">${esc(code)}</code></pre>`;
     });
-    if (generando) out += '<div class="imgload"><span class="shimmer"></span><span class="il-t">Generando imagen… puede tardar unos segundos</span></div>';
+    if (marca === "imagen") out += '<div class="imgload"><span class="shimmer"></span><span class="il-t">Generando imagen… puede tardar unos segundos</span></div>';
+    else if (marca) out += PROGRESO[marca];
     return out;
 }
+
+/* ── Programación: resaltado de sintaxis, descarga y vista previa ── */
+const HLJS = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+async function resaltar(raiz) {
+    const bloques = [...raiz.querySelectorAll("pre code:not([data-hl])")]; if (!bloques.length) return;
+    try { await cargarScript(HLJS); } catch { return; /* sin conexión: queda sin colores */ }
+    for (const c of bloques) {
+        c.dataset.hl = "1";
+        const lang = c.closest("pre").dataset.lang;
+        try {
+            const r = lang && hljs.getLanguage(lang) ? hljs.highlight(c.textContent, { language: lang, ignoreIllegals: true }) : hljs.highlightAuto(c.textContent);
+            c.innerHTML = r.value; c.classList.add("hljs");
+        } catch { /* lenguaje no soportado */ }
+    }
+}
+function descargarCodigo(pre) {
+    const lang = pre.dataset.lang || "text", texto = pre.querySelector("code").textContent;
+    const b = new Blob([texto], { type: "text/plain;charset=utf-8" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = nombreArchivo(EXT[lang] || "txt").replace(/-\d{4}-\d{2}-\d{2}/, "");
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function vistaPrevia(pre) {
+    const texto = pre.querySelector("code").textContent, lang = pre.dataset.lang;
+    // iframe aislado: sin acceso a la sesión ni a la página de Alterna
+    $("pvFrame").srcdoc = lang === "svg" ? `<!doctype html><body style="margin:0;display:grid;place-items:center;min-height:100vh">${texto}</body>` : texto;
+    $("pvModal").classList.add("open");
+}
+$("pvModal").addEventListener("click", e => { if (e.target.id === "pvModal" || e.target.closest("[data-pv-x]")) { $("pvModal").classList.remove("open"); $("pvFrame").srcdoc = ""; } });
 
 /* ── Estado ── */
 let convs = [], actual = null, mensajes = [], enCurso = false, abortar = null, filtro = "", adjuntos = [];
@@ -273,7 +318,8 @@ $("vista").addEventListener("click", e => {
     const rg = e.target.closest("[data-regen]"); if (rg) return regenerar();
     const ok = e.target.closest("[data-acc-ok]"); if (ok) return resolverAccion(ok.closest(".acc").dataset.acc, true);
     const no = e.target.closest("[data-acc-no]"); if (no) return resolverAccion(no.closest(".acc").dataset.acc, false);
-    const pf = e.target.closest("[data-pdf]"); if (pf) return descargarPDF(pf.closest(".msg").dataset.raw || "");
+    const dc = e.target.closest("[data-dlcode]"); if (dc) return descargarCodigo(dc.closest("pre"));
+    const pv = e.target.closest("[data-preview]"); if (pv) return vistaPrevia(pv.closest("pre"));
     const xl = e.target.closest("[data-xls]"); if (xl) return descargarExcel(xl.closest(".msg").dataset.raw || "");
     const dl = e.target.closest("[data-dl]"); if (dl) return descargar(dl.dataset.dl);
     const im = e.target.closest(".imgbox img, .thumbs img"); if (im) return abrirLightbox(im.src);
@@ -323,7 +369,7 @@ function pintarConversacion() {
     $("vista").innerHTML = '<div class="col" id="col"></div>';
     const col = $("col");
     mensajes.forEach(m => col.appendChild(m.rol === "user" ? nodoUsuario(m.contenido) : nodoAsistente(m.contenido)));
-    marcarUltimo(); hidratarAcciones(); bajar(true);
+    marcarUltimo(); hidratarAcciones(); resaltar(col); bajar(true);
 }
 
 function bajar(forzar) {
@@ -441,9 +487,9 @@ async function ejecutar({ texto = "", regen = false }) {
         while (true) {
             const { done, value } = await rd.read(); if (done) break;
             acumulado += dec.decode(value, { stream: true });
-            cuerpo.innerHTML = md(acumulado); if (!acumulado.trimEnd().endsWith(MARCA_IMAGEN)) cuerpo.classList.add("cursor"); else cuerpo.classList.remove("cursor"); bajar();
+            cuerpo.innerHTML = md(acumulado); cuerpo.classList.toggle("cursor", !marcaFinal(acumulado)); bajar();
         }
-        if (!acumulado.replace(MARCA_IMAGEN, "").trim()) throw new Error("La IA no devolvió respuesta. Intenta de nuevo.");
+        if (!quitarMarcas(acumulado).trim()) throw new Error("La IA no devolvió respuesta. Intenta de nuevo.");
     } catch (e) {
         if (e.name !== "AbortError") {
             if (!acumulado) { cuerpo.innerHTML = `<div class="err">${esc(e.message)}</div>`; tools.remove(); }
@@ -451,9 +497,9 @@ async function ejecutar({ texto = "", regen = false }) {
         }
     } finally {
         cuerpo.classList.remove("cursor");
-        const final = acumulado.split(MARCA_IMAGEN).join("");
+        const final = quitarMarcas(acumulado);
         if (final.trim()) {
-            nodo.dataset.raw = final; cuerpo.innerHTML = md(final); tools.insertAdjacentHTML("beforeend", botonesReporte(final)); tools.style.display = "";
+            nodo.dataset.raw = final; cuerpo.innerHTML = md(final); resaltar(cuerpo); tools.insertAdjacentHTML("beforeend", botonesReporte(final)); tools.style.display = "";
             mensajes.push({ rol: "assistant", contenido: final });
             const c = convs.find(x => x.id === actual); if (c) { c.updated_at = new Date().toISOString(); convs = [c, ...convs.filter(x => x !== c)]; pintarLista(); }
             if (esNueva && actual) titular(actual);
@@ -522,7 +568,7 @@ async function resolverAccion(id, confirmar) {
     } catch (e) { n.querySelectorAll("button").forEach(b => b.disabled = false); toast(e.message); }
 }
 
-/* ── Reportes: PDF y Excel (se generan en el navegador) ── */
+/* ── Reportes: Excel (se genera en el navegador) ── */
 const limpiarMd = t => t.replace(/<br\s*\/?>/gi, " ").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/!\[[^\]]*\]\([^)]*\)/g, "").trim();
 const SEP_TABLA = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 const celdasMd = l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => limpiarMd(c));
@@ -537,7 +583,7 @@ function tablasMd(raw) {
     }
     return out;
 }
-const botonesReporte = raw => (raw && raw.length > 120 ? `<button type="button" data-pdf>${I.pdf} PDF</button>` : "") + (tablasMd(raw || "").length ? `<button type="button" data-xls>${I.xls} Excel</button>` : "");
+const botonesReporte = raw => (tablasMd(raw || "").length ? `<button type="button" data-xls>${I.xls} Excel</button>` : "");
 const cargarScript = src => new Promise((res, rej) => {
     if ([...document.scripts].some(s => s.src === src)) return res();
     const e = document.createElement("script"); e.src = src; e.onload = res; e.onerror = () => rej(new Error("No se pudo cargar una librería. Revisa tu conexión.")); document.head.appendChild(e);
@@ -551,48 +597,6 @@ async function descargarExcel(raw) {
         tablasMd(raw).forEach((t, k) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([t.head, ...t.rows]), ("Tabla " + (k + 1)).slice(0, 31)));
         XLSX.writeFile(wb, nombreArchivo("xlsx")); toast("Excel descargado");
     } catch (e) { toast(e.message); }
-}
-
-async function descargarPDF(raw) {
-    try {
-        await cargarScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js");
-        await cargarScript("https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js");
-        const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "mm", format: "a4" });
-        const W = 210, M = 16, AN = W - M * 2;
-        const ok = t => limpiarMd(t).replace(/[^\u0000-ÿ–—‘-”•…]/g, "");
-        let y = 34;
-        const espacio = h => { if (y + h > 280) { doc.addPage(); y = 20; } };
-
-        doc.setFillColor(28, 28, 30); doc.rect(0, 0, W, 24, "F");
-        doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.text("Alterna IA", M, 14);
-        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.text(new Date().toLocaleString("es", { dateStyle: "long", timeStyle: "short" }), W - M, 14, { align: "right" });
-        doc.setTextColor(30); doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text(ok($("titulo").textContent || "Reporte"), M, y); y += 9;
-
-        const L = raw.replace(/⟦[^⟧]*⟧/g, "").split("\n"); let i = 0;
-        while (i < L.length) {
-            const l = L[i];
-            if (!l.trim()) { i++; continue; }
-            let m;
-            if (/\|/.test(l) && SEP_TABLA.test(L[i + 1] || "")) {
-                const head = celdasMd(l).map(ok); i += 2; const body = [];
-                while (i < L.length && /\|/.test(L[i]) && L[i].trim()) body.push(celdasMd(L[i++]).map(ok));
-                espacio(20);
-                doc.autoTable({ head: [head], body, startY: y, margin: { left: M, right: M }, styles: { fontSize: 8.5, cellPadding: 2 }, headStyles: { fillColor: [58, 58, 60] }, alternateRowStyles: { fillColor: [245, 246, 248] } });
-                y = doc.lastAutoTable.finalY + 6; continue;
-            }
-            if ((m = l.match(/^(#{1,4})\s+(.*)$/))) {
-                espacio(12); doc.setFont("helvetica", "bold"); doc.setFontSize(m[1].length === 1 ? 14 : 12); doc.setTextColor(30); y += 2;
-                doc.text(doc.splitTextToSize(ok(m[2]), AN), M, y); y += m[1].length === 1 ? 8 : 6.5; i++; continue;
-            }
-            const li = l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(50);
-            const lineas = doc.splitTextToSize((li ? "•  " : "") + ok(li ? li[1] : l), AN - (li ? 4 : 0));
-            espacio(lineas.length * 5 + 2); doc.text(lineas, M + (li ? 4 : 0), y); y += lineas.length * 5 + (li ? 1.2 : 2.5); i++;
-        }
-        const n = doc.internal.getNumberOfPages();
-        for (let p = 1; p <= n; p++) { doc.setPage(p); doc.setFontSize(8); doc.setTextColor(140); doc.text("Alterna IA", M, 289); doc.text("Página " + p + " de " + n, W - M, 289, { align: "right" }); }
-        doc.save(nombreArchivo("pdf")); toast("PDF descargado");
-    } catch (e) { toast(e.message || "No se pudo generar el PDF."); }
 }
 
 /* ── Cuota del usuario (medidor en la barra lateral) ── */

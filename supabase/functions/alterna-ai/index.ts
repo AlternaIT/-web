@@ -9,6 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { HERRAMIENTAS_ACCION, NOMBRES_ACCION, proponer, resolver, infoAcciones } from "./acciones.ts";
 import { resumenDia, usoAdmin } from "./admin.ts";
 import { estadoKb, sincronizar, listarKb, leerKb, buscarKb, contextoKb } from "./kb.ts";
+import { HERRAMIENTAS_AVANZADAS, NOMBRES_AVANZADAS, responderConHerramienta } from "./herramientas.ts";
 import { estadoCuota, motivoRechazo, imagenesDisponibles, vistaUsuario, panelCuotas, guardarPlan, eliminarPlan, guardarCuota, reiniciarCuota, historialCuota } from "./cuotas.ts";
 
 const OPENAI = "https://api.openai.com/v1";
@@ -29,7 +30,9 @@ const MAX_CHARS = 6000;
 const MAX_ADJUNTOS = 3;
 const MAX_BYTES_ADJUNTO = 5 * 1024 * 1024;
 const HISTORIAL_MODELO = 24;
-const MARCA_IMAGEN = "⟦imagen⟧"; // ⟦imagen⟧ — la interfaz la muestra como "generando imagen…"
+// Marcas de progreso: la interfaz las muestra como "generando imagen…", "buscando en internet…", etc.
+const MARCA_IMAGEN = "⟦imagen⟧";
+const MARCA_HERRAMIENTA: Record<string, string> = { buscar_web: "⟦buscando⟧", ejecutar_codigo: "⟦ejecutando⟧" };
 
 const log = (nivel: string, evento: string, datos: Record<string, unknown> = {}) =>
   console.log(JSON.stringify({ nivel, evento, ...datos }));
@@ -433,6 +436,15 @@ ${contexto ? "- Responder sobre el sistema interno de gestión del área de TI (
 - Redactar correos, reportes, actas, minutas, propuestas, procedimientos y otros documentos; resumir, corregir y traducir textos; organizar ideas y planes de trabajo; resolver dudas generales y de uso de herramientas; analizar imágenes que el usuario adjunte (capturas, fotos, diagramas, documentos).
 ${user.rol === "admin" ? '- Proponer cambios en el sistema con las herramientas "crear_actividad", "actualizar_actividad" y "programar_mantenimiento". NUNCA digas que ya lo hiciste: el usuario verá una tarjeta y debe pulsar Confirmar. Usa ids reales del contexto; si faltan datos obligatorios, pregunta primero. Fechas en formato AAAA-MM-DD.' : ""}
 ${puedeImagenes ? '- Generar imágenes con la herramienta "generar_imagen" cuando el usuario lo pida (logos, ilustraciones, banners, pósters, mockups). Escribe un prompt visual detallado. No describas la imagen antes de generarla; después, una línea breve.' : ""}
+- Buscar en internet con la herramienta "buscar_web" cuando la respuesta dependa de información actual o verificable (noticias, precios, tipos de cambio, clima, versiones, documentación, leyes, datos de empresas) o cuando el usuario pida buscar o citar fuentes. Si sabes la respuesta y no cambia con el tiempo, no busques.
+- Ejecutar código Python con la herramienta "ejecutar_codigo" cuando haga falta un resultado calculado de verdad: cálculos exactos, estadísticas, análisis de datos que el usuario pegó, conversiones, o probar un programa.
+
+PROGRAMACIÓN
+- Eres un programador sénior en cualquier lenguaje (JavaScript/TypeScript, Python, SQL, HTML/CSS, Java, C#, PHP, Go, Bash, PowerShell, etc.) y frameworks comunes.
+- Entrega código completo y funcional, listo para copiar, en bloques con el lenguaje indicado (\`\`\`python, \`\`\`sql, \`\`\`html…). Sin "..." ni partes omitidas salvo que el usuario pida solo un fragmento.
+- Antes del código, una línea con el enfoque; después, cómo usarlo o ejecutarlo. Señala supuestos, dependencias y riesgos (seguridad, rendimiento, datos sensibles).
+- Para depurar: identifica la causa, muestra la corrección y explica por qué fallaba.
+- Si piden una página, interfaz o demo web, entrégala en un único bloque \`\`\`html autocontenido (CSS y JS dentro): la persona podrá verla con el botón "Vista previa".
 
 REGLAS
 - Para cifras y estados del sistema usa SOLO el contexto en vivo. Si algo no está ahí, dilo con honestidad; nunca inventes datos.
@@ -525,7 +537,7 @@ async function chat(db: any, user: any, p: Record<string, any>) {
 
   const messages = [{ role: "system", content: promptSistema(user, contexto, imagenesOk, kb?.prompt ?? "") }, ...mensajesModelo];
   const candidatos = await candidatosChat(key);
-  const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
+  const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...HERRAMIENTAS_AVANZADAS, ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
   const maxSalida = cuota && !cuota.ilimitado && cuota.tokens_restantes !== null ? cuota.tokens_restantes : undefined;
   const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined, true, maxSalida);
   log("info", "chat", { usuario: user.id, modelo: apertura.modelo, regenerar, adjuntos: urlsAdjuntos.length });
@@ -586,6 +598,17 @@ async function chat(db: any, user: any, p: Record<string, any>) {
               emitir(`\n\n⚠️ ${err instanceof ErrorOpenAI ? mensajeAmigable(err.status, err.cuerpo) : (err?.message ?? "No fue posible generar la imagen.")}`);
             }
           }
+        }
+
+        // Herramientas avanzadas: búsqueda en internet o ejecución de código (una por mensaje)
+        const avz = img ? null : Object.values(llamadas).find((c) => NOMBRES_AVANZADAS.includes(c.name));
+        if (avz) {
+          let args: any = {}; try { args = JSON.parse(avz.args || "{}"); } catch { /* vacío */ }
+          controller.enqueue(enc.encode(`${completo ? "\n\n" : ""}${MARCA_HERRAMIENTA[avz.name]}`));
+          if (completo) completo += "\n\n";
+          const r = await responderConHerramienta(key, candidatos, avz.name, args, String(messages[0].content), mensajesModelo, emitir, maxSalida);
+          if (r) { uso = { entrada: uso.entrada + r.entrada, salida: uso.salida + r.salida }; log("info", "herramienta", { usuario: user.id, nombre: avz.name, modelo: r.modelo }); }
+          else emitir(avz.name === "buscar_web" ? "⚠️ No pude buscar en internet en este momento. Intenta de nuevo en unos minutos." : "⚠️ No pude ejecutar el código en este momento. Intenta de nuevo en unos minutos.");
         }
 
         // Acciones propuestas (requieren confirmación del usuario)
