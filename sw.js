@@ -6,12 +6,12 @@
    → Al volver a abrir la app, SIEMPRE se sirve la red.
 ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME = "alterna-v2";
+const CACHE_NAME = "alterna-v3";
 
 // Archivos que se cachean para modo offline
 const OFFLINE_ASSETS = [
   "./index.html",
-  "./dashboard.html",
+  "./it.html",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
   "https://cdn.jsdelivr.net/npm/lucide@0.383.0/dist/umd/lucide.min.js",
   "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js",
