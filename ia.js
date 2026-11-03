@@ -260,7 +260,7 @@ function saludoAleatorio() {
 function inicio() {
     const s = saludoAleatorio();
     $("vista").innerHTML =
-        `<div class="hero"><div class="logo">${I.spark}</div>` +
+        `<div class="hero"><div class="logo con-img"><img src="img/logo-ia.webp" alt=""></div>` +
         `<h1>${s.titulo}</h1>` +
         `<p>${s.sub}</p>` +
         `<div class="cards">` + SUGERENCIAS.map((s, k) => `<button class="card" data-k="${k}"><span class="ci">${s.i}</span><span><div class="ct">${s.t}</div><div class="cd">${s.d}</div></span></button>`).join("") + `</div></div>`;
@@ -306,7 +306,7 @@ function nodoUsuario(contenido, previews) {
 
 function nodoAsistente(texto) {
     const d = document.createElement("div"); d.className = "msg assistant"; d.dataset.raw = texto;
-    d.innerHTML = `<div class="av">${I.sparkS}</div><div class="body"><div class="who">Alterna IA</div><div class="md">${md(texto)}</div>` +
+    d.innerHTML = `<div class="av con-img"><img src="img/logo-ia.webp" alt=""></div><div class="body"><div class="who">Alterna IA</div><div class="md">${md(texto)}</div>` +
                   `<div class="tools"><button type="button" data-copymsg>${I.copy} Copiar</button>${botonesReporte(texto)}</div></div>`;
     return d;
 }
