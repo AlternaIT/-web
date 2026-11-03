@@ -1008,6 +1008,69 @@
         document.getElementById("fuGuardar").disabled        = false;
         document.getElementById("modalFichaUsuario").classList.add("open");
         cargarAccesosUsuario(u.id);
+        pintarSesionesFicha(u);
+    }
+
+    /* Sesiones y bloqueo (funciones seguras de la base de datos: solo admin) */
+    async function pintarSesionesFicha(u) {
+        const propio = u.id === usuario?.id;
+        const bloq = document.getElementById("fuBloquear");
+        bloq.textContent = u.activo === false ? "Desbloquear" : "Bloquear acceso";
+        bloq.className   = u.activo === false ? "btn-secondary" : "btn-danger";
+        bloq.disabled    = propio;
+        bloq.title       = propio ? "No puedes bloquear tu propio usuario" : "";
+        const span = document.getElementById("fuSesiones");
+        span.textContent = "Consultando…";
+        const { data, error } = await supabaseClient.rpc("sesiones_activas", { p_usuario_id: u.id });
+        if (String(document.getElementById("fuId").value) !== String(u.id)) return;   // ya abrieron otra ficha
+        span.textContent = error || data == null ? "—"
+            : data === 0 ? "Sin sesiones abiertas"
+            : data === 1 ? "1 sesión abierta" : `${data} sesiones abiertas`;
+        document.getElementById("fuCerrarSesiones").disabled = !data;
+    }
+
+    function mensajeFicha(texto, color) {
+        const m = document.getElementById("fuMsg");
+        m.textContent = texto; m.style.color = color;
+    }
+
+    async function cerrarSesionesFicha() {
+        const id = parseInt(document.getElementById("fuId").value);
+        const u = todosUsuarios.find(x => x.id === id);
+        const propio = id === usuario?.id;
+        if (!confirm(propio
+            ? "Se cerrará tu sesión en todos los dispositivos, también en este. ¿Continuar?"
+            : `Se cerrará la sesión de ${u?.nombre || "este usuario"} en todos sus dispositivos. ¿Continuar?`)) return;
+        const { data, error } = await supabaseClient.rpc("cerrar_sesiones_usuario", { p_usuario_id: id });
+        if (error) return mensajeFicha(error.message, "#ef4444");
+        if (propio) { localStorage.removeItem("usuario"); window.location.href = "index.html"; return; }
+        mensajeFicha(data ? `Se cerraron ${data} ${data === 1 ? "sesión" : "sesiones"}.` : "No tenía sesiones abiertas.", "#10b981");
+        if (u) pintarSesionesFicha(u);
+    }
+
+    async function bloquearFicha() {
+        const id = parseInt(document.getElementById("fuId").value);
+        const u = todosUsuarios.find(x => x.id === id);
+        if (!u || id === usuario?.id) return;
+        const bloquear = u.activo !== false;
+        if (bloquear && !confirm(`${u.nombre || "Este usuario"} no podrá entrar a ninguna aplicación y se cerrarán sus sesiones abiertas. ¿Bloquear?`)) return;
+        const { error } = await supabaseClient.rpc("bloquear_usuario", { p_usuario_id: id, p_bloquear: bloquear });
+        if (error) return mensajeFicha(error.message, "#ef4444");
+        u.activo = !bloquear;
+        document.getElementById("fuActivo").value = String(u.activo);
+        mensajeFicha(bloquear ? "Usuario bloqueado y sesiones cerradas." : "Usuario desbloqueado.", "#10b981");
+        pintarSesionesFicha(u);
+        cargarTablaUsuarios();
+    }
+
+    // Configuración → Seguridad: el propio usuario cierra sus sesiones en los demás dispositivos
+    async function cerrarOtrasSesiones() {
+        const desc = document.getElementById("cfgOtrasSesiones");
+        if (!confirm("Se cerrará tu sesión en todos los demás dispositivos. Esta se mantiene. ¿Continuar?")) return;
+        const { data, error } = await supabaseClient.rpc("cerrar_otras_sesiones");
+        if (error) { desc.textContent = "No se pudo: " + error.message; desc.style.color = "#ef4444"; return; }
+        desc.textContent = data ? `Listo: se cerraron ${data} ${data === 1 ? "sesión" : "sesiones"} en otros dispositivos.` : "No tenías sesiones abiertas en otros dispositivos.";
+        desc.style.color = "#10b981";
     }
 
     /* ═══════════════════════════════════════════
@@ -1182,6 +1245,11 @@
             document.getElementById("fuMsg").style.color = "#ef4444";
             return;
         }
+        if (!activo && id === usuario?.id) {
+            document.getElementById("fuMsg").textContent = "No puedes bloquear tu propio usuario.";
+            document.getElementById("fuMsg").style.color = "#ef4444";
+            return;
+        }
 
         const btn = document.getElementById("fuGuardar");
         btn.disabled = true;
@@ -1191,7 +1259,10 @@
         const payload = { nombre, correo, rol, activo };
 
         const { error: errUsuario } = await supabaseClient.from("usuarios").update(payload).eq("id", id);
-        const error = errUsuario || await guardarAccesosUsuario(id);
+        // Bloqueado desde el selector de estado: también se cierran sus sesiones abiertas
+        const errSesiones = !errUsuario && !activo
+            ? (await supabaseClient.rpc("cerrar_sesiones_usuario", { p_usuario_id: id })).error : null;
+        const error = errUsuario || errSesiones || await guardarAccesosUsuario(id);
 
         if (error) {
             document.getElementById("fuMsg").textContent = "" + error.message;

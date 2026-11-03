@@ -685,13 +685,22 @@
             method: "POST", body: "{}",
             headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": token }
         }).catch(() => null);
-        if (r?.ok && (await r.json()) != null) location.replace("apps.html");
+        if (!r?.ok) return;
+        if ((await r.json()) != null) location.replace("apps.html");
+        else localStorage.removeItem("usuario");   // sesión cerrada o usuario bloqueado
     })();
+
+    // Venimos de una página abierta cuya sesión cerró un admin (sesion.js)
+    if (new URLSearchParams(location.search).get("sesion") === "cerrada") {
+        history.replaceState(null, "", location.pathname);
+        showError("Tu sesión se cerró o tu acceso fue bloqueado. Si crees que es un error, avisa al área de IT.");
+    }
 
     // Cargar stat
     (async () => {
         const { count } = await sb.from("actividades").select("*", { count: "exact", head: true });
-        if (count != null) document.getElementById("statNum").textContent = count;
+        const el = document.getElementById("statNum");
+        if (el && count != null) el.textContent = count;
     })();
 
     // Toggle password
