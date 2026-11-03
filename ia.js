@@ -428,7 +428,8 @@ async function ejecutar({ texto = "", regen = false }) {
         });
         if (!r.ok) {
             if (r.status === 401) { localStorage.removeItem("usuario"); window.location.replace("index.html"); return; }
-            const d = await r.json().catch(() => ({})); throw new Error(d.error || "No fue posible conectar con Alterna IA.");
+            const d = await r.json().catch(() => ({})); if (d.cuota) pintarCuota(d.cuota);
+            throw new Error(d.error || "No fue posible conectar con Alterna IA.");
         }
         const id = r.headers.get("X-Conversacion-Id");
         if (id && !actual) {
@@ -458,6 +459,7 @@ async function ejecutar({ texto = "", regen = false }) {
             if (esNueva && actual) titular(actual);
         } else if (!cuerpo.querySelector(".err")) { nodo.remove(); }
         enCurso = false; abortar = null; estadoBoton(); marcarUltimo(); hidratarAcciones(); $("entrada").focus(); bajar();
+        if (final.trim()) setTimeout(cargarCuota, 1500); // el backend registra los tokens al cerrar la respuesta
     }
 }
 
@@ -593,11 +595,234 @@ async function descargarPDF(raw) {
     } catch (e) { toast(e.message || "No se pudo generar el PDF."); }
 }
 
+/* ── Cuota del usuario (medidor en la barra lateral) ── */
+const compacto = n => new Intl.NumberFormat("es", { notation: "compact", maximumFractionDigits: 1 }).format(n || 0);
+function pintarCuota(c) {
+    const q = $("quota");
+    if (!c) { q.style.display = "none"; return; }
+    q.style.display = "";
+    const pct = c.porcentaje ?? 0;
+    q.className = "quota" + (c.bloqueado ? " off" : c.ilimitado ? " inf" : pct >= 100 ? " full" : pct >= 80 ? " warn" : "");
+    const estado = c.bloqueado ? "Acceso pausado" : c.ilimitado ? "Uso ilimitado" : c.tokens_limite == null ? "Sin límite de tokens" : `${pct}% usado`;
+    const det = c.bloqueado ? (c.motivo_bloqueo || "Contacta al área de IT.")
+        : c.ilimitado || c.tokens_limite == null ? `${compacto(c.tokens_usados)} tokens en este periodo`
+        : `${compacto(c.tokens_usados)} de ${compacto(c.tokens_limite)} tokens · se restablece ${c.reinicia_texto}`;
+    q.title = c.imagenes_limite != null ? `Imágenes: ${c.imagenes_usadas} de ${c.imagenes_limite} en este periodo` : "";
+    q.innerHTML = `<div class="q-h"><span>Plan ${esc(c.plan || "—")}</span><b>${estado}</b></div>` +
+        (c.ilimitado || c.bloqueado || c.tokens_limite == null ? "" : `<div class="q-bar"><i style="width:${pct}%"></i></div>`) +
+        `<div class="q-d">${esc(det)}</div>`;
+}
+async function cargarCuota() {
+    try { pintarCuota((await api("mi_cuota")).cuota); } catch { /* el medidor es informativo */ }
+}
+
 /* ── Panel de administración (solo admin) ── */
-async function abrirAdmin() {
+const DIAS_SEM = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const ZONAS = ["America/Guatemala", "America/El_Salvador", "America/Tegucigalpa", "America/Managua", "America/Costa_Rica", "America/Mexico_City", "America/Bogota", "America/Lima", "America/New_York", "Europe/Madrid", "UTC"];
+const hh = h => String(h).padStart(2, "0") + ":00";
+const textoPeriodo = p => p.periodo === "semana" ? `Cada ${DIAS_SEM[(p.dia_reinicio - 1) % 7].toLowerCase()} a las ${hh(p.hora_reinicio)}`
+    : p.periodo === "mes" ? `El día ${p.dia_reinicio} de cada mes a las ${hh(p.hora_reinicio)}` : `Cada día a las ${hh(p.hora_reinicio)}`;
+const nombrePer = p => ({ dia: "día", semana: "semana", mes: "mes" })[p] || "día";
+let adTab = "cuotas", adDatos = null, adFiltro = "";
+
+function abrirAdmin() {
     $("adminModal").classList.add("open");
+    $("adminTabs").querySelectorAll("button").forEach(b => b.classList.toggle("act", b.dataset.tab === adTab));
+    pintarTab();
+}
+$("adminTabs").addEventListener("click", e => {
+    const b = e.target.closest("[data-tab]"); if (!b) return;
+    adTab = b.dataset.tab; $("adminTabs").querySelectorAll("button").forEach(x => x.classList.toggle("act", x === b)); pintarTab();
+});
+async function pintarTab() {
     const cont = $("adminBody"); cont.innerHTML = '<div class="dots"><i></i><i></i><i></i></div>';
     try {
+        if (adTab === "uso") return await pintarUso(cont);
+        adDatos = await api("admin_cuotas");
+        adTab === "planes" ? pintarPlanes(cont) : pintarCuotas(cont);
+    } catch (e) { cont.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function chipEstado(c) {
+    if (!c) return '<span class="chip">—</span>';
+    if (c.bloqueado) return '<span class="chip off">Pausado</span>';
+    if (c.ilimitado) return '<span class="chip inf">Ilimitado</span>';
+    if (c.tokens_restantes === 0) return '<span class="chip full">Límite alcanzado</span>';
+    if (c.tokens_limite && c.tokens_usados / (c.tokens_limite + c.tokens_extra) >= .8) return '<span class="chip warn">Cerca del límite</span>';
+    return '<span class="chip ok">Activo</span>';
+}
+function barraConsumo(c) {
+    if (!c) return "—";
+    if (c.ilimitado || c.tokens_limite == null) return `<span class="q-num">${compacto(c.tokens_usados)}</span> <small>sin límite</small>`;
+    const total = c.tokens_limite + c.tokens_extra, pct = Math.min(100, Math.round(c.tokens_usados / Math.max(total, 1) * 100));
+    return `<div class="ad-q ${pct >= 100 ? "full" : pct >= 80 ? "warn" : ""}"><div class="q-bar"><i style="width:${pct}%"></i></div><span>${compacto(c.tokens_usados)} / ${compacto(total)}${c.tokens_extra ? ` <small>(+${compacto(c.tokens_extra)} extra)</small>` : ""}</span></div>`;
+}
+
+function pintarCuotas(cont) {
+    const q = adFiltro.trim().toLowerCase();
+    const us = adDatos.usuarios.filter(u => !q || (u.nombre + " " + u.correo).toLowerCase().includes(q));
+    const n = k => adDatos.usuarios.filter(u => k(u.cuota || {})).length;
+    cont.innerHTML =
+        `<div class="ad-stats"><div><b>${adDatos.usuarios.length}</b><span>Usuarios</span></div><div><b>${n(c => c.ilimitado)}</b><span>Ilimitados</span></div><div><b>${n(c => !c.ilimitado && c.tokens_restantes === 0)}</b><span>En su límite</span></div><div><b>${n(c => c.bloqueado)}</b><span>Pausados</span></div></div>` +
+        `<div class="ad-bar-top"><input type="search" id="adBuscar" placeholder="Buscar usuario" value="${esc(adFiltro)}" autocomplete="off"></div>` +
+        `<div class="tw"><table><thead><tr><th>Usuario</th><th>Plan</th><th>Consumo del periodo</th><th>Imágenes</th><th>Se restablece</th><th>Estado</th><th></th></tr></thead><tbody>` +
+        (us.map(u => { const c = u.cuota; return `<tr><td>${esc(u.nombre || "—")}<br><small>${esc(u.correo || "")}</small></td>` +
+            `<td>${esc(c?.plan_nombre || "—")}${c?.personalizado ? ' <small title="Tiene ajustes propios">· personalizado</small>' : ""}</td>` +
+            `<td>${barraConsumo(c)}</td><td>${c ? (c.imagenes_limite == null ? `${c.imagenes_usadas} <small>/ ∞</small>` : `${c.imagenes_usadas} / ${c.imagenes_limite}`) : "—"}</td>` +
+            `<td>${c ? esc(c.reinicia_texto) : "—"}</td><td>${chipEstado(c)}</td>` +
+            `<td><button class="ad-btn" data-gest="${u.id}">Gestionar</button></td></tr>`; }).join("") || `<tr><td colspan="7"><small>Sin resultados.</small></td></tr>`) +
+        `</tbody></table></div>`;
+    const inp = $("adBuscar");
+    inp.addEventListener("input", () => { adFiltro = inp.value; pintarCuotas(cont); const i = $("adBuscar"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); });
+}
+
+const aLocal = iso => { if (!iso) return ""; const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+const ACCIONES_HIST = { cuota_editada: "Ajustes actualizados", consumo_reiniciado: "Consumo reiniciado" };
+const CAMPOS_HIST = { plan_id: "plan", ilimitado: "ilimitado", bloqueado: "pausado", motivo_bloqueo: "motivo", tokens_limite: "límite", tokens_extra: "tokens extra", extra_hasta: "extra vence", notas: "notas" };
+function resumenCambio(h) {
+    const d = h.detalle || {};
+    const partes = Object.entries(d).map(([k, v]) => {
+        if (k === "plan_id") return "plan: " + (adDatos.planes.find(p => p.id === v)?.nombre || "predeterminado");
+        if (typeof v === "boolean") return `${CAMPOS_HIST[k] || k}: ${v ? "sí" : "no"}`;
+        if (k === "extra_hasta") return "extra vence: " + (v ? new Date(v).toLocaleString("es", { dateStyle: "short", timeStyle: "short" }) : "nunca");
+        if (k === "tokens_limite" || k === "tokens_extra") return `${CAMPOS_HIST[k]}: ${v == null ? "del plan" : compacto(v)}`;
+        return `${CAMPOS_HIST[k] || k}: ${v ?? "—"}`;
+    });
+    return partes.join(" · ");
+}
+
+async function gestionarUsuario(id) {
+    const u = adDatos.usuarios.find(x => x.id === id); if (!u) return;
+    const c = u.cuota || {}, a = u.ajustes || {}, cont = $("adminBody");
+    const pred = adDatos.planes.find(p => p.predeterminado);
+    cont.innerHTML =
+        `<button class="ad-back" data-volver>← Usuarios</button>` +
+        `<div class="ad-user"><div><b>${esc(u.nombre || "—")}</b><small>${esc(u.correo || "")} · ${esc(u.rol || "")}</small></div>${chipEstado(c)}</div>` +
+        `<div class="ad-now">${barraConsumo(c)}<small>Periodo actual: desde ${c.inicio ? new Date(c.inicio).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" }) : "—"} · se restablece ${esc(c.reinicia_texto || "—")}</small></div>` +
+        `<form class="ad-form" id="fCuota">` +
+        `<label>Plan<select name="plan_id"><option value="">Predeterminado${pred ? ` (${esc(pred.nombre)})` : ""}</option>${adDatos.planes.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join("")}</select></label>` +
+        `<label class="ad-sw"><input type="checkbox" name="ilimitado"> <span><b>Ilimitado</b><small>Sin límite de tokens, imágenes ni mensajes por hora, sin importar el plan.</small></span></label>` +
+        `<div class="ad-2"><label>Límite propio de tokens por periodo<input name="tokens_limite" type="number" min="0" step="1000" placeholder="El del plan"></label>` +
+        `<label>Tokens extra (bono)<input name="tokens_extra" type="number" min="0" step="1000" placeholder="0"></label></div>` +
+        `<label>El bono vence<input name="extra_hasta" type="datetime-local"><small>Vacío: el bono no vence (se suma en cada periodo).</small></label>` +
+        `<label class="ad-sw"><input type="checkbox" name="bloqueado"> <span><b>Pausar acceso a la IA</b><small>El usuario no podrá enviar mensajes hasta que lo reactives.</small></span></label>` +
+        `<label>Motivo visible para el usuario<input name="motivo_bloqueo" maxlength="200" placeholder="Opcional"></label>` +
+        `<label>Notas internas<textarea name="notas" rows="2" maxlength="500" placeholder="Solo las ven los administradores"></textarea></label>` +
+        `<div class="ad-acts"><button type="submit" class="ad-btn pri">Guardar cambios</button><button type="button" class="ad-btn" data-reset>Reiniciar consumo ahora</button></div></form>` +
+        `<div class="ad-h">Historial</div><div id="adHist"><div class="dots"><i></i><i></i><i></i></div></div>`;
+    // El formulario muestra los ajustes guardados del usuario (no el estado calculado con el plan)
+    const f = $("fCuota");
+    f.plan_id.value = a.plan_id ?? ""; f.ilimitado.checked = !!a.ilimitado; f.tokens_limite.value = a.tokens_limite ?? "";
+    f.tokens_extra.value = a.tokens_extra || ""; f.extra_hasta.value = aLocal(a.extra_hasta);
+    f.bloqueado.checked = !!a.bloqueado; f.motivo_bloqueo.value = a.motivo_bloqueo || ""; f.notas.value = a.notas || "";
+    const sync = () => { f.motivo_bloqueo.closest("label").style.display = f.bloqueado.checked ? "" : "none"; f.tokens_limite.disabled = f.ilimitado.checked; };
+    f.bloqueado.onchange = f.ilimitado.onchange = sync; sync();
+    f.onsubmit = async e => {
+        e.preventDefault();
+        const b = f.querySelector("[type=submit]"); b.disabled = true;
+        try {
+            await api("admin_cuota_guardar", { cuota: {
+                usuario_id_objetivo: id, plan_id: f.plan_id.value || null, ilimitado: f.ilimitado.checked, bloqueado: f.bloqueado.checked,
+                motivo_bloqueo: f.motivo_bloqueo.value, tokens_limite: f.tokens_limite.value === "" ? null : +f.tokens_limite.value,
+                tokens_extra: f.tokens_extra.value === "" ? 0 : +f.tokens_extra.value,
+                extra_hasta: f.extra_hasta.value ? new Date(f.extra_hasta.value).toISOString() : null, notas: f.notas.value } });
+            toast("Cambios guardados"); adDatos = await api("admin_cuotas"); gestionarUsuario(id); if (id === usuario.id) cargarCuota();
+        } catch (err) { toast(err.message); b.disabled = false; }
+    };
+    f.querySelector("[data-reset]").onclick = async () => {
+        if (!await confirmar({ titulo: "Reiniciar consumo", mensaje: `El consumo del periodo actual de ${u.nombre || "este usuario"} volverá a cero desde este momento. El historial de uso se conserva.`, ok: "Reiniciar" })) return;
+        try { await api("admin_cuota_reiniciar", { usuario_id_objetivo: id }); toast("Consumo reiniciado"); adDatos = await api("admin_cuotas"); gestionarUsuario(id); if (id === usuario.id) cargarCuota(); }
+        catch (err) { toast(err.message); }
+    };
+    try {
+        const h = await api("admin_cuota_historial", { usuario_id_objetivo: id }), fecha = s => new Date(s).toLocaleString("es", { dateStyle: "short", timeStyle: "short" });
+        $("adHist").innerHTML =
+            (h.cambios.length ? `<ul class="ad-log">${h.cambios.map(x => `<li><b>${ACCIONES_HIST[x.accion] || x.accion}</b> <small>${fecha(x.created_at)}${x.admin?.nombre ? " · " + esc(x.admin.nombre) : ""}</small>${x.accion === "cuota_editada" ? `<div>${esc(resumenCambio(x))}</div>` : ""}</li>`).join("")}</ul>` : `<p class="ad-nota">Sin cambios registrados.</p>`) +
+            `<div class="ad-h">Últimos usos</div>` +
+            (h.uso.length ? `<div class="tw"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Modelo</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>${h.uso.map(x => `<tr><td>${fecha(x.created_at)}</td><td>${x.tipo === "imagen" ? "Imagen" : "Mensaje"}</td><td>${esc(x.modelo || "—")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_entrada ?? 0).toLocaleString("es")}</td><td>${x.tipo === "imagen" ? "—" : (x.tokens_salida ?? 0).toLocaleString("es")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="ad-nota">Aún no ha usado la IA.</p>`);
+    } catch (err) { $("adHist").innerHTML = `<div class="err">${esc(err.message)}</div>`; }
+}
+
+function pintarPlanes(cont) {
+    const enPlan = id => adDatos.usuarios.filter(u => u.cuota?.plan_id === id).length;
+    const lim = (v, suf) => v == null ? "Sin límite" : `${compacto(v)} ${suf}`;
+    cont.innerHTML =
+        `<div class="ad-bar-top"><p class="ad-nota">Los planes definen cuánto puede usar cada persona y cuándo se restablece su consumo. Los usuarios sin plan asignado usan el <b>predeterminado</b>.</p><button class="ad-btn pri" data-plan-nuevo>+ Nuevo plan</button></div>` +
+        `<div class="ad-planes">${adDatos.planes.map(p => `<div class="ad-plan${p.predeterminado ? " pred" : ""}">` +
+            `<div class="ap-h"><b>${esc(p.nombre)}</b>${p.predeterminado ? '<span class="chip ok">Predeterminado</span>' : ""}${p.ilimitado ? '<span class="chip inf">Ilimitado</span>' : ""}</div>` +
+            (p.descripcion ? `<p>${esc(p.descripcion)}</p>` : "") +
+            (p.ilimitado ? `<ul><li>Tokens, imágenes y mensajes sin límite</li></ul>` :
+            `<ul><li><span>Tokens</span><b>${lim(p.tokens_limite, "por " + nombrePer(p.periodo))}</b></li><li><span>Imágenes</span><b>${lim(p.imagenes_limite, "por " + nombrePer(p.periodo))}</b></li><li><span>Mensajes</span><b>${lim(p.mensajes_hora, "por hora")}</b></li><li><span>Se restablece</span><b>${textoPeriodo(p)}</b></li></ul>`) +
+            `<div class="ap-f"><small>${enPlan(p.id)} usuario(s) · ${esc(p.zona_horaria)}</small><span><button class="ad-btn" data-plan-ed="${p.id}">Editar</button>${p.predeterminado ? "" : `<button class="ad-btn peligro" data-plan-del="${p.id}">Eliminar</button>`}</span></div></div>`).join("")}</div>`;
+}
+
+function formPlan(p = {}) {
+    const cont = $("adminBody"), nuevo = !p.id;
+    const zonas = [...new Set([p.zona_horaria || "America/Guatemala", ...ZONAS])];
+    cont.innerHTML =
+        `<button class="ad-back" data-tab-volver="planes">← Planes</button><div class="ad-h">${nuevo ? "Nuevo plan" : "Editar plan"}</div>` +
+        `<form class="ad-form" id="fPlan">` +
+        `<div class="ad-2"><label>Nombre<input name="nombre" required maxlength="60"></label><label>Descripción<input name="descripcion" maxlength="200" placeholder="Opcional"></label></div>` +
+        `<label class="ad-sw"><input type="checkbox" name="ilimitado"> <span><b>Plan ilimitado</b><small>Sin límite de tokens, imágenes ni mensajes por hora.</small></span></label>` +
+        `<div class="ad-lim"><div class="ad-3"><label>Tokens por periodo<input name="tokens_limite" type="number" min="0" step="1000"></label>` +
+        `<label>Imágenes por periodo<input name="imagenes_limite" type="number" min="0" placeholder="Sin límite"></label>` +
+        `<label>Mensajes por hora<input name="mensajes_hora" type="number" min="1" placeholder="Sin límite"></label></div>` +
+        `<div class="ad-presets"><small>Rápido:</small>${[[50e3, "50 mil"], [200e3, "200 mil"], [500e3, "500 mil"], [1e6, "1 millón"], [5e6, "5 millones"]].map(([v, t]) => `<button type="button" class="ad-btn" data-tok="${v}">${t}</button>`).join("")}</div></div>` +
+        `<div class="ad-h">Restablecimiento del consumo</div>` +
+        `<div class="ad-3"><label>Periodo<select name="periodo"><option value="dia">Diario</option><option value="semana">Semanal</option><option value="mes">Mensual</option></select></label>` +
+        `<label class="ad-dia">Día<select name="dia_reinicio"></select></label>` +
+        `<label>Hora<select name="hora_reinicio">${Array.from({ length: 24 }, (_, h) => `<option value="${h}">${hh(h)}</option>`).join("")}</select></label></div>` +
+        `<label>Zona horaria<select name="zona_horaria">${zonas.map(z => `<option>${esc(z)}</option>`).join("")}</select></label>` +
+        `<p class="ad-nota" id="fPlanRes"></p>` +
+        `<label class="ad-sw"><input type="checkbox" name="predeterminado"> <span><b>Plan predeterminado</b><small>Se aplica a todos los usuarios que no tienen un plan asignado.</small></span></label>` +
+        `<div class="ad-acts"><button type="submit" class="ad-btn pri">${nuevo ? "Crear plan" : "Guardar plan"}</button></div></form>`;
+    const f = $("fPlan");
+    f.nombre.value = p.nombre || ""; f.descripcion.value = p.descripcion || ""; f.ilimitado.checked = !!p.ilimitado;
+    f.tokens_limite.value = p.tokens_limite ?? (nuevo ? 200000 : ""); f.imagenes_limite.value = p.imagenes_limite ?? ""; f.mensajes_hora.value = p.mensajes_hora ?? (nuevo ? 60 : "");
+    f.periodo.value = p.periodo || "dia"; f.hora_reinicio.value = p.hora_reinicio ?? 0; f.zona_horaria.value = p.zona_horaria || "America/Guatemala"; f.predeterminado.checked = !!p.predeterminado;
+    const dias = () => {
+        const per = f.periodo.value, prev = +f.dia_reinicio.value || p.dia_reinicio || 1;
+        f.dia_reinicio.innerHTML = per === "semana" ? DIAS_SEM.map((d, i) => `<option value="${i + 1}">${d}</option>`).join("") : Array.from({ length: 28 }, (_, i) => `<option value="${i + 1}">Día ${i + 1}</option>`).join("");
+        f.dia_reinicio.value = Math.min(prev, per === "semana" ? 7 : 28);
+        f.querySelector(".ad-dia").style.display = per === "dia" ? "none" : "";
+    };
+    const sync = () => {
+        f.querySelector(".ad-lim").style.display = f.ilimitado.checked ? "none" : "";
+        $("fPlanRes").textContent = `${textoPeriodo({ periodo: f.periodo.value, dia_reinicio: +f.dia_reinicio.value || 1, hora_reinicio: +f.hora_reinicio.value })} (${f.zona_horaria.value}), el consumo de cada usuario vuelve a cero.`;
+    };
+    dias(); sync();
+    f.periodo.onchange = () => { dias(); sync(); }; f.dia_reinicio.onchange = f.hora_reinicio.onchange = f.zona_horaria.onchange = f.ilimitado.onchange = sync;
+    f.querySelectorAll("[data-tok]").forEach(b => b.onclick = () => { f.tokens_limite.value = b.dataset.tok; });
+    f.onsubmit = async e => {
+        e.preventDefault();
+        const b = f.querySelector("[type=submit]"); b.disabled = true;
+        const v = k => f[k].value === "" ? null : +f[k].value;
+        try {
+            await api("admin_plan_guardar", { plan: {
+                id: p.id, nombre: f.nombre.value, descripcion: f.descripcion.value, ilimitado: f.ilimitado.checked,
+                tokens_limite: v("tokens_limite"), imagenes_limite: v("imagenes_limite"), mensajes_hora: v("mensajes_hora"),
+                periodo: f.periodo.value, dia_reinicio: +f.dia_reinicio.value || 1, hora_reinicio: +f.hora_reinicio.value,
+                zona_horaria: f.zona_horaria.value, predeterminado: f.predeterminado.checked } });
+            toast(nuevo ? "Plan creado" : "Plan guardado"); adTab = "planes"; pintarTab(); cargarCuota();
+        } catch (err) { toast(err.message); b.disabled = false; }
+    };
+}
+
+$("adminBody").addEventListener("click", async e => {
+    const g = e.target.closest("[data-gest]"); if (g) return gestionarUsuario(+g.dataset.gest);
+    if (e.target.closest("[data-volver]")) return pintarCuotas($("adminBody"));
+    const tv = e.target.closest("[data-tab-volver]"); if (tv) return pintarPlanes($("adminBody"));
+    if (e.target.closest("[data-plan-nuevo]")) return formPlan();
+    const ed = e.target.closest("[data-plan-ed]"); if (ed) return formPlan(adDatos.planes.find(p => p.id === +ed.dataset.planEd));
+    const del = e.target.closest("[data-plan-del]");
+    if (del) {
+        const p = adDatos.planes.find(x => x.id === +del.dataset.planDel); if (!p) return;
+        if (!await confirmar({ titulo: "Eliminar plan", mensaje: `Se eliminará el plan «${p.nombre}». Los usuarios que lo tenían pasarán al plan predeterminado.`, ok: "Eliminar", peligro: true })) return;
+        try { await api("admin_plan_eliminar", { id: p.id }); toast("Plan eliminado"); pintarTab(); cargarCuota(); } catch (err) { toast(err.message); }
+    }
+});
+
+async function pintarUso(cont) {
         const d = await api("admin_uso"), max = Math.max(1, ...d.mensajes_por_dia.map(x => x.n));
         const num = n => Number(n).toLocaleString("es"), usd = n => n == null ? "—" : "$" + Number(n).toFixed(2);
         cont.innerHTML =
@@ -606,7 +831,6 @@ async function abrirAdmin() {
             `<div class="ad-h">Uso por usuario</div><div class="tw"><table><thead><tr><th>Usuario</th><th>Mensajes</th><th>Imágenes</th><th>Tokens</th><th>Conv.</th><th>Costo</th><th>Último uso</th></tr></thead><tbody>` +
             d.usuarios.map(u => `<tr><td>${esc(u.nombre)}<br><small>${esc(u.correo)}</small></td><td>${num(u.mensajes)}</td><td>${num(u.imagenes)}</td><td>${num(u.tokens_entrada + u.tokens_salida)}</td><td>${num(u.conversaciones)}</td><td>${usd(u.costo_usd)}</td><td>${u.ultimo ? new Date(u.ultimo).toLocaleDateString("es") : "—"}</td></tr>`).join("") + `</tbody></table></div>` +
             (d.costo_configurado ? "" : `<p class="ad-nota">Para ver el costo estimado, agrega en Supabase (Edge Functions → Secrets) los precios de tu modelo: <code>IA_PRECIO_ENTRADA_USD_1M</code>, <code>IA_PRECIO_SALIDA_USD_1M</code> e <code>IA_PRECIO_IMAGEN_USD</code>. Los mensajes y tokens ya se registran.</p>`);
-    } catch (e) { cont.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
 $("adminModal").addEventListener("click", e => { if (e.target.id === "adminModal" || e.target.closest("[data-admin-x]")) $("adminModal").classList.remove("open"); });
 
@@ -656,7 +880,7 @@ async function tieneAcceso(clave) {
     aplicarTema();
     $("meAv").innerHTML = avatarHtml;$("meNm").textContent = usuario.nombre || usuario.correo; $("meRl").textContent = usuario.rol || "";
     if (usuario.rol === "admin") { $("btnAdmin").style.display = ""; $("btnAdmin").onclick = abrirAdmin; }
-    pintarAdjuntos(); estadoBoton(); inicio(); pintarLista();
+    pintarAdjuntos(); estadoBoton(); inicio(); pintarLista(); cargarCuota();
     const preguntaInicial = new URLSearchParams(location.search).get("q");
     if (preguntaInicial) { history.replaceState(null, "", location.pathname + location.hash); setTimeout(() => ejecutar({ texto: preguntaInicial.slice(0, 2000) }), 300); }
     try {

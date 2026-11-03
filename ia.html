@@ -7,7 +7,7 @@
     <link rel="icon" href="img/logo-ia.webp">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="ia.css?v=20261103b">
+    <link rel="stylesheet" href="ia.css?v=20261103c">
 </head>
 <body>
 <div class="app" id="app">
@@ -29,6 +29,7 @@
                 <div class="av" id="meAv">--</div>
                 <div><div class="nm" id="meNm">Cargando…</div><div class="rl" id="meRl"></div></div>
             </div>
+            <div class="quota" id="quota" style="display:none"></div>
             <button class="btn-admin" id="btnAdmin" style="display:none">Administración · uso de la IA</button>
             <div class="foot-links">
                 <button id="btnVolver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Aplicaciones</button>
@@ -65,12 +66,12 @@
     </main>
 </div>
 <div class="toast" id="toast"></div>
-<div class="modal" id="adminModal"><div class="modal-card"><div class="modal-h"><b>Administración · uso de la IA</b><button data-admin-x aria-label="Cerrar">&times;</button></div><div class="modal-b" id="adminBody"></div></div></div>
+<div class="modal" id="adminModal"><div class="modal-card"><div class="modal-h"><b>Administración · uso de la IA</b><button data-admin-x aria-label="Cerrar">&times;</button></div><div class="ad-tabs" id="adminTabs" role="tablist"><button data-tab="cuotas" role="tab">Usuarios y cuotas</button><button data-tab="planes" role="tab">Planes</button><button data-tab="uso" role="tab">Consumo (30 días)</button></div><div class="modal-b" id="adminBody"></div></div></div>
 <div class="modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="cfTitulo"><div class="modal-card cf-card"><div class="cf-b"><h3 id="cfTitulo"></h3><p id="cfMensaje"></p></div><div class="cf-btns"><button type="button" class="cf-no" id="cfNo">Cancelar</button><button type="button" class="cf-ok" id="cfOk">Aceptar</button></div></div></div>
 <div class="lightbox" id="lb"><button class="lb-x" aria-label="Cerrar">&times;</button><img alt=""></div>
 <div class="dropzone" id="drop">Suelta la imagen para adjuntarla</div>
 
 <script src="sesion.js?v=20261103b"></script>
-<script src="ia.js?v=20261103b"></script>
+<script src="ia.js?v=20261103c"></script>
 </body>
 </html>

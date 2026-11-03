@@ -9,6 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { HERRAMIENTAS_ACCION, NOMBRES_ACCION, proponer, resolver, infoAcciones } from "./acciones.ts";
 import { resumenDia, usoAdmin } from "./admin.ts";
 import { estadoKb, sincronizar, listarKb, leerKb, buscarKb, contextoKb } from "./kb.ts";
+import { estadoCuota, motivoRechazo, imagenesDisponibles, vistaUsuario, panelCuotas, guardarPlan, eliminarPlan, guardarCuota, reiniciarCuota, historialCuota } from "./cuotas.ts";
 
 const OPENAI = "https://api.openai.com/v1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -21,6 +22,7 @@ const CORS = {
   "Access-Control-Expose-Headers": "X-Conversacion-Id, X-Titulo, X-Modelo",
 };
 
+// Límites heredados: solo se usan si la migración de cuotas (ia_planes / ia_cuotas) aún no está aplicada.
 const LIM_MENSAJES_HORA = Number(Deno.env.get("IA_LIMITE_MENSAJES_HORA") ?? 60);
 const LIM_IMAGENES_DIA = Number(Deno.env.get("IA_LIMITE_IMAGENES_DIA") ?? 20);
 const MAX_CHARS = 6000;
@@ -89,11 +91,13 @@ function mensajeAmigable(status: number, cuerpo: string): string {
   return "La IA no pudo responder en este momento.";
 }
 
-function cuerpoChat(modelo: string, messages: any[], stream: boolean, tools?: any[]) {
+// maxSalida: tope de tokens de respuesta según lo que le queda al usuario en su cuota.
+function cuerpoChat(modelo: string, messages: any[], stream: boolean, tools?: any[], maxSalida?: number) {
   const b: any = { model: modelo, messages, stream };
   if (stream) b.stream_options = { include_usage: true };
-  if (esRazonador(modelo)) b.max_completion_tokens = 12000;
-  else { b.max_completion_tokens = 3000; b.temperature = 0.4; }
+  const tope = (n: number) => maxSalida ? Math.min(n, Math.max(maxSalida, esRazonador(modelo) ? 2000 : 500)) : n;
+  if (esRazonador(modelo)) b.max_completion_tokens = tope(12000);
+  else { b.max_completion_tokens = tope(3000); b.temperature = 0.4; }
   if (tools?.length) { b.tools = tools; b.tool_choice = "auto"; }
   return JSON.stringify(b);
 }
@@ -101,17 +105,17 @@ function cuerpoChat(modelo: string, messages: any[], stream: boolean, tools?: an
 type Apertura = { modelo: string; stream: Response | null; completo: any | null };
 
 // Prueba los modelos en orden hasta que uno responda. Si un modelo no permite streaming, reintenta sin él.
-async function abrirChat(key: string, candidatos: string[], messages: any[], tools?: any[], recordar = true): Promise<Apertura> {
+async function abrirChat(key: string, candidatos: string[], messages: any[], tools?: any[], recordar = true, maxSalida?: number): Promise<Apertura> {
   const errores: { modelo: string; status: number; detalle: string }[] = [];
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${key}` };
   for (const modelo of candidatos) {
     const exp = bloqueados.get(modelo);
     if (exp && exp > Date.now()) continue;
-    let r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, true, tools) });
+    let r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, true, tools, maxSalida) });
     if (r.ok && r.body) { if (recordar) modeloQueFunciona = modelo; return { modelo, stream: r, completo: null }; }
     let txt = await r.text();
     if (/stream/i.test(txt) && r.status === 400) {
-      r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, false, tools) });
+      r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, false, tools, maxSalida) });
       if (r.ok) { if (recordar) modeloQueFunciona = modelo; return { modelo, stream: null, completo: await r.json() }; }
       txt = await r.text();
     }
@@ -338,6 +342,26 @@ Deno.serve(async (req) => {
       case "admin_uso":
         if (user.rol !== "admin") return json({ error: "Solo administradores" }, 403);
         return json(await usoAdmin(db));
+      case "mi_cuota": {
+        const e = await estadoCuota(db, user.id);
+        return json({ cuota: e ? vistaUsuario(e) : null });
+      }
+      case "admin_cuotas":
+      case "admin_plan_guardar":
+      case "admin_plan_eliminar":
+      case "admin_cuota_guardar":
+      case "admin_cuota_reiniciar":
+      case "admin_cuota_historial": {
+        if (user.rol !== "admin") return json({ error: "Solo administradores" }, 403);
+        try {
+          if (p.accion === "admin_cuotas") return json(await panelCuotas(db));
+          if (p.accion === "admin_plan_guardar") return json(await guardarPlan(db, user, p.plan ?? {}));
+          if (p.accion === "admin_plan_eliminar") return json(await eliminarPlan(db, user, Number(p.id)));
+          if (p.accion === "admin_cuota_guardar") return json(await guardarCuota(db, user, p.cuota ?? {}));
+          if (p.accion === "admin_cuota_reiniciar") return json(await reiniciarCuota(db, user, Number(p.usuario_id_objetivo)));
+          return json(await historialCuota(db, Number(p.usuario_id_objetivo)));
+        } catch (e) { return json({ error: (e as any)?.message ?? "No se pudo completar la operación." }, 400); }
+      }
       case "accion_info":
         return json({ acciones: await infoAcciones(db, user, (Array.isArray(p.ids) ? p.ids : []).filter((x: any) => UUID.test(String(x)))) });
       case "accion_resolver": {
@@ -425,9 +449,13 @@ async function chat(db: any, user: any, p: Record<string, any>) {
   const key = Deno.env.get("OPENAI_API_KEY");
   if (!key) return json({ error: "La IA aún no está configurada en el servidor." }, 503);
 
-  // Límite de uso
-  if (await usoReciente(db, user.id, "mensaje", 3600_000) >= LIM_MENSAJES_HORA)
-    return json({ error: `Alcanzaste el límite de ${LIM_MENSAJES_HORA} mensajes por hora. Intenta de nuevo más tarde.` }, 429);
+  // Cuota del usuario (plan, tokens del periodo, bloqueo) y límite anti-abuso de mensajes por hora
+  const cuota = await estadoCuota(db, user.id);
+  const rechazo = cuota ? motivoRechazo(cuota) : null;
+  if (rechazo) return json({ error: rechazo, cuota: vistaUsuario(cuota!) }, cuota!.bloqueado ? 403 : 429);
+  const limHora = cuota ? (cuota.ilimitado ? null : cuota.mensajes_hora) : LIM_MENSAJES_HORA;
+  if (limHora && await usoReciente(db, user.id, "mensaje", 3600_000) >= limHora)
+    return json({ error: `Alcanzaste el límite de ${limHora} mensajes por hora. Intenta de nuevo en unos minutos.` }, 429);
 
   const regenerar = p.regenerar === true;
   let texto = String(p.mensaje ?? "").trim().slice(0, MAX_CHARS);
@@ -487,7 +515,7 @@ async function chat(db: any, user: any, p: Record<string, any>) {
   }).reverse();
 
   const imagenesOk = (await candidatosImagen(key).catch(() => [])).length > 0
-    && (await usoReciente(db, user.id, "imagen", 86400_000)) < LIM_IMAGENES_DIA;
+    && (cuota ? imagenesDisponibles(cuota) : (await usoReciente(db, user.id, "imagen", 86400_000)) < LIM_IMAGENES_DIA);
   // Datos del área de IT solo para quien tiene acceso a esa aplicación
   const contexto = (await tieneAcceso(db, user.id, "it")) ? await contextoEnVivo(db) : null;
 
@@ -498,7 +526,8 @@ async function chat(db: any, user: any, p: Record<string, any>) {
   const messages = [{ role: "system", content: promptSistema(user, contexto, imagenesOk, kb?.prompt ?? "") }, ...mensajesModelo];
   const candidatos = await candidatosChat(key);
   const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
-  const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined);
+  const maxSalida = cuota && !cuota.ilimitado && cuota.tokens_restantes !== null ? cuota.tokens_restantes : undefined;
+  const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined, true, maxSalida);
   log("info", "chat", { usuario: user.id, modelo: apertura.modelo, regenerar, adjuntos: urlsAdjuntos.length });
 
   const enc = new TextEncoder(), dec = new TextDecoder();
@@ -578,6 +607,9 @@ async function chat(db: any, user: any, p: Record<string, any>) {
       } finally {
         if (completo) {
           await db.from("ia_mensajes").insert({ conversacion_id: convId, rol: "assistant", contenido: completo });
+          // Si la respuesta se cortó antes de que OpenAI informara el uso, se estima (~4 caracteres por token)
+          // para que detener la respuesta no deje el consumo sin contar.
+          if (!uso.entrada && !uso.salida) uso = { entrada: Math.ceil(JSON.stringify(messages).length / 4), salida: Math.ceil(completo.length / 4) };
           if (usoId && (uso.entrada || uso.salida)) await db.from("ia_uso").update({ tokens_entrada: uso.entrada, tokens_salida: uso.salida }).eq("id", usoId);
           await db.from("ia_conversaciones").update({ updated_at: new Date().toISOString() }).eq("id", convId);
         }
