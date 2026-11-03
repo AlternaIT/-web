@@ -936,7 +936,6 @@
     function abrirModalNuevoUsuario() {
         document.getElementById("nuNombre").value   = "";
         document.getElementById("nuCorreo").value   = "";
-        document.getElementById("nuPassword").value = "";
         document.getElementById("nuRol").value      = "usuario";
         document.getElementById("nuMsg").textContent = "";
         document.getElementById("nuGuardar").disabled = false;
@@ -949,12 +948,17 @@
 
     async function guardarNuevoUsuario() {
         const nombre   = document.getElementById("nuNombre").value.trim();
-        const correo   = document.getElementById("nuCorreo").value.trim();
-        const password = document.getElementById("nuPassword").value.trim();
+        const correo   = document.getElementById("nuCorreo").value.trim().toLowerCase();
         const rol      = document.getElementById("nuRol").value;
 
-        if (!nombre || !correo || !password) {
-            document.getElementById("nuMsg").textContent = "Nombre, correo y contraseña son obligatorios.";
+        if (!nombre || !correo) {
+            document.getElementById("nuMsg").textContent = "Nombre y correo son obligatorios.";
+            document.getElementById("nuMsg").style.color = "#ef4444";
+            return;
+        }
+        // Se entra con la cuenta de Zoho: solo sirven correos de la empresa
+        if (!/^[^\s@]+@alterna\.pro$/.test(correo)) {
+            document.getElementById("nuMsg").textContent = "El correo debe ser de Zoho de la empresa (@alterna.pro).";
             document.getElementById("nuMsg").style.color = "#ef4444";
             return;
         }
@@ -964,8 +968,10 @@
         document.getElementById("nuMsg").textContent = "Guardando...";
         document.getElementById("nuMsg").style.color = "#6b7280";
 
+        // La columna contraseña es obligatoria pero ya no se usa (el login es con Zoho):
+        // se guarda una aleatoria que nadie conoce.
         const { error } = await supabaseClient.from("usuarios").insert([{
-            nombre, correo, contraseña: password, rol, activo: true
+            nombre, correo, contraseña: crypto.randomUUID() + crypto.randomUUID(), rol, activo: true
         }]);
 
         if (error) {
@@ -996,7 +1002,6 @@
         document.getElementById("fuNombreTitle").textContent = u.nombre || "—";
         document.getElementById("fuNombre").value            = u.nombre    || "";
         document.getElementById("fuCorreo").value            = u.correo    || "";
-        document.getElementById("fuPassword").value          = "";
         document.getElementById("fuRol").value               = u.rol       || "usuario";
         document.getElementById("fuActivo").value            = String(u.activo ?? true);
         document.getElementById("fuMsg").textContent         = "";
@@ -1171,7 +1176,6 @@
         const correo = document.getElementById("fuCorreo").value.trim();
         const rol    = document.getElementById("fuRol").value;
         const activo = document.getElementById("fuActivo").value === "true";
-        const pass   = document.getElementById("fuPassword").value.trim();
 
         if (!nombre || !correo) {
             document.getElementById("fuMsg").textContent = "Nombre y correo son obligatorios.";
@@ -1185,7 +1189,6 @@
         document.getElementById("fuMsg").style.color = "#6b7280";
 
         const payload = { nombre, correo, rol, activo };
-        if (pass) payload.contraseña = pass;
 
         const { error: errUsuario } = await supabaseClient.from("usuarios").update(payload).eq("id", id);
         const error = errUsuario || await guardarAccesosUsuario(id);
@@ -1686,36 +1689,6 @@
             osc.start();
             osc.stop(ctx.currentTime + 0.25);
         } catch { /* el navegador puede bloquear audio sin interacción previa */ }
-    }
-
-    async function cambiarContrasena() {
-        const actual = document.getElementById("cpActual").value;
-        const nueva  = document.getElementById("cpNueva").value;
-        const conf   = document.getElementById("cpConfirmar").value;
-        const msg    = document.getElementById("cpMsg");
-        msg.style.color = "#ef4444";
-
-        if (!actual || !nueva || !conf) { msg.textContent = "Completa los tres campos."; return; }
-        if (nueva.length < 8)           { msg.textContent = "La nueva contraseña debe tener al menos 8 caracteres."; return; }
-        if (nueva !== conf)             { msg.textContent = "La confirmación no coincide."; return; }
-
-        const { data: okPw, error: errRpc } = await supabaseClient.rpc("cambiar_contrasena", { p_actual: actual, p_nueva: nueva });
-        if (!errRpc) {
-            if (!okPw) { msg.textContent = "La contraseña actual no es correcta."; return; }
-        } else if (errRpc.code === "PGRST202") {
-            // Compatibilidad: la función segura aún no está instalada en la base de datos.
-            const { data, error } = await supabaseClient
-                .from("usuarios").select("contraseña").eq("id", usuario.id).single();
-            if (error || !data) { msg.textContent = "No se pudo verificar la contraseña actual."; return; }
-            if (data.contraseña !== actual) { msg.textContent = "La contraseña actual no es correcta."; return; }
-            const { error: errUpd } = await supabaseClient
-                .from("usuarios").update({ contraseña: nueva }).eq("id", usuario.id);
-            if (errUpd) { msg.textContent = "" + errUpd.message; return; }
-        } else { msg.textContent = "" + errRpc.message; return; }
-
-        msg.style.color = "#10b981";
-        msg.textContent = "Contraseña actualizada.";
-        ["cpActual","cpNueva","cpConfirmar"].forEach(id => document.getElementById(id).value = "");
     }
 
     // Cierre de sesión por inactividad
