@@ -45,7 +45,12 @@ const json = (body: unknown, status = 200) =>
 const esRazonador = (m: string) => /^(gpt-5|o\d)/.test(m);
 let cacheIds: { t: number; ids: string[] } | null = null;
 const bloqueados = new Map<string, number>(); // modelo -> expira (no vuelve a intentarse unos minutos)
-let modeloQueFunciona: string | null = null;
+// Último modelo que respondió bien en cada nivel (se intenta primero la próxima vez)
+const modeloQueFunciona = new Map<string, string>();
+
+// Niveles que elige el usuario: bajo = rápido y económico, medio = equilibrado, alto = el más potente.
+const NIVELES_IA = ["bajo", "medio", "alto"];
+const nivelValido = (n: unknown) => (NIVELES_IA.includes(String(n)) ? String(n) : "medio");
 
 async function listarModelos(key: string): Promise<string[]> {
   if (cacheIds && Date.now() - cacheIds.t < 30 * 60_000) return cacheIds.ids;
@@ -60,15 +65,17 @@ const porVersion = (ids: string[], re: RegExp) =>
   ids.map((id) => { const m = id.match(re); return m ? { id, v: parseFloat(m[1]) } : null; })
     .filter(Boolean).sort((a: any, b: any) => b.v - a.v).map((x: any) => x.id as string);
 
-async function candidatosChat(key: string): Promise<string[]> {
+// Modelos a probar en orden según el nivel. Cada lista termina con los demás modelos como respaldo,
+// así un nivel nunca se queda sin respuesta aunque la cuenta no tenga su modelo ideal.
+async function candidatosChat(key: string, nivel = "alto"): Promise<string[]> {
   const ids = await listarModelos(key);
-  const lista = [
-    Deno.env.get("OPENAI_MODEL"),
-    modeloQueFunciona,
-    ...porVersion(ids, /^gpt-(\d+(?:\.\d+)?)o?$/),          // más potente primero
-    ...porVersion(ids, /^gpt-(\d+(?:\.\d+)?)o?-mini$/),     // respaldos económicos
-  ].filter(Boolean) as string[];
-  const unicos = [...new Set(lista)];
+  const completos = porVersion(ids, /^gpt-(\d+(?:\.\d+)?)o?$/);       // más potente primero
+  const mini = porVersion(ids, /^gpt-(\d+(?:\.\d+)?)o?-mini$/);
+  const nano = porVersion(ids, /^gpt-(\d+(?:\.\d+)?)o?-nano$/);
+  const orden = nivel === "bajo" ? [...nano, ...mini, ...completos]
+    : nivel === "medio" ? [...mini, ...completos, ...nano]
+    : [Deno.env.get("OPENAI_MODEL"), ...completos, ...mini, ...nano];
+  const unicos = [...new Set([modeloQueFunciona.get(nivel), ...orden].filter(Boolean) as string[])];
   return unicos.length ? unicos : ["gpt-4o", "gpt-4o-mini"];
 }
 
@@ -108,18 +115,19 @@ function cuerpoChat(modelo: string, messages: any[], stream: boolean, tools?: an
 type Apertura = { modelo: string; stream: Response | null; completo: any | null };
 
 // Prueba los modelos en orden hasta que uno responda. Si un modelo no permite streaming, reintenta sin él.
-async function abrirChat(key: string, candidatos: string[], messages: any[], tools?: any[], recordar = true, maxSalida?: number): Promise<Apertura> {
+// recordar: nivel cuyo "último modelo que funcionó" se actualiza, o null para no recordar.
+async function abrirChat(key: string, candidatos: string[], messages: any[], tools?: any[], recordar: string | null = null, maxSalida?: number): Promise<Apertura> {
   const errores: { modelo: string; status: number; detalle: string }[] = [];
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${key}` };
   for (const modelo of candidatos) {
     const exp = bloqueados.get(modelo);
     if (exp && exp > Date.now()) continue;
     let r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, true, tools, maxSalida) });
-    if (r.ok && r.body) { if (recordar) modeloQueFunciona = modelo; return { modelo, stream: r, completo: null }; }
+    if (r.ok && r.body) { if (recordar) modeloQueFunciona.set(recordar, modelo); return { modelo, stream: r, completo: null }; }
     let txt = await r.text();
     if (/stream/i.test(txt) && r.status === 400) {
       r = await fetch(`${OPENAI}/chat/completions`, { method: "POST", headers, body: cuerpoChat(modelo, messages, false, tools, maxSalida) });
-      if (r.ok) { if (recordar) modeloQueFunciona = modelo; return { modelo, stream: null, completo: await r.json() }; }
+      if (r.ok) { if (recordar) modeloQueFunciona.set(recordar, modelo); return { modelo, stream: null, completo: await r.json() }; }
       txt = await r.text();
     }
     errores.push({ modelo, status: r.status, detalle: txt.slice(0, 300) });
@@ -132,7 +140,7 @@ async function abrirChat(key: string, candidatos: string[], messages: any[], too
 }
 
 async function completarSimple(key: string, candidatos: string[], messages: any[]): Promise<string> {
-  const a = await abrirChat(key, candidatos, messages, undefined, false).catch(() => null);
+  const a = await abrirChat(key, candidatos, messages, undefined, null).catch(() => null);
   if (!a) return "";
   if (a.completo) return a.completo.choices?.[0]?.message?.content ?? "";
   // consume el stream completo
@@ -296,7 +304,7 @@ Deno.serve(async (req) => {
         const { data: ms } = await db.from("ia_mensajes").select("rol, contenido").eq("conversacion_id", p.id).order("id", { ascending: true }).limit(2);
         if (!ms?.length) return json({ titulo: null });
         const resumen = ms.map((m: any) => `${m.rol === "user" ? "Usuario" : "Asistente"}: ${m.contenido.replace(/!\[[^\]]*\]\([^)]*\)/g, "[imagen]").slice(0, 400)}`).join("\n");
-        const cand = (await candidatosChat(key)).sort((a, b) => Number(/mini/.test(b)) - Number(/mini/.test(a)));
+        const cand = await candidatosChat(key, "bajo");
         const t = (await completarSimple(key, cand, [
           { role: "system", content: "Genera un título de 3 a 6 palabras, en español, que resuma esta conversación. Sin comillas, sin punto final. Responde solo con el título." },
           { role: "user", content: resumen },
@@ -320,7 +328,8 @@ Deno.serve(async (req) => {
             if (r.ok) break;
           }
         }
-        return json({ chat_candidatos: chat.slice(0, 8), imagen_candidatos: imagen, pruebas, limites: { mensajes_hora: LIM_MENSAJES_HORA, imagenes_dia: LIM_IMAGENES_DIA } });
+        const niveles = Object.fromEntries(await Promise.all(NIVELES_IA.map(async (n) => [n, (await candidatosChat(key, n))[0]])));
+        return json({ chat_candidatos: chat.slice(0, 8), niveles, imagen_candidatos: imagen, pruebas, limites: { mensajes_hora: LIM_MENSAJES_HORA, imagenes_dia: LIM_IMAGENES_DIA } });
       }
       case "resumen":
         if (!(await tieneAcceso(db, user.id, "it"))) return json({ error: "Sin acceso a los datos de IT" }, 403);
@@ -536,11 +545,12 @@ async function chat(db: any, user: any, p: Record<string, any>) {
   const kb = ultimoUsuario.length >= 12 ? await contextoKb(db, key, user, ultimoUsuario).catch(() => null) : null;
 
   const messages = [{ role: "system", content: promptSistema(user, contexto, imagenesOk, kb?.prompt ?? "") }, ...mensajesModelo];
-  const candidatos = await candidatosChat(key);
+  const nivel = nivelValido(p.nivel);
+  const candidatos = await candidatosChat(key, nivel);
   const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...HERRAMIENTAS_AVANZADAS, ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
   const maxSalida = cuota && !cuota.ilimitado && cuota.tokens_restantes !== null ? cuota.tokens_restantes : undefined;
-  const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined, true, maxSalida);
-  log("info", "chat", { usuario: user.id, modelo: apertura.modelo, regenerar, adjuntos: urlsAdjuntos.length });
+  const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined, nivel, maxSalida);
+  log("info", "chat", { usuario: user.id, nivel, modelo: apertura.modelo, regenerar, adjuntos: urlsAdjuntos.length });
 
   const enc = new TextEncoder(), dec = new TextDecoder();
   let completo = "";
@@ -633,7 +643,7 @@ async function chat(db: any, user: any, p: Record<string, any>) {
           // Si la respuesta se cortó antes de que OpenAI informara el uso, se estima (~4 caracteres por token)
           // para que detener la respuesta no deje el consumo sin contar.
           if (!uso.entrada && !uso.salida) uso = { entrada: Math.ceil(JSON.stringify(messages).length / 4), salida: Math.ceil(completo.length / 4) };
-          if (usoId && (uso.entrada || uso.salida)) await db.from("ia_uso").update({ tokens_entrada: uso.entrada, tokens_salida: uso.salida }).eq("id", usoId);
+          if (usoId && (uso.entrada || uso.salida)) await db.from("ia_uso").update({ tokens_entrada: uso.entrada, tokens_salida: uso.salida, modelo: apertura.modelo }).eq("id", usoId);
           await db.from("ia_conversaciones").update({ updated_at: new Date().toISOString() }).eq("id", convId);
         }
         try { controller.close(); } catch { /* ya cerrado */ }

@@ -470,7 +470,7 @@ async function ejecutar({ texto = "", regen = false }) {
         const r = await fetch(ENDPOINT, {
             method: "POST", signal: abortar.signal,
             headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-            body: JSON.stringify({ accion: "chat", ...credenciales(), conversacion_id: actual, mensaje: texto, regenerar: regen, adjuntos: adj.map(({ mime, base64 }) => ({ mime, base64 })) })
+            body: JSON.stringify({ accion: "chat", ...credenciales(), nivel, conversacion_id: actual, mensaje: texto, regenerar: regen, adjuntos: adj.map(({ mime, base64 }) => ({ mime, base64 })) })
         });
         if (!r.ok) {
             if (r.status === 401) { localStorage.removeItem("usuario"); window.location.replace("index.html"); return; }
@@ -855,6 +855,34 @@ async function pintarUso(cont) {
             (d.costo_configurado ? "" : `<p class="ad-nota">Para ver el costo estimado, agrega en Supabase (Edge Functions → Secrets) los precios de tu modelo: <code>IA_PRECIO_ENTRADA_USD_1M</code>, <code>IA_PRECIO_SALIDA_USD_1M</code> e <code>IA_PRECIO_IMAGEN_USD</code>. Los mensajes y tokens ya se registran.</p>`);
 }
 $("adminModal").addEventListener("click", e => { if (e.target.id === "adminModal" || e.target.closest("[data-admin-x]")) $("adminModal").classList.remove("open"); });
+
+/* ── Nivel de la IA: tres opciones con nombres claros; el backend elige el modelo de cada una ── */
+const NIVELES = {
+    bajo:  { n: "Rápido",      d: "Respuestas al instante para preguntas sencillas y textos cortos.", i: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>', 16) },
+    medio: { n: "Equilibrado", d: "Para el día a día: correos, resúmenes, reportes y dudas generales.", i: svg('<path d="M12 3v18M5 7h14M5 7l-3 6a3 3 0 006 0L5 7zm14 0l-3 6a3 3 0 006 0l-3-6zM8 21h8"/>', 16) },
+    alto:  { n: "Avanzado",    d: "Para análisis, programación y tareas complejas. Tarda un poco más.", i: svg('<path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13z"/>', 16) },
+};
+let nivel = "medio";
+try { const g = localStorage.getItem("ia_nivel"); if (NIVELES[g]) nivel = g; } catch { /* sin storage */ }
+function pintarNivel() {
+    const v = NIVELES[nivel];
+    $("btnNivel").innerHTML = `<span class="nv-ic nv-${nivel}">${v.i}</span><span class="nv-n">${v.n}</span>${svg('<path d="M6 9l6 6 6-6"/>', 13, 'class="nv-flecha"')}`;
+    $("menuNivel").innerHTML = `<div class="nv-t">Nivel de la IA</div>` + Object.entries(NIVELES).map(([k, x]) =>
+        `<button type="button" role="menuitemradio" aria-checked="${k === nivel}" data-nivel="${k}" class="${k === nivel ? "act" : ""}"><span class="nv-ic nv-${k}">${x.i}</span><span><b>${x.n}</b><small>${x.d}</small></span>${k === nivel ? svg('<path d="M5 12l5 5L20 7"/>', 16, 'class="nv-ok"') : ""}</button>`).join("");
+}
+function menuNivel(abrir) {
+    const m = $("menuNivel"); m.hidden = !abrir; $("btnNivel").setAttribute("aria-expanded", String(abrir));
+    if (abrir) m.querySelector(".act")?.focus();
+}
+$("btnNivel").onclick = e => { e.stopPropagation(); menuNivel($("menuNivel").hidden); };
+$("menuNivel").addEventListener("click", e => {
+    const b = e.target.closest("[data-nivel]"); if (!b) return;
+    nivel = b.dataset.nivel; try { localStorage.setItem("ia_nivel", nivel); } catch { /* sin storage */ }
+    pintarNivel(); menuNivel(false); toast("Nivel: " + NIVELES[nivel].n); $("entrada").focus();
+});
+document.addEventListener("click", e => { if (!e.target.closest(".nivel")) menuNivel(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("menuNivel").hidden) { menuNivel(false); $("btnNivel").focus(); } });
+pintarNivel();
 
 /* ── Eventos ── */
 $("form").addEventListener("submit", e => { e.preventDefault(); if (enCurso) abortar?.abort(); else ejecutar({ texto: $("entrada").value }); });

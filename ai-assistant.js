@@ -164,7 +164,7 @@
             const r = await fetch(ENDPOINT, {
                 method: "POST", signal: abortar.signal,
                 headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-                body: JSON.stringify({ accion: "chat", usuario_id: usuario.id, correo: usuario.correo, token: usuario.token, conversacion_id: estado.id, mensaje: texto, regenerar: false, adjuntos: [] })
+                body: JSON.stringify({ accion: "chat", usuario_id: usuario.id, correo: usuario.correo, token: usuario.token, nivel: (() => { try { return localStorage.getItem("ia_nivel") || "medio"; } catch { return "medio"; } })(), conversacion_id: estado.id, mensaje: texto, regenerar: false, adjuntos: [] })
             });
             if (r.status === 401) { localStorage.removeItem("usuario"); window.location.href = "index.html"; return; }
             if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || "No fue posible conectar con Alterna IA."); }

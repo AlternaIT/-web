@@ -7,7 +7,7 @@
     <link rel="icon" href="img/logo-ia.webp?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="ia.css?v=20261103f">
+    <link rel="stylesheet" href="ia.css?v=20261103g">
 </head>
 <body>
 <div class="app" id="app">
@@ -57,6 +57,7 @@
                 <div class="crow">
                     <button type="button" class="attach" id="btnAdj" title="Adjuntar imagen" aria-label="Adjuntar imagen"></button>
                     <input type="file" id="fileAdj" accept="image/png,image/jpeg,image/webp" multiple hidden>
+                    <div class="nivel"><button type="button" class="nivel-btn" id="btnNivel" aria-haspopup="menu" aria-expanded="false" title="Elegir el nivel de la IA"></button><div class="nivel-menu" id="menuNivel" role="menu" hidden></div></div>
                     <textarea id="entrada" rows="1" maxlength="6000" placeholder="Escribe tu mensaje, pega una imagen o pide que genere una…"></textarea>
                     <button class="send" id="btnEnviar" type="submit" title="Enviar" disabled></button>
                 </div>
@@ -73,6 +74,6 @@
 <div class="dropzone" id="drop">Suelta la imagen para adjuntarla</div>
 
 <script src="sesion.js?v=20261103b"></script>
-<script src="ia.js?v=20261103f"></script>
+<script src="ia.js?v=20261103g"></script>
 </body>
 </html>
