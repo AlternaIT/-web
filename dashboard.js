@@ -1012,8 +1012,8 @@
     function iconoAplicacion(a, tam = 36) {
         const fondo = /^#[0-9a-f]{3,8}$/i.test(a.color || "") ? a.color : "#3a3a3c";
         const texto = (a.clave && a.clave.length <= 3 ? a.clave.toUpperCase() : (a.nombre || "?").split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase()).replace(/[^\p{L}\p{N}]/gu, "");
-        const img = a.logo_url ? `<img src="${esc(a.logo_url)}" alt="" style="width:70%;height:70%;object-fit:contain" onerror="this.replaceWith(document.createTextNode('${texto}'))">` : texto;
-        return `<div style="width:${tam}px;height:${tam}px;border-radius:10px;background:${fondo};color:#fff;display:grid;place-items:center;font-size:${Math.round(tam / 3)}px;font-weight:700;overflow:hidden;flex:none">${img}</div>`;
+        const img = a.logo_url ? `<img src="${esc(a.logo_url)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.background='${fondo}';this.replaceWith(document.createTextNode('${texto}'))">` : texto;
+        return `<div style="width:${tam}px;height:${tam}px;border-radius:10px;background:${a.logo_url ? "transparent" : fondo};color:#fff;display:grid;place-items:center;font-size:${Math.round(tam / 3)}px;font-weight:700;overflow:hidden;flex:none">${img}</div>`;
     }
 
     async function cargarAplicacionesAdmin() {
