@@ -81,8 +81,8 @@
         let t = texto.replace(/⟦fuentes:[^⟧]*⟧?/g, "");
         // Acciones e imágenes se gestionan mejor en la página completa
         const accion = /⟦accion:[0-9a-f-]{36}⟧/.test(t);
-        const marca = enCurso && (t.match(/⟦(imagen|buscando|ejecutando)⟧\s*$/) || [])[1];
-        const generando = marca && { imagen: "Generando imagen…", buscando: "Buscando en internet…", ejecutando: "Ejecutando código…" }[marca];
+        const marca = enCurso && (t.match(/⟦(imagen|buscando|ejecutando|consultando)⟧\s*$/) || [])[1];
+        const generando = marca && { imagen: "Generando imagen…", buscando: "Buscando en internet…", ejecutando: "Ejecutando código…", consultando: "Consultando datos de IT…" }[marca];
         t = t.replace(/⟦[^⟧]*⟧?/g, "").trim();
 
         let html = "", lista = null;

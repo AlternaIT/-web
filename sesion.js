@@ -20,6 +20,10 @@
             if (!r.ok) return;
             if ((await r.json()) == null) {
                 localStorage.removeItem("usuario");
+                // Enlace directo de IT (QR de equipo o ticket): se retoma después de volver a iniciar sesión
+                if (/(^|\/)it\.html$/.test(location.pathname) && /^#(equipo|ticket)=[\w-]{1,40}$/.test(location.hash)) {
+                    try { sessionStorage.setItem("alterna_volver", "it.html" + location.hash); } catch { /* sin almacenamiento */ }
+                }
                 location.replace("index.html?sesion=cerrada");
             }
         } catch { /* sin conexión: se vuelve a intentar después */ }

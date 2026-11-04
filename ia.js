@@ -134,11 +134,12 @@ function mdSinFuentes(src) {
 }
 
 // Marcas de progreso del backend: solo se muestran mientras son lo último que llegó.
-const MARCAS_RE = /⟦(imagen|buscando|ejecutando)⟧/g;
+const MARCAS_RE = /⟦(imagen|buscando|ejecutando|consultando)⟧/g;
 const MSG_RE = /⟦msg:(\d+)⟧/;
 const quitarMarcas = t => t.replace(MARCAS_RE, "").replace(/⟦msg:\d+⟧/g, "");
-const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando)⟧$/) || [])[1] || null;
+const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando|consultando)⟧$/) || [])[1] || null;
 const PROGRESO = {
+    consultando: `<div class="prog">${svg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>', 16, 'class="prog-ic late"')}<span>Consultando datos de IT</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
     buscando: `<div class="prog">${svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>', 16, 'class="prog-ic gira"')}<span>Buscando en internet</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
     ejecutando: `<div class="prog">${svg('<path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/>', 16, 'class="prog-ic late"')}<span>Ejecutando código</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
 };
@@ -1052,7 +1053,7 @@ function tarjetaAccion(a) {
     let filas = "";
     if (a.tipo === "crear_actividad") filas = F("Actividad", d.actividad) + F("Prioridad", d.prioridad) + F("Importancia", d.importancia) + F("Área", d.area) + F("Responsable", d.asignado) + F("Entrega", d.fecha_entrega) + F("Proyecto", d.proyecto_macro) + F("Notas", d.notas);
     else if (a.tipo === "actualizar_actividad") filas = F("Actividad", "#" + d.id + " " + (d.titulo || "")) + Object.entries(d.cambios || {}).map(([k, v]) => F(ETIQ[k] || k, (v.antes ?? "—") + "  →  " + (v.despues ?? "—"))).join("");
-    else filas = F("Equipo", d.equipo) + F("Tipo", d.tipo) + F("Fecha", d.fecha_programada) + F("Técnico", d.tecnico) + F("Descripción", d.descripcion);
+    else filas = F("Equipo", d.equipo_id ? `${d.equipo} (EQ-${String(d.equipo_id).padStart(4, "0")})` : d.equipo) + F("Título", d.titulo) + F("Tipo", d.tipo) + F("Prioridad", d.prioridad) + F("Fecha", d.fecha_programada) + F("Técnico", d.tecnico) + F("Descripción", d.descripcion);
     const est = { ejecutada: ["ok", "Ejecutada"], cancelada: ["no", "Cancelada"], error: ["err", "No se pudo ejecutar"] }[a.estado];
     const pie = a.estado === "pendiente"
         ? `<div class="acc-btns"><button type="button" class="acc-ok" data-acc-ok>Confirmar</button><button type="button" class="acc-no" data-acc-no>Cancelar</button></div>`

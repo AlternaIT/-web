@@ -9,13 +9,13 @@ export async function resumenDia(db: any) {
   const [acts, mants, pcs] = await Promise.all([
     db.from("actividades").select("id, actividad, estado, prioridad, asignado, fecha_entrega, fecha_limite").limit(1000),
     db.from("mantenimientos").select("id, estado, fecha_programada").limit(500),
-    db.from("computadoras").select("id, nombre_equipo, fecha_garantia").limit(500),
+    db.from("inventario_equipos").select("id, estado, garantia_hasta").limit(2000),
   ]);
   const abiertas = (acts.data ?? []).filter((a: any) => !CERRADAS.includes(a.estado));
   const venc = abiertas.filter((a: any) => { const f = a.fecha_limite || a.fecha_entrega; return f && f < hoy; });
   const vencen7 = abiertas.filter((a: any) => { const f = a.fecha_limite || a.fecha_entrega; return f && f >= hoy && f <= en7; });
   const mant7 = (mants.data ?? []).filter((m: any) => m.estado !== "Completado" && m.estado !== "Cancelado" && m.fecha_programada >= hoy && m.fecha_programada <= en7);
-  const gar30 = (pcs.data ?? []).filter((c: any) => c.fecha_garantia && c.fecha_garantia >= hoy && c.fecha_garantia <= en30);
+  const gar30 = (pcs.data ?? []).filter((c: any) => c.estado !== "Dado de baja" && c.garantia_hasta && c.garantia_hasta >= hoy && c.garantia_hasta <= en30);
   return {
     fecha: hoy,
     abiertas: abiertas.length,

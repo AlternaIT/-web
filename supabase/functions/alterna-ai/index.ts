@@ -16,6 +16,7 @@ import {
   obtenerPerfil, guardarPerfil, borrarMemoria, recordar, olvidar, HERRAMIENTAS_MEMORIA, NOMBRES_MEMORIA, promptPerfil,
   MAX_BYTES_AUDIO, transcribir, hablar, valorar, valoracionesDe, panelCalidad,
 } from "./extras.ts";
+import { HERRAMIENTAS_IT, NOMBRES_IT, consultarIT, resumenIT } from "./it.ts";
 
 const OPENAI = "https://api.openai.com/v1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -143,6 +144,42 @@ async function abrirChat(key: string, candidatos: string[], messages: any[], too
   }
   const ultimo = errores[errores.length - 1];
   throw new ErrorOpenAI(ultimo?.status ?? 503, ultimo?.detalle ?? "sin modelos disponibles");
+}
+
+type Llamada = { id: string; name: string; args: string };
+
+// Lee una respuesta del modelo (streaming o completa): emite el texto y junta las llamadas a herramientas.
+async function leerApertura(ap: Apertura, emitir: (t: string) => void, llamadas: Record<number, Llamada>): Promise<{ entrada: number; salida: number }> {
+  let uso = { entrada: 0, salida: 0 };
+  if (!ap.stream) {
+    const msg = ap.completo?.choices?.[0]?.message ?? {};
+    const u = ap.completo?.usage; if (u) uso = { entrada: u.prompt_tokens ?? 0, salida: u.completion_tokens ?? 0 };
+    if (msg.content) emitir(msg.content);
+    (msg.tool_calls ?? []).forEach((tc: any, i: number) => { llamadas[i] = { id: tc.id ?? "", name: tc.function?.name ?? "", args: tc.function?.arguments ?? "" }; });
+    return uso;
+  }
+  const rd = ap.stream.body!.getReader(), dec = new TextDecoder(); let buf = "";
+  while (true) {
+    const { done, value } = await rd.read(); if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const ls = buf.split("\n"); buf = ls.pop() ?? "";
+    for (const l of ls) {
+      if (!l.startsWith("data:")) continue; const d = l.slice(5).trim(); if (!d || d === "[DONE]") continue;
+      try {
+        const j = JSON.parse(d);
+        if (j.usage) uso = { entrada: j.usage.prompt_tokens ?? 0, salida: j.usage.completion_tokens ?? 0 };
+        const delta = j.choices?.[0]?.delta;
+        if (delta?.content) emitir(delta.content);
+        for (const tc of delta?.tool_calls ?? []) {
+          const c = (llamadas[tc.index ?? 0] ??= { id: "", name: "", args: "" });
+          if (tc.id) c.id = tc.id;
+          if (tc.function?.name) c.name += tc.function.name;
+          if (tc.function?.arguments) c.args += tc.function.arguments;
+        }
+      } catch { /* línea parcial */ }
+    }
+  }
+  return uso;
 }
 
 async function completarSimple(key: string, candidatos: string[], messages: any[]): Promise<string> {
@@ -464,12 +501,13 @@ function aMensajeModelo(m: { rol: string; contenido: string }, conVision: boolea
 
 async function contextoEnVivo(db: any) {
   const hoy = new Date().toISOString().slice(0, 10);
-  const [acts, mants, pcs] = await Promise.all([
+  // Actividades en el contexto; equipos, mantenimientos y licencias solo como resumen
+  // (el detalle lo pide el modelo con la herramienta consultar_it).
+  const [acts, it] = await Promise.all([
     db.from("actividades").select("id, proyecto_macro, actividad, prioridad, estado, area, asignado, fecha_entrega, fecha_limite").order("fecha_entrega", { ascending: true }).limit(300),
-    db.from("mantenimientos").select("id, computadora_id, tipo, estado, fecha_programada, tecnico").limit(200),
-    db.from("computadoras").select("id, nombre_equipo, usuario_asignado, departamento, estado, fecha_garantia, ultima_revision").limit(300),
+    resumenIT(db),
   ]);
-  const A = acts.data ?? [], M = mants.data ?? [], C = pcs.data ?? [];
+  const A = acts.data ?? [];
   const cuenta = (arr: Record<string, unknown>[], k: string) =>
     arr.reduce((o: Record<string, number>, r) => { const v = String(r[k] ?? "Sin dato"); o[v] = (o[v] ?? 0) + 1; return o; }, {});
   const cerradas = ["Completado", "Cancelado", "Finalizado", "Terminado"];
@@ -478,8 +516,7 @@ async function contextoEnVivo(db: any) {
   return {
     fecha_hoy: hoy,
     actividades: { total: A.length, por_estado: cuenta(A, "estado"), por_prioridad: cuenta(A, "prioridad"), vencidas: vencidas.length, vencidas_detalle: vencidas.slice(0, 30), abiertas_detalle: abiertas.slice(0, 50) },
-    mantenimientos: { total: M.length, por_estado: cuenta(M, "estado"), proximos: M.filter((m: any) => m.fecha_programada >= hoy).slice(0, 20) },
-    equipos: { total: C.length, por_estado: cuenta(C, "estado"), por_departamento: cuenta(C, "departamento"), lista: C.slice(0, 150).map((c: any) => ({ id: c.id, nombre: c.nombre_equipo, usuario: c.usuario_asignado, depto: c.departamento, estado: c.estado })), garantias_por_vencer: C.filter((c: any) => c.fecha_garantia && c.fecha_garantia >= hoy).sort((a: any, b: any) => a.fecha_garantia.localeCompare(b.fecha_garantia)).slice(0, 15) },
+    resumen_it: it,
   };
 }
 
@@ -493,10 +530,13 @@ PERSONALIDAD Y ESTILO
 - Si la petición es ambigua, haz una pregunta breve en lugar de suponer.
 
 QUÉ PUEDES HACER
-${contexto ? "- Responder sobre el sistema interno de gestión del área de TI (actividades, mantenimientos y equipos de cómputo) con el CONTEXTO EN VIVO, SOLO cuando la persona pregunte por eso. Si la pregunta no trata de esos datos, no los menciones ni los uses como ejemplo." : "- Esta persona NO tiene acceso a los datos del área de TI. Si pregunta por actividades, mantenimientos o equipos de TI, dile con amabilidad que no tiene acceso y que puede solicitarlo al área de TI."}
+${contexto ? `- Responder sobre el sistema interno de gestión del área de TI, SOLO cuando la persona pregunte por eso. Si la pregunta no trata de esos datos, no los menciones ni los uses como ejemplo.
+  · Actividades: usa el CONTEXTO EN VIVO.
+  · Equipos (inventario, quién tiene qué, equipos libres, especificaciones, garantías, antigüedad, historial de un equipo), mantenimientos y licencias de Office: llama SIEMPRE a la herramienta "consultar_it" para obtener datos actuales; el contexto solo trae totales. Puedes llamarla varias veces en el mismo turno si hace falta. Cita los equipos por su código (EQ-0012). En la página de Equipos cada equipo tiene ficha con QR, historial y actas de entrega/devolución.
+  · Las contraseñas, PIN y datos de recuperación de las licencias NO están disponibles para ti: si los piden, indica que se ven en la página de Licencias (quedan registrados).` : "- Esta persona NO tiene acceso a los datos del área de TI. Si pregunta por actividades, mantenimientos, equipos o licencias de TI, dile con amabilidad que no tiene acceso y que puede solicitarlo al área de TI."}
 - Responder dudas de uso de las herramientas de Alterna (Zoho y otros procesos internos) con la BASE DE CONOCIMIENTO cuando se incluya abajo; esa documentación tiene prioridad sobre tu conocimiento general.
 - Redactar correos, reportes, actas, minutas, propuestas, procedimientos y otros documentos; resumir, corregir y traducir textos; organizar ideas y planes de trabajo; resolver dudas generales y de uso de herramientas; analizar imágenes que el usuario adjunte (capturas, fotos, diagramas, documentos).
-${user.rol === "admin" ? '- Proponer cambios en el sistema con las herramientas "crear_actividad", "actualizar_actividad" y "programar_mantenimiento". NUNCA digas que ya lo hiciste: el usuario verá una tarjeta y debe pulsar Confirmar. Usa ids reales del contexto; si faltan datos obligatorios, pregunta primero. Fechas en formato AAAA-MM-DD.' : ""}
+${user.rol === "admin" ? '- Proponer cambios en el sistema con las herramientas "crear_actividad", "actualizar_actividad" y "programar_mantenimiento". NUNCA digas que ya lo hiciste: el usuario verá una tarjeta y debe pulsar Confirmar. Usa ids reales (de actividades del contexto; de equipos, el id que devuelve consultar_it); si faltan datos obligatorios, pregunta primero. Fechas en formato AAAA-MM-DD.' : ""}
 ${puedeImagenes ? '- Generar imágenes con la herramienta "generar_imagen" cuando el usuario lo pida (logos, ilustraciones, banners, pósters, mockups). Escribe un prompt visual detallado. No describas la imagen antes de generarla; después, una línea breve.' : ""}
 - Buscar en internet con la herramienta "buscar_web" cuando la respuesta dependa de información actual o verificable (noticias, precios, tipos de cambio, clima, versiones, documentación, leyes, datos de empresas) o cuando el usuario pida buscar o citar fuentes. Si sabes la respuesta y no cambia con el tiempo, no busques.
 - Ejecutar código Python con la herramienta "ejecutar_codigo" cuando haga falta un resultado calculado de verdad: cálculos exactos, estadísticas, análisis de datos que el usuario pegó o adjuntó, conversiones, o probar un programa.
@@ -622,45 +662,45 @@ async function chat(db: any, user: any, p: Record<string, any>) {
   const messages = [{ role: "system", content: promptSistema(user, contexto, imagenesOk, kb?.prompt ?? "", perfil ? promptPerfil(perfil.perfil, perfil.memorias) : "") }, ...mensajesModelo];
   const nivel = nivelValido(p.nivel);
   const candidatos = await candidatosChat(key, nivel);
-  const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...HERRAMIENTAS_AVANZADAS, ...(memoriaActiva ? HERRAMIENTAS_MEMORIA : []), ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
+  const herramientas = [...(imagenesOk ? HERRAMIENTAS : []), ...HERRAMIENTAS_AVANZADAS, ...(memoriaActiva ? HERRAMIENTAS_MEMORIA : []),
+    ...(contexto ? HERRAMIENTAS_IT : []), ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])];
   const maxSalida = cuota && !cuota.ilimitado && cuota.tokens_restantes !== null ? cuota.tokens_restantes : undefined;
   const apertura = await abrirChat(key, candidatos, messages, herramientas.length ? herramientas : undefined, nivel, maxSalida);
   log("info", "chat", { usuario: user.id, nivel, modelo: apertura.modelo, regenerar, adjuntos: urlsAdjuntos.length });
 
-  const enc = new TextEncoder(), dec = new TextDecoder();
+  const enc = new TextEncoder();
   let completo = "";
-  const llamadas: Record<number, { name: string; args: string }> = {};
+  let llamadas: Record<number, Llamada> = {};
 
   const stream = new ReadableStream({
     async start(controller) {
       const emitir = (t: string) => { completo += t; controller.enqueue(enc.encode(t)); };
       try {
-        if (apertura.stream) {
-          const rd = apertura.stream.body!.getReader(); let buf = "";
-          while (true) {
-            const { done, value } = await rd.read(); if (done) break;
-            buf += dec.decode(value, { stream: true });
-            const ls = buf.split("\n"); buf = ls.pop() ?? "";
-            for (const l of ls) {
-              if (!l.startsWith("data:")) continue; const d = l.slice(5).trim(); if (!d || d === "[DONE]") continue;
-              try {
-                const j = JSON.parse(d);
-                if (j.usage) uso = { entrada: j.usage.prompt_tokens ?? 0, salida: j.usage.completion_tokens ?? 0 };
-                const delta = j.choices?.[0]?.delta;
-                if (delta?.content) emitir(delta.content);
-                for (const tc of delta?.tool_calls ?? []) {
-                  const c = (llamadas[tc.index ?? 0] ??= { name: "", args: "" });
-                  if (tc.function?.name) c.name += tc.function.name;
-                  if (tc.function?.arguments) c.args += tc.function.arguments;
-                }
-              } catch { /* línea parcial */ }
-            }
-          }
-        } else {
-          const msg = apertura.completo.choices?.[0]?.message ?? {};
-          const u = apertura.completo.usage; if (u) uso = { entrada: u.prompt_tokens ?? 0, salida: u.completion_tokens ?? 0 };
-          if (msg.content) emitir(msg.content);
-          (msg.tool_calls ?? []).forEach((tc: any, i: number) => { llamadas[i] = { name: tc.function?.name ?? "", args: tc.function?.arguments ?? "" }; });
+        const r0 = await leerApertura(apertura, emitir, llamadas);
+        uso = { entrada: r0.entrada, salida: r0.salida };
+
+        // Datos de IT: el modelo pidió consultar inventario, mantenimientos o licencias.
+        // Se ejecutan las consultas y se le devuelve el resultado para que responda (hasta 3 rondas).
+        let mensajesIT = messages;
+        for (let ronda = 0; ronda < 3 && contexto; ronda++) {
+          const its = Object.values(llamadas).filter((c) => NOMBRES_IT.includes(c.name)).slice(0, 4);
+          if (!its.length) break;
+          controller.enqueue(enc.encode(`${completo ? "\n\n" : ""}⟦consultando⟧`));
+          const textoPrevio = completo;
+          const resultados = await Promise.all(its.map(async (c, i) => {
+            let args: any = {}; try { args = JSON.parse(c.args || "{}"); } catch { /* vacío */ }
+            const r = await consultarIT(db, args).catch((e) => ({ error: String((e as any)?.message ?? e).slice(0, 200) }));
+            return { id: c.id || `it_${ronda}_${i}`, name: c.name, args: c.args || "{}", contenido: JSON.stringify(r).slice(0, 60000) };
+          }));
+          log("info", "consulta_it", { usuario: user.id, ronda, consultas: its.map((c) => c.args).join(" | ").slice(0, 300) });
+          mensajesIT = [...mensajesIT,
+            { role: "assistant", content: textoPrevio || null, tool_calls: resultados.map((r) => ({ id: r.id, type: "function", function: { name: r.name, arguments: r.args } })) },
+            ...resultados.map((r) => ({ role: "tool", tool_call_id: r.id, content: r.contenido }))];
+          if (completo) completo += "\n\n";
+          llamadas = {};
+          const ap = await abrirChat(key, candidatos, mensajesIT, [...HERRAMIENTAS_IT, ...(user.rol === "admin" ? HERRAMIENTAS_ACCION : [])], null, maxSalida);
+          const r = await leerApertura(ap, emitir, llamadas);
+          uso = { entrada: uso.entrada + r.entrada, salida: uso.salida + r.salida };
         }
 
         // Herramienta: generar imagen

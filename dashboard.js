@@ -15,6 +15,10 @@
        SESIÓN
     ═══════════════════════════════════════════ */
     const usuarioGuardado = localStorage.getItem("usuario");
+    // Enlaces directos (QR de un equipo, ticket): se recuerdan para volver aquí después de iniciar sesión
+    if (!usuarioGuardado && /^#(equipo|ticket)=[\w-]{1,40}$/.test(location.hash)) {
+        try { sessionStorage.setItem("alterna_volver", "it.html" + location.hash); } catch { /* sin almacenamiento */ }
+    }
     if (!usuarioGuardado) window.location.href = "index.html";
 
     let usuario = null;
@@ -98,7 +102,10 @@
 
         if (pagina === "usuarios")         cargarTablaUsuarios();
         if (pagina === "equipos")          cargarEquipos();
-        if (pagina === "reportes")         renderReportes();
+        if (pagina === "reportes") {
+            if (document.getElementById("repIT")?.hidden === false) cargarReporteIT(reporteITDias);
+            else renderReportes();
+        }
         if (pagina === "configuracion")    renderConfiguracion();
         if (pagina === "licencias-office") cargarLicenciasOffice();
         if (pagina === "licencias-kanva")  cargarLicenciasKanva();
@@ -1539,7 +1546,7 @@
         vista_actividades: localStorage.getItem(VISTA_KEY) || "tabla",
         periodo_reportes: Number(localStorage.getItem(PERIODO_KEY) ?? 0),
         tema: localStorage.getItem("alterna_tema") || "claro",
-        notif_vencidas: true, notif_proximas: true, notif_resumen: true,
+        notif_vencidas: true, notif_proximas: true, notif_resumen: true, notif_garantias: true,
         // Apariencia
         tamano_texto: "normal",          // compacto | normal | grande
         densidad: "comoda",              // comoda | compacta
@@ -1759,7 +1766,7 @@
         mantenimientos:["mant_vista", "mant_primer_dia", "mant_ocultar_cancelados"],
         exportacion:   ["export_formato", "export_notas", "export_prefijo"],
         seguridad:     ["inactividad_min"],
-        notificaciones:["notif_vencidas", "notif_proximas", "dias_alerta", "notif_navegador", "notif_resumen", "notif_frecuencia", "notif_sonido"],
+        notificaciones:["notif_vencidas", "notif_proximas", "notif_garantias", "dias_alerta", "notif_navegador", "notif_resumen", "notif_frecuencia", "notif_sonido"],
     };
 
     // Detecta a qué panel pertenece un elemento y activa su botón de guardar
@@ -1863,6 +1870,18 @@
             }
         });
 
+        // Garantías de equipos: vencen en los próximos 30 días o vencieron hace menos de 30
+        if (preferenciasUsuario.notif_garantias !== false) {
+            (typeof equiposParaAvisos !== "undefined" ? equiposParaAvisos : []).forEach(e => {
+                if (!e.garantia_hasta || e.estado === "Dado de baja") return;
+                const diff = Math.round((new Date(e.garantia_hasta + "T00:00:00") - hoy) / 86400000);
+                if (diff > 30 || diff < -30) return;
+                const nombre = [e.tipo, e.marca, e.modelo].filter(Boolean).join(" ");
+                notifs.push({ equipoId: e.id, titulo: `Garantía · ${nombre}`, tipo: diff < 0 ? "vencida" : "proxima",
+                    meta: `${diff < 0 ? `Venció hace ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? "s" : ""}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} día${diff !== 1 ? "s" : ""}`} · ${esc(e.asignado_a || "Sin asignar")}` });
+            });
+        }
+
         notifs.sort((a,b) => (a.tipo === "vencida" ? -1 : 1));
         return notifs;
     }
@@ -1885,14 +1904,14 @@
             badge.style.display = "flex";
             count.textContent   = `${notifs.length} pendiente${notifs.length !== 1 ? "s" : ""}`;
             list.innerHTML = notifs.map(n => `
-                <div class="notif-item ${n.tipo}" onclick="navegar('actividades');cerrarNotifDropdown()">
+                <div class="notif-item ${n.tipo}" onclick="${n.equipoId ? `abrirFichaEquipo(${n.equipoId})` : "navegar('actividades')"};cerrarNotifDropdown()">
                     <div class="notif-item-title">${esc(n.titulo)}</div>
                     <div class="notif-item-meta"><span class="notif-dot ${n.tipo}"></span>${n.meta}</div>
                 </div>`).join("");
         } else {
             badge.style.display = "none";
             count.textContent   = "";
-            list.innerHTML      = `<div class="notif-empty">Sin actividades vencidas o próximas a vencer</div>`;
+            list.innerHTML      = `<div class="notif-empty">Sin actividades ni garantías vencidas o próximas a vencer</div>`;
         }
 
         // Con recordatorios periódicos, el temporizador es quien avisa
@@ -2177,16 +2196,17 @@
         if (!tbody) return;
         tbody.innerHTML = `<tr class="loading-row"><td colspan="9">Cargando...</td></tr>`;
 
-        const { data, error } = await supabaseClient
-            .from("licencias_office")
-            .select("*")
-            .order("numero_licencia, slot");
+        const [{ data, error }, sec] = await Promise.all([
+            supabaseClient.from("licencias_office").select("*").order("numero_licencia, slot"),
+            supabaseClient.rpc("licencias_secretos_estado"),
+        ]);
 
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" style="color:#ef4444;padding:20px 16px">Error al cargar: ${esc(error.message)}</td></tr>`;
             return;
         }
 
+        secretosOffice = new Map((sec.data || []).map(s => [s.licencia_id, s]));
         todasLicenciasOffice = data || [];
         poblarFiltroLicencia();
         renderTablaOffice();
@@ -2245,7 +2265,11 @@
                 <td data-label="Expiración">${expBadge}</td>
                 <td data-label="País" style="font-size:12px;color:#374151">${esc(r.pais||"—")}</td>
                 <td data-label="Contacto" style="font-size:11px;color:#9ca3af">${esc(r.contacto||"—")}</td>
-                <td data-label="N° Lic." style="font-size:11px;color:#48484a;font-weight:600">${esc(String(r.numero_licencia||"—"))}</td>
+                <td data-label="Contraseña">${secretosOffice.get(r.id)?.password
+                    ? `<span class="sec-celda"><span class="sec-mask" id="secTabla${r.id}">••••••••</span>
+                        <button class="sec-mini" title="Mostrar" onclick="verSecretoTabla(${r.id})"><i data-lucide="eye"></i></button>
+                        <button class="sec-mini" title="Copiar" onclick="copiarSecreto(${r.id}, 'password')"><i data-lucide="copy"></i></button></span>`
+                    : `<span style="color:#9ca3af">—</span>`}</td>
                 <td data-label=""><button class="btn-edit" onclick="abrirEditarOffice(${r.id})"><i data-lucide="pencil"></i> Editar</button></td>
             </tr>`;
         }).join("");
@@ -2261,22 +2285,128 @@
         document.getElementById("eoNombre").value       = r.nombre           || "";
         document.getElementById("eoNombreCuenta").value = r.nombre_cuenta    || "";
         document.getElementById("eoCorreo").value       = r.correo           || "";
-        document.getElementById("eoPassword").value     = r.password         || "";
         document.getElementById("eoExpiracion").value   = r.fecha_expiracion || "";
-        document.getElementById("eoFechaNac").value     = r.fecha_nacimiento || "";
         document.getElementById("eoPais").value         = r.pais             || "";
         document.getElementById("eoContacto").value     = r.contacto         || "";
-        document.getElementById("eoPin").value          = r.pin              || "";
-        document.getElementById("eoNotas").value        = [r.recuperacion_zoho, r.notas].filter(Boolean).join(" | ") || "";
+        document.getElementById("eoNotas").value        = r.notas            || "";
         document.getElementById("eoMsg").textContent    = "";
         document.getElementById("eoMsg").style.color    = "";
         document.getElementById("eoGuardar").disabled   = false;
+        prepararSecretosModal(r.id);
         document.getElementById("modalEditarOffice").classList.add("open");
     }
 
     function cerrarModalEditarOffice() {
         document.getElementById("modalEditarOffice").classList.remove("open");
+        prepararSecretosModal(null); // no deja datos revelados en la página
     }
+
+    /* ── Datos protegidos (contraseña, PIN, recuperación): cifrados en la BD, se revelan uno a uno y queda registro ── */
+    let secretosOffice = new Map();
+    const CAMPOS_SECRETOS = ["password", "pin", "fecha_nacimiento", "recuperacion"];
+    const NOMBRE_SECRETO = { password: "Contraseña", pin: "PIN", fecha_nacimiento: "Fecha de nacimiento", recuperacion: "Recuperación Zoho" };
+    const CON_ARTICULO = { password: "la contraseña", pin: "el PIN", fecha_nacimiento: "la fecha de nacimiento", recuperacion: "la recuperación Zoho" };
+    let temporizadorSecretos = null;
+
+    async function leerSecreto(id, campo, accion) {
+        const { data, error } = await supabaseClient.rpc("licencia_secreto", { p_licencia: id, p_campo: campo, p_accion: accion });
+        if (error) throw new Error(error.code === "42501" ? "No tienes permiso para ver este dato." : error.message);
+        return data ?? "";
+    }
+
+    function avisoBreve(texto, tipo = "ok") {
+        let t = document.getElementById("avisoBreve");
+        if (!t) { t = document.createElement("div"); t.id = "avisoBreve"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+        t.textContent = texto;
+        t.className = "aviso-breve visible " + tipo;
+        clearTimeout(t._tm);
+        t._tm = setTimeout(() => t.classList.remove("visible"), 2600);
+    }
+
+    async function copiarSecreto(id, campo) {
+        try {
+            const v = await leerSecreto(id, campo, "copiar");
+            if (!v) { avisoBreve("No hay dato guardado.", "error"); return; }
+            await navigator.clipboard.writeText(v);
+            avisoBreve(`Copiado al portapapeles: ${NOMBRE_SECRETO[campo]}.`);
+        } catch (e) { avisoBreve(e.message || "No se pudo copiar.", "error"); }
+    }
+
+    async function verSecretoTabla(id) {
+        const el = document.getElementById("secTabla" + id);
+        if (!el) return;
+        if (el.dataset.visible) { el.textContent = "••••••••"; delete el.dataset.visible; return; }
+        try {
+            el.textContent = await leerSecreto(id, "password", "ver") || "—";
+            el.dataset.visible = "1";
+            setTimeout(() => { if (el.dataset.visible) { el.textContent = "••••••••"; delete el.dataset.visible; } }, 20000);
+        } catch (e) { avisoBreve(e.message, "error"); }
+    }
+
+    function prepararSecretosModal(id) {
+        clearTimeout(temporizadorSecretos);
+        const estado = id ? (secretosOffice.get(id) || {}) : {};
+        CAMPOS_SECRETOS.forEach(campo => {
+            const inp = document.getElementById("eoSec_" + campo);
+            if (!inp) return;
+            inp.value = "";
+            inp.type = "password";
+            delete inp.dataset.revelado; delete inp.dataset.sucio;
+            inp.placeholder = estado[campo] ? "•••••••• guardada" : "Sin dato";
+            inp.title = estado[campo] ? "Escribe aquí solo si quieres cambiarla" : "";
+            const fila = inp.closest(".sec-campo");
+            fila.classList.toggle("tiene", !!estado[campo]);
+        });
+        const wrap = document.getElementById("eoAccesosWrap");
+        if (wrap) {
+            wrap.style.display = id && usuario?.rol === "admin" ? "" : "none";
+            wrap.open = false;
+            document.getElementById("eoAccesos").innerHTML = "";
+        }
+    }
+
+    function ocultarSecretosRevelados() {
+        CAMPOS_SECRETOS.forEach(campo => {
+            const inp = document.getElementById("eoSec_" + campo);
+            if (inp?.dataset.revelado && !inp.dataset.sucio) { inp.value = ""; inp.type = "password"; delete inp.dataset.revelado; }
+        });
+    }
+
+    document.getElementById("eoSecretos")?.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-sec]");
+        if (!btn) return;
+        const campo = btn.closest(".sec-campo").dataset.campo;
+        const inp = document.getElementById("eoSec_" + campo);
+        const id = parseInt(document.getElementById("eoId").value);
+        if (btn.dataset.sec === "copiar") {
+            if (inp.dataset.sucio && inp.value) { await navigator.clipboard.writeText(inp.value).catch(() => {}); avisoBreve("Copiado al portapapeles."); return; }
+            return copiarSecreto(id, campo);
+        }
+        // Mostrar / ocultar
+        if (inp.type === "text") { inp.type = "password"; if (inp.dataset.revelado && !inp.dataset.sucio) { inp.value = ""; delete inp.dataset.revelado; } return; }
+        if (!inp.dataset.sucio && !inp.dataset.revelado && btn.closest(".sec-campo").classList.contains("tiene")) {
+            try {
+                inp.value = await leerSecreto(id, campo, "ver");
+                inp.dataset.revelado = "1";
+            } catch (err) { avisoBreve(err.message, "error"); return; }
+            clearTimeout(temporizadorSecretos);
+            temporizadorSecretos = setTimeout(ocultarSecretosRevelados, 30000);
+        }
+        inp.type = "text";
+    });
+    document.getElementById("eoSecretos")?.addEventListener("input", (e) => { if (e.target.id?.startsWith("eoSec_")) e.target.dataset.sucio = "1"; });
+
+    document.getElementById("eoAccesosWrap")?.addEventListener("toggle", async function () {
+        if (!this.open) return;
+        const lista = document.getElementById("eoAccesos");
+        lista.innerHTML = `<div class="sec-acceso vacio">Cargando…</div>`;
+        const { data, error } = await supabaseClient.rpc("licencia_accesos", { p_licencia: parseInt(document.getElementById("eoId").value) });
+        if (error) { lista.innerHTML = `<div class="sec-acceso vacio">No se pudo cargar el registro.</div>`; return; }
+        const verbo = { ver: "vio", copiar: "copió", editar: "cambió" };
+        lista.innerHTML = (data || []).length
+            ? data.map(a => `<div class="sec-acceso"><strong>${esc(a.usuario)}</strong> ${verbo[a.accion] || a.accion} ${esc(CON_ARTICULO[a.campo] || a.campo)}<span>${esc(formatFechaHora(a.fecha))}</span></div>`).join("")
+            : `<div class="sec-acceso vacio">Nadie ha visto ni cambiado estos datos todavía.</div>`;
+    });
 
     async function guardarEditarOffice() {
         const id  = parseInt(document.getElementById("eoId").value);
@@ -2293,18 +2423,27 @@
             nombre:           document.getElementById("eoNombre").value.trim()          || null,
             nombre_cuenta:    document.getElementById("eoNombreCuenta").value.trim()    || null,
             correo:           document.getElementById("eoCorreo").value.trim()          || null,
-            password:         document.getElementById("eoPassword").value               || null,
             fecha_expiracion: document.getElementById("eoExpiracion").value.trim()      || null,
-            fecha_nacimiento: document.getElementById("eoFechaNac").value.trim()        || null,
             pais:             document.getElementById("eoPais").value.trim()            || null,
             contacto:         document.getElementById("eoContacto").value.trim()        || null,
-            pin:              document.getElementById("eoPin").value.trim()             || null,
             notas:            notasRaw                                                  || null,
         };
 
+        // Datos protegidos: solo se envían los que se tocaron. Vacío = borrar (solo si antes se mostró el valor).
+        const secretos = {};
+        CAMPOS_SECRETOS.forEach(campo => {
+            const inp = document.getElementById("eoSec_" + campo);
+            if (!inp?.dataset.sucio) return;
+            const v = campo === "recuperacion" ? inp.value : inp.value.trim();
+            if (v) secretos["p_" + campo] = v;
+            else if (inp.dataset.revelado) secretos["p_" + campo] = "";
+        });
+
         const { error } = await supabaseClient.from("licencias_office").update(payload).eq("id", id);
-        if (error) {
-            document.getElementById("eoMsg").textContent = "" + error.message;
+        const errSec = !error && Object.keys(secretos).length
+            ? (await supabaseClient.rpc("licencia_secretos_guardar", { p_licencia: id, ...secretos })).error : null;
+        if (error || errSec) {
+            document.getElementById("eoMsg").textContent = (error || errSec).message;
             document.getElementById("eoMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
@@ -2337,7 +2476,7 @@
     async function cargarEquipos() {
         const tbody = document.getElementById("equiposBody");
         if (!tbody) return;
-        tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Cargando...</td></tr>`;
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="7">Cargando...</td></tr>`;
         ["eqCntTotal","eqCntDisponibles","eqCntAsignados","eqCntMantenimiento"]
             .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = "—"; });
 
@@ -2347,12 +2486,14 @@
             .order("id", { ascending: false });
 
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444;padding:20px 16px">Error al cargar: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444;padding:20px 16px">Error al cargar: ${esc(error.message)}</td></tr>`;
             return;
         }
 
         todosEquipos = data || [];
+        equiposParaAvisos = todosEquipos;
         renderTablaEquipos();
+        renderNotificaciones();
     }
 
     function badgeEquipoEstado(estado) {
@@ -2381,26 +2522,26 @@
     function renderTablaEquipos() {
         const tbody = document.getElementById("equiposBody");
         if (!tbody) return;
-        const q       = (document.getElementById("eqBusqueda")?.value || "").toLowerCase();
-        const fEstado = document.getElementById("eqFiltroEstado")?.value || "";
+        const q         = (document.getElementById("eqBusqueda")?.value || "").toLowerCase().trim();
+        const fEstado   = document.getElementById("eqFiltroEstado")?.value || "";
+        const fGarantia = document.getElementById("eqFiltroGarantia")?.value || "";
 
         actualizarCardsEquipos();
 
         const rows = todosEquipos.filter(r => {
             const matchEstado = !fEstado || r.estado === fEstado;
-            const matchQ = !q ||
-                (r.tipo||"").toLowerCase().includes(q) ||
-                (r.numero_serie||"").toLowerCase().includes(q) ||
-                (r.modelo||"").toLowerCase().includes(q) ||
-                (r.marca||"").toLowerCase().includes(q) ||
-                (r.asignado_a||"").toLowerCase().includes(q);
-            return matchEstado && matchQ;
+            const g = estadoGarantia(r);
+            const matchGarantia = !fGarantia
+                || (fGarantia === "renovar" ? (aniosDeUso(r) ?? 0) >= ANIOS_RENOVACION && r.estado !== "Dado de baja" : g.clave === fGarantia);
+            const matchQ = !q || [codigoEquipo(r), r.tipo, r.numero_serie, r.modelo, r.marca, r.asignado_a, r.procesador]
+                .some(v => String(v || "").toLowerCase().includes(q));
+            return matchEstado && matchGarantia && matchQ;
         });
 
         document.getElementById("equiposCount").textContent = `${rows.length} equipo${rows.length !== 1 ? "s" : ""}`;
 
         if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No se encontraron equipos.</div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No se encontraron equipos.</div></td></tr>`;
             return;
         }
 
@@ -2408,29 +2549,89 @@
             const asignadoHtml = r.asignado_a
                 ? `<span class="asignado-chip">${esc(r.asignado_a)}</span>`
                 : `<span style="color:#d1d5db;font-size:12px">—</span>`;
-            return `<tr>
-                <td data-label="Tipo"><strong>${esc(r.tipo||"—")}</strong></td>
-                <td data-label="Marca/Mod" style="font-size:12px;color:#374151">${esc([r.marca, r.modelo].filter(Boolean).join(" ") || "—")}</td>
+            const g = estadoGarantia(r);
+            const anios = aniosDeUso(r);
+            const renovar = anios !== null && anios >= ANIOS_RENOVACION && r.estado !== "Dado de baja";
+            return `<tr class="eq-fila" onclick="abrirFichaEquipo(${r.id})">
+                <td data-label="Equipo"><strong>${esc(r.tipo||"—")}</strong>
+                    <div class="eq-sub">${esc([r.marca, r.modelo].filter(Boolean).join(" ") || "Sin marca")} · <span class="eq-codigo">${codigoEquipo(r)}</span></div></td>
                 <td data-label="Serie" style="font-size:12px;color:#6b7280;font-family:monospace">${esc(r.numero_serie||"—")}</td>
                 <td data-label="Estado"><span class="badge ${badgeEquipoEstado(r.estado)}">${esc(r.estado||"—")}</span></td>
                 <td data-label="Asignado a">${asignadoHtml}</td>
-                <td data-label=""><button class="btn-edit" onclick="abrirEditarEquipo(${r.id})"><i data-lucide="pencil"></i> Editar</button></td>
+                <td data-label="Garantía"><span class="eq-gar ${g.clave}" title="${esc(g.detalle)}">${esc(g.texto)}</span></td>
+                <td data-label="Antigüedad">${anios === null ? `<span style="color:#9ca3af;font-size:12px">—</span>`
+                    : `<span class="eq-edad${renovar ? " renovar" : ""}" title="${renovar ? `Tiene ${ANIOS_RENOVACION} años o más: considera renovarlo` : "Desde la fecha de compra"}">${textoAntiguedad(r)}${renovar ? " · renovar" : ""}</span>`}</td>
+                <td data-label="" onclick="event.stopPropagation()" style="white-space:nowrap">
+                    <button class="btn-edit" onclick="abrirFichaEquipo(${r.id})"><i data-lucide="file-text"></i> Ficha</button>
+                    <button class="btn-edit" onclick="abrirEditarEquipo(${r.id})"><i data-lucide="pencil"></i> Editar</button>
+                </td>
             </tr>`;
         }).join("");
     }
 
+    /* ── Formulario de equipo (nuevo y editar comparten campos con prefijo ne / ee) ── */
+    const CAMPOS_FORM_EQUIPO = {
+        Tipo: "tipo", Serie: "numero_serie", Marca: "marca", Modelo: "modelo", Procesador: "procesador",
+        So: "sistema_operativo", Ram: "ram", Disco: "almacenamiento", Estado: "estado", Asignado: "asignado_a",
+        Fecha: "fecha_compra", Garantia: "garantia_hasta", Notas: "notas",
+    };
+
+    function llenarFormEquipo(p, r) {
+        Object.entries(CAMPOS_FORM_EQUIPO).forEach(([id, col]) => {
+            const el = document.getElementById(p + id);
+            if (el) el.value = r[col] ?? (col === "estado" ? "Disponible" : "");
+        });
+        document.getElementById(p + "Msg").textContent = "";
+        document.getElementById(p + "Guardar").disabled = false;
+        llenarListaUsuariosEquipo();
+    }
+
+    function leerFormEquipo(p) {
+        const v = id => document.getElementById(p + id).value.trim();
+        const asignado = v("Asignado");
+        let estado = v("Estado");
+        // Asignar a alguien un equipo "Disponible" lo pasa a "Asignado" (y al revés)
+        if (asignado && estado === "Disponible") estado = "Asignado";
+        if (!asignado && estado === "Asignado") estado = "Disponible";
+        const u = usuariosParaEquipos.find(x => x.nombre.toLowerCase() === asignado.toLowerCase());
+        return {
+            tipo: v("Tipo"), numero_serie: v("Serie") || null, marca: v("Marca") || null, modelo: v("Modelo") || null,
+            procesador: v("Procesador") || null, sistema_operativo: v("So") || null, ram: v("Ram") || null, almacenamiento: v("Disco") || null,
+            estado, asignado_a: u?.nombre || asignado || null, usuario_id: asignado ? (u?.id ?? null) : null,
+            fecha_compra: v("Fecha") || null, garantia_hasta: v("Garantia") || null, notas: v("Notas") || null,
+        };
+    }
+
+    function validarFormEquipo(p, payload) {
+        const msg = document.getElementById(p + "Msg");
+        msg.style.color = "#ef4444";
+        if (!payload.tipo) { msg.textContent = "El tipo de equipo es obligatorio."; return false; }
+        if (payload.fecha_compra && payload.garantia_hasta && payload.garantia_hasta < payload.fecha_compra) {
+            msg.textContent = "La garantía no puede terminar antes de la fecha de compra."; return false;
+        }
+        const serie = (payload.numero_serie || "").toLowerCase();
+        const idActual = p === "ee" ? parseInt(document.getElementById("eeId").value) : null;
+        if (serie && todosEquipos.some(e => e.id !== idActual && (e.numero_serie || "").toLowerCase() === serie)) {
+            msg.textContent = "Ya existe un equipo con ese número de serie."; return false;
+        }
+        return true;
+    }
+
+    // Atajos "+1 / +2 / +3 años desde la compra" para la garantía
+    document.querySelectorAll(".eq-atajos").forEach(caja => caja.addEventListener("click", e => {
+        const b = e.target.closest("[data-anios]");
+        if (!b) return;
+        const p = caja.dataset.para;
+        const compra = document.getElementById(p + "Fecha").value;
+        const base = compra ? new Date(compra + "T00:00:00") : new Date();
+        base.setFullYear(base.getFullYear() + Number(b.dataset.anios));
+        document.getElementById(p + "Garantia").value = base.toISOString().slice(0, 10);
+        if (!compra) avisoBreve("Sin fecha de compra: se contó desde hoy.");
+    }));
+
     /* ── NUEVO EQUIPO ── */
     function abrirModalNuevoEquipo() {
-        document.getElementById("neTipo").value      = "";
-        document.getElementById("neSerie").value     = "";
-        document.getElementById("neMarca").value     = "";
-        document.getElementById("neModelo").value    = "";
-        document.getElementById("neEstado").value    = "Disponible";
-        document.getElementById("neAsignado").value  = "";
-        document.getElementById("neFecha").value     = "";
-        document.getElementById("neNotas").value     = "";
-        document.getElementById("neMsg").textContent = "";
-        document.getElementById("neGuardar").disabled = false;
+        llenarFormEquipo("ne", {});
         document.getElementById("modalNuevoEquipo").classList.add("open");
     }
 
@@ -2439,29 +2640,14 @@
     }
 
     async function guardarNuevoEquipo() {
-        const tipo = document.getElementById("neTipo").value.trim();
-        if (!tipo) {
-            document.getElementById("neMsg").textContent = "El tipo de equipo es obligatorio.";
-            document.getElementById("neMsg").style.color = "#ef4444";
-            return;
-        }
+        const payload = leerFormEquipo("ne");
+        if (!validarFormEquipo("ne", payload)) return;
         const btn = document.getElementById("neGuardar");
         btn.disabled = true;
         document.getElementById("neMsg").textContent = "Guardando...";
         document.getElementById("neMsg").style.color = "#6b7280";
 
-        const payload = {
-            tipo,
-            numero_serie: document.getElementById("neSerie").value.trim() || null,
-            marca:        document.getElementById("neMarca").value.trim() || null,
-            modelo:       document.getElementById("neModelo").value.trim() || null,
-            estado:       document.getElementById("neEstado").value,
-            asignado_a:   document.getElementById("neAsignado").value.trim() || null,
-            fecha_compra: document.getElementById("neFecha").value || null,
-            notas:        document.getElementById("neNotas").value.trim() || null
-        };
-
-        const { error } = await supabaseClient.from("inventario_equipos").insert([payload]);
+        const { data, error } = await supabaseClient.from("inventario_equipos").insert([payload]).select("id").single();
         if (error) {
             document.getElementById("neMsg").textContent = "" + error.message;
             document.getElementById("neMsg").style.color = "#ef4444";
@@ -2471,6 +2657,7 @@
         await cargarEquipos();
         cerrarModalNuevoEquipo();
         btn.disabled = false;
+        abrirFichaEquipo(data.id);
     }
 
     document.getElementById("modalNuevoEquipo").addEventListener("click", function(e) {
@@ -2481,17 +2668,8 @@
     function abrirEditarEquipo(id) {
         const r = todosEquipos.find(x => x.id === id);
         if (!r) return;
-        document.getElementById("eeId").value         = r.id;
-        document.getElementById("eeTipo").value       = r.tipo || "";
-        document.getElementById("eeSerie").value      = r.numero_serie || "";
-        document.getElementById("eeMarca").value      = r.marca || "";
-        document.getElementById("eeModelo").value     = r.modelo || "";
-        document.getElementById("eeEstado").value     = r.estado || "Disponible";
-        document.getElementById("eeAsignado").value   = r.asignado_a || "";
-        document.getElementById("eeFecha").value      = r.fecha_compra || "";
-        document.getElementById("eeNotas").value      = r.notas || "";
-        document.getElementById("eeMsg").textContent  = "";
-        document.getElementById("eeGuardar").disabled = false;
+        document.getElementById("eeId").value = r.id;
+        llenarFormEquipo("ee", r);
         document.getElementById("modalEditarEquipo").classList.add("open");
     }
 
@@ -2500,29 +2678,14 @@
     }
 
     async function guardarEditarEquipo() {
-        const id   = parseInt(document.getElementById("eeId").value);
-        const tipo = document.getElementById("eeTipo").value.trim();
-        if (!tipo) {
-            document.getElementById("eeMsg").textContent = "El tipo de equipo es obligatorio.";
-            document.getElementById("eeMsg").style.color = "#ef4444";
-            return;
-        }
+        const id = parseInt(document.getElementById("eeId").value);
+        const payload = leerFormEquipo("ee");
+        if (!validarFormEquipo("ee", payload)) return;
 
         const btn = document.getElementById("eeGuardar");
         btn.disabled = true;
         document.getElementById("eeMsg").textContent = "Guardando...";
         document.getElementById("eeMsg").style.color = "#6b7280";
-
-        const payload = {
-            tipo,
-            numero_serie: document.getElementById("eeSerie").value.trim() || null,
-            marca:        document.getElementById("eeMarca").value.trim() || null,
-            modelo:       document.getElementById("eeModelo").value.trim() || null,
-            estado:       document.getElementById("eeEstado").value,
-            asignado_a:   document.getElementById("eeAsignado").value.trim() || null,
-            fecha_compra: document.getElementById("eeFecha").value || null,
-            notas:        document.getElementById("eeNotas").value.trim() || null
-        };
 
         const { error } = await supabaseClient.from("inventario_equipos").update(payload).eq("id", id);
         if (error) {
@@ -2533,14 +2696,16 @@
         }
         await cargarEquipos();
         cerrarModalEditarEquipo();
+        if (fichaEquipoId === id) abrirFichaEquipo(id);
     }
 
     async function eliminarEquipo() {
         const id = parseInt(document.getElementById("eeId").value);
-        if (!confirm("¿Eliminar este equipo del inventario? Esta acción no se puede deshacer.")) return;
+        if (!confirm("¿Eliminar este equipo del inventario? También se borrará su historial. Esta acción no se puede deshacer.")) return;
         const { error } = await supabaseClient.from("inventario_equipos").delete().eq("id", id);
         if (error) { alert("Error al eliminar: " + error.message); return; }
         cerrarModalEditarEquipo();
+        if (fichaEquipoId === id) cerrarFichaEquipo();
         await cargarEquipos();
     }
 
@@ -3408,10 +3573,11 @@
         // Gestionar el catálogo de aplicaciones es solo de administradores (la BD también lo exige)
         if (usuario?.rol !== "admin") document.querySelector('.menu-item[data-page="aplicaciones"]')?.remove();
         await cargarConfiguracionUsuario();
-        await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets()]);
+        await Promise.all([cargarTotalUsuarios(), cargarActividades(), cargarUsuariosEnSelects(), renderExpiringTickets(), cargarDatosEquiposBase()]);
         aplicarAjustes();
         const inicio = preferenciasUsuario.pagina_inicio;
         if (inicio && inicio !== "dashboard") navegar(inicio);
+        abrirEnlaceDirecto();
     }
 
     iniciarDashboard();

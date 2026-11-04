@@ -12,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="dashboard.css?v=20261103b">
     <link rel="stylesheet" href="ai-assistant.css?v=20261103a">
+<link rel="stylesheet" href="it-equipos.css?v=20261104a">
 </head>
 <body>
 
@@ -619,12 +620,13 @@
                 <div class="section-title">Inventario de Equipos</div>
                 <div style="display:flex;align-items:center;gap:10px">
                     <div class="filter-count" id="equiposCount"></div>
+                    <button class="btn-secondary" onclick="abrirEtiquetas()"><i data-lucide="qr-code"></i> Etiquetas QR</button>
                     <button class="btn-primary" onclick="abrirModalNuevoEquipo()"><i data-lucide="plus"></i> Nuevo equipo</button>
                 </div>
             </div>
 
             <div class="filters">
-                <input class="filter-input" id="eqBusqueda" type="text" placeholder="Buscar tipo, serie, modelo, asignado..." oninput="renderTablaEquipos()" style="width:280px" />
+                <input class="filter-input" id="eqBusqueda" type="text" placeholder="Buscar código, tipo, serie, modelo, asignado..." oninput="renderTablaEquipos()" style="width:280px" />
                 <select class="filter-select" id="eqFiltroEstado" onchange="renderTablaEquipos()">
                     <option value="">Todos los estados</option>
                     <option value="Disponible">Disponible</option>
@@ -632,22 +634,31 @@
                     <option value="En mantenimiento">En mantenimiento</option>
                     <option value="Dado de baja">Dado de baja</option>
                 </select>
+                <select class="filter-select" id="eqFiltroGarantia" onchange="renderTablaEquipos()">
+                    <option value="">Garantía: todas</option>
+                    <option value="vigente">Garantía vigente</option>
+                    <option value="por-vencer">Vence en 90 días</option>
+                    <option value="vencida">Garantía vencida</option>
+                    <option value="sin-dato">Sin dato de garantía</option>
+                    <option value="renovar">Para renovar (4+ años)</option>
+                </select>
             </div>
 
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Tipo</th>
-                            <th>Marca / Modelo</th>
+                            <th>Equipo</th>
                             <th>No. Serie</th>
                             <th>Estado</th>
                             <th>Asignado a</th>
+                            <th>Garantía</th>
+                            <th>Antigüedad</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody id="equiposBody">
-                        <tr class="loading-row"><td colspan="6">Cargando equipos...</td></tr>
+                        <tr class="loading-row"><td colspan="7">Cargando equipos...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -660,6 +671,42 @@
         ══════════════════════════════════════ -->
         <section class="page" id="page-reportes">
 
+            <div class="rep-tabs" role="tablist" aria-label="Tipo de reporte">
+                <button class="rep-tab activa" role="tab" aria-selected="true" data-rep="actividades" onclick="cambiarReporte('actividades')"><i data-lucide="list-checks"></i> Actividades</button>
+                <button class="rep-tab" role="tab" aria-selected="false" data-rep="it" onclick="cambiarReporte('it')"><i data-lucide="monitor"></i> Equipos, mantenimientos y licencias</button>
+            </div>
+
+            <div id="repIT" class="rep-it" hidden>
+                <div class="page-section-header" style="margin-bottom:16px">
+                    <div>
+                        <span class="section-title">Reporte de IT</span>
+                        <span class="periodo-badge" id="repItBadge">Últimos 90 días</span>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                        <div style="display:flex;gap:6px" id="repItPeriodos">
+                            <button class="periodo-btn" data-dias="30" onclick="cargarReporteIT(30)">1 mes</button>
+                            <button class="periodo-btn active" data-dias="90" onclick="cargarReporteIT(90)">3 meses</button>
+                            <button class="periodo-btn" data-dias="365" onclick="cargarReporteIT(365)">1 año</button>
+                            <button class="periodo-btn" data-dias="0" onclick="cargarReporteIT(0)">Todo</button>
+                        </div>
+                        <button class="btn-primary" id="repItPdf" onclick="exportarReporteITPdf()" style="font-size:12px;padding:7px 14px"><i data-lucide="download"></i> PDF</button>
+                    </div>
+                </div>
+                <p class="rep-nota">El periodo aplica a los mantenimientos. Equipos y licencias muestran el estado actual.</p>
+                <div class="rep-kpis" id="repItKpis"></div>
+                <div class="report-grid" id="repItGraficas">
+                    <div class="report-card"><div class="report-card-title">Equipos por estado</div><div class="rep-graf"><canvas id="repEqEstado" role="img" aria-label="Equipos por estado"></canvas></div></div>
+                    <div class="report-card"><div class="report-card-title">Antigüedad de los equipos</div><div class="rep-graf"><canvas id="repEqEdad" role="img" aria-label="Antigüedad de los equipos"></canvas></div></div>
+                    <div class="report-card" style="grid-column:1/-1"><div class="report-card-title">Mantenimientos por mes</div><div class="rep-graf"><canvas id="repMtMes" role="img" aria-label="Mantenimientos por mes y tipo"></canvas></div></div>
+                    <div class="report-card"><div class="report-card-title">Mantenimientos por técnico</div><div class="rep-graf"><canvas id="repMtTecnico" role="img" aria-label="Mantenimientos por técnico"></canvas></div></div>
+                    <div class="report-card"><div class="report-card-title">Tiempo promedio de resolución</div><div class="rep-graf"><canvas id="repMtResol" role="img" aria-label="Horas promedio de resolución por técnico"></canvas></div></div>
+                    <div class="report-card"><div class="report-card-title">Licencias Office por vencer</div><div class="rep-graf"><canvas id="repLic" role="img" aria-label="Licencias por vencer"></canvas></div></div>
+                    <div class="report-card"><div class="report-card-title">Garantías de equipos</div><div class="rep-graf"><canvas id="repEqGar" role="img" aria-label="Estado de garantías"></canvas></div></div>
+                    <div class="report-card" style="grid-column:1/-1"><div class="report-card-title">Próximos vencimientos (90 días)</div><div id="repItTabla"></div></div>
+                </div>
+            </div>
+
+            <div id="repActividades">
             <div class="page-section-header" style="margin-bottom:20px">
                 <div>
                     <span class="section-title">Reportes de Actividades</span>
@@ -708,6 +755,7 @@
                     </div>
                 </div>
 
+            </div>
             </div>
 
         </section>
@@ -1126,6 +1174,18 @@
                             </div>
                             <div class="cfg-row">
                                 <div class="cfg-row-info">
+                                    <div class="cfg-row-label">Garantías de equipos</div>
+                                    <div class="cfg-row-desc">Avisar cuando la garantía de un equipo vence en 30 días o ya venció</div>
+                                </div>
+                                <div class="cfg-row-control">
+                                    <label class="cfg-toggle">
+                                        <input type="checkbox" data-pref="notif_garantias" onchange="cfgCambio(this); setPref('notif_garantias', this.checked)">
+                                        <span class="cfg-toggle-track"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="cfg-row">
+                                <div class="cfg-row-info">
                                     <div class="cfg-row-label">Días de anticipación</div>
                                     <div class="cfg-row-desc">Cuántos días antes se considera "próxima a vencer"</div>
                                 </div>
@@ -1291,7 +1351,7 @@
                             <th>Expiración</th>
                             <th>País</th>
                             <th>Contacto</th>
-                            <th>Licencia</th>
+                            <th>Contraseña</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -1989,46 +2049,72 @@
                 <input class="modal-input" id="eoNombreCuenta" type="text" placeholder="Nombre de cuenta MS" />
             </div>
         </div>
-        <div class="modal-section-title">Credenciales</div>
-        <div class="modal-grid-2">
+        <div class="modal-section-title">Cuenta</div>
+        <div class="modal-grid-3">
             <div class="modal-field">
                 <label class="modal-label">Correo</label>
                 <input class="modal-input" id="eoCorreo" type="email" placeholder="correo@outlook.com" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Password</label>
-                <input class="modal-input" id="eoPassword" type="text" placeholder="Contraseña" />
-            </div>
-        </div>
-        <div class="modal-section-title">Datos adicionales</div>
-        <div class="modal-grid-3">
-            <div class="modal-field">
                 <label class="modal-label">Fecha expiración</label>
                 <input class="modal-input" id="eoExpiracion" type="text" placeholder="dd/mm/aa" />
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">Fecha de nacimiento</label>
-                <input class="modal-input" id="eoFechaNac" type="text" placeholder="dd/mm/aa" />
             </div>
             <div class="modal-field">
                 <label class="modal-label">País</label>
                 <input class="modal-input" id="eoPais" type="text" placeholder="País" />
             </div>
         </div>
-        <div class="modal-grid-2">
-            <div class="modal-field">
-                <label class="modal-label">Teléfono / Correo de contacto</label>
-                <input class="modal-input" id="eoContacto" type="text" placeholder="Contacto" />
-            </div>
-            <div class="modal-field">
-                <label class="modal-label">PIN</label>
-                <input class="modal-input" id="eoPin" type="text" placeholder="PIN" />
-            </div>
-        </div>
         <div class="modal-field">
-            <label class="modal-label">Recuperación Zoho / Notas</label>
-            <textarea class="modal-textarea" id="eoNotas" placeholder="Notas, recuperación, observaciones..." style="min-height:60px"></textarea>
+            <label class="modal-label">Teléfono / Correo de contacto</label>
+            <input class="modal-input" id="eoContacto" type="text" placeholder="Contacto" />
         </div>
+
+        <div class="modal-section-title sec-titulo"><i data-lucide="lock"></i> Datos protegidos
+            <span class="sec-nota">Se guardan cifrados. Cada vez que alguien los ve o copia queda registrado.</span>
+        </div>
+        <div class="sec-grid" id="eoSecretos">
+            <div class="sec-campo" data-campo="password">
+                <label class="modal-label" for="eoSec_password">Contraseña</label>
+                <div class="sec-fila">
+                    <input class="modal-input" id="eoSec_password" type="password" autocomplete="new-password" spellcheck="false" />
+                    <button type="button" class="sec-btn" data-sec="ver" title="Mostrar"><i data-lucide="eye"></i></button>
+                    <button type="button" class="sec-btn" data-sec="copiar" title="Copiar"><i data-lucide="copy"></i></button>
+                </div>
+            </div>
+            <div class="sec-campo" data-campo="pin">
+                <label class="modal-label" for="eoSec_pin">PIN</label>
+                <div class="sec-fila">
+                    <input class="modal-input" id="eoSec_pin" type="password" autocomplete="new-password" spellcheck="false" />
+                    <button type="button" class="sec-btn" data-sec="ver" title="Mostrar"><i data-lucide="eye"></i></button>
+                    <button type="button" class="sec-btn" data-sec="copiar" title="Copiar"><i data-lucide="copy"></i></button>
+                </div>
+            </div>
+            <div class="sec-campo" data-campo="fecha_nacimiento">
+                <label class="modal-label" for="eoSec_fecha_nacimiento">Fecha de nacimiento (recuperación)</label>
+                <div class="sec-fila">
+                    <input class="modal-input" id="eoSec_fecha_nacimiento" type="password" autocomplete="off" spellcheck="false" />
+                    <button type="button" class="sec-btn" data-sec="ver" title="Mostrar"><i data-lucide="eye"></i></button>
+                    <button type="button" class="sec-btn" data-sec="copiar" title="Copiar"><i data-lucide="copy"></i></button>
+                </div>
+            </div>
+            <div class="sec-campo" data-campo="recuperacion">
+                <label class="modal-label" for="eoSec_recuperacion">Recuperación Zoho</label>
+                <div class="sec-fila">
+                    <input class="modal-input" id="eoSec_recuperacion" type="password" autocomplete="off" spellcheck="false" />
+                    <button type="button" class="sec-btn" data-sec="ver" title="Mostrar"><i data-lucide="eye"></i></button>
+                    <button type="button" class="sec-btn" data-sec="copiar" title="Copiar"><i data-lucide="copy"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-field">
+            <label class="modal-label">Notas</label>
+            <textarea class="modal-textarea" id="eoNotas" placeholder="Observaciones (no escribas contraseñas aquí)" style="min-height:60px"></textarea>
+        </div>
+        <details class="sec-accesos" id="eoAccesosWrap" style="display:none">
+            <summary>Registro de accesos a los datos protegidos</summary>
+            <div id="eoAccesos" class="sec-accesos-lista"></div>
+        </details>
         <div class="modal-msg" id="eoMsg"></div>
         <div class="modal-footer">
             <button class="btn-danger" onclick="eliminarOffice()"><i data-lucide="trash-2"></i> Eliminar</button>
@@ -2041,30 +2127,53 @@
 <!-- MODAL NUEVO EQUIPO -->
 <div class="modal-overlay" id="modalNuevoEquipo">
     <div class="modal modal-wide">
-        <div class="modal-title">Nuevo Equipo</div>
+        <div class="modal-title">Nuevo equipo</div>
+        <div class="modal-section-title">Equipo</div>
         <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Tipo de Equipo *</label>
-                <input class="modal-input" id="neTipo" type="text" placeholder="Laptop, Monitor, etc." />
+                <label class="modal-label" for="neTipo">Tipo de equipo *</label>
+                <input class="modal-input" id="neTipo" type="text" list="listaTiposEquipo" placeholder="Laptop, Monitor, Impresora…" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Número de Serie</label>
+                <label class="modal-label" for="neSerie">Número de serie</label>
                 <input class="modal-input" id="neSerie" type="text" />
             </div>
         </div>
         <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Marca</label>
+                <label class="modal-label" for="neMarca">Marca</label>
                 <input class="modal-input" id="neMarca" type="text" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Modelo</label>
+                <label class="modal-label" for="neModelo">Modelo</label>
                 <input class="modal-input" id="neModelo" type="text" />
             </div>
         </div>
-        <div class="modal-grid-3">
+        <div class="modal-section-title">Especificaciones</div>
+        <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Estado</label>
+                <label class="modal-label" for="neProcesador">Procesador</label>
+                <input class="modal-input" id="neProcesador" type="text" placeholder="Intel Core i5-1235U" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="neSo">Sistema operativo</label>
+                <input class="modal-input" id="neSo" type="text" placeholder="Windows 11 Pro" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="neRam">Memoria RAM</label>
+                <input class="modal-input" id="neRam" type="text" placeholder="16 GB" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="neDisco">Almacenamiento</label>
+                <input class="modal-input" id="neDisco" type="text" placeholder="512 GB SSD" />
+            </div>
+        </div>
+        <div class="modal-section-title">Asignación y garantía</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="neEstado">Estado</label>
                 <select class="modal-select" id="neEstado">
                     <option value="Disponible">Disponible</option>
                     <option value="Asignado">Asignado</option>
@@ -2073,22 +2182,32 @@
                 </select>
             </div>
             <div class="modal-field">
-                <label class="modal-label">Asignado a</label>
-                <input class="modal-input" id="neAsignado" type="text" placeholder="Nombre del usuario" />
+                <label class="modal-label" for="neAsignado">Asignado a</label>
+                <input class="modal-input" id="neAsignado" type="text" list="listaUsuariosEquipo" placeholder="Nombre del colaborador" autocomplete="off" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="neFecha">Fecha de compra</label>
+                <input class="modal-input" id="neFecha" type="date" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Fecha de Compra</label>
-                <input class="modal-input" id="neFecha" type="date" />
+                <label class="modal-label" for="neGarantia">Garantía hasta</label>
+                <input class="modal-input" id="neGarantia" type="date" />
+                <div class="eq-atajos" data-para="ne">
+                    <button type="button" data-anios="1">+1 año</button><button type="button" data-anios="2">+2 años</button><button type="button" data-anios="3">+3 años</button>
+                    <span>desde la compra</span>
+                </div>
             </div>
         </div>
         <div class="modal-field">
-            <label class="modal-label">Notas</label>
-            <textarea class="modal-textarea" id="neNotas" placeholder="Especificaciones o detalles..."></textarea>
+            <label class="modal-label" for="neNotas">Notas</label>
+            <textarea class="modal-textarea" id="neNotas" placeholder="Accesorios, cargador, detalles físicos…"></textarea>
         </div>
         <div class="modal-msg" id="neMsg"></div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="cerrarModalNuevoEquipo()">Cancelar</button>
-            <button class="btn-primary" id="neGuardar" onclick="guardarNuevoEquipo()">Guardar Equipo</button>
+            <button class="btn-primary" id="neGuardar" onclick="guardarNuevoEquipo()">Guardar equipo</button>
         </div>
     </div>
 </div>
@@ -2096,31 +2215,54 @@
 <!-- MODAL EDITAR EQUIPO -->
 <div class="modal-overlay" id="modalEditarEquipo">
     <div class="modal modal-wide">
-        <div class="modal-title">Editar Equipo</div>
+        <div class="modal-title">Editar equipo</div>
         <input type="hidden" id="eeId" />
+        <div class="modal-section-title">Equipo</div>
         <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Tipo de Equipo *</label>
-                <input class="modal-input" id="eeTipo" type="text" />
+                <label class="modal-label" for="eeTipo">Tipo de equipo *</label>
+                <input class="modal-input" id="eeTipo" type="text" list="listaTiposEquipo" placeholder="Laptop, Monitor, Impresora…" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Número de Serie</label>
+                <label class="modal-label" for="eeSerie">Número de serie</label>
                 <input class="modal-input" id="eeSerie" type="text" />
             </div>
         </div>
         <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Marca</label>
+                <label class="modal-label" for="eeMarca">Marca</label>
                 <input class="modal-input" id="eeMarca" type="text" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Modelo</label>
+                <label class="modal-label" for="eeModelo">Modelo</label>
                 <input class="modal-input" id="eeModelo" type="text" />
             </div>
         </div>
-        <div class="modal-grid-3">
+        <div class="modal-section-title">Especificaciones</div>
+        <div class="modal-grid-2">
             <div class="modal-field">
-                <label class="modal-label">Estado</label>
+                <label class="modal-label" for="eeProcesador">Procesador</label>
+                <input class="modal-input" id="eeProcesador" type="text" placeholder="Intel Core i5-1235U" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="eeSo">Sistema operativo</label>
+                <input class="modal-input" id="eeSo" type="text" placeholder="Windows 11 Pro" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="eeRam">Memoria RAM</label>
+                <input class="modal-input" id="eeRam" type="text" placeholder="16 GB" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="eeDisco">Almacenamiento</label>
+                <input class="modal-input" id="eeDisco" type="text" placeholder="512 GB SSD" />
+            </div>
+        </div>
+        <div class="modal-section-title">Asignación y garantía</div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="eeEstado">Estado</label>
                 <select class="modal-select" id="eeEstado">
                     <option value="Disponible">Disponible</option>
                     <option value="Asignado">Asignado</option>
@@ -2129,23 +2271,143 @@
                 </select>
             </div>
             <div class="modal-field">
-                <label class="modal-label">Asignado a</label>
-                <input class="modal-input" id="eeAsignado" type="text" />
+                <label class="modal-label" for="eeAsignado">Asignado a</label>
+                <input class="modal-input" id="eeAsignado" type="text" list="listaUsuariosEquipo" placeholder="Nombre del colaborador" autocomplete="off" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="eeFecha">Fecha de compra</label>
+                <input class="modal-input" id="eeFecha" type="date" />
             </div>
             <div class="modal-field">
-                <label class="modal-label">Fecha de Compra</label>
-                <input class="modal-input" id="eeFecha" type="date" />
+                <label class="modal-label" for="eeGarantia">Garantía hasta</label>
+                <input class="modal-input" id="eeGarantia" type="date" />
+                <div class="eq-atajos" data-para="ee">
+                    <button type="button" data-anios="1">+1 año</button><button type="button" data-anios="2">+2 años</button><button type="button" data-anios="3">+3 años</button>
+                    <span>desde la compra</span>
+                </div>
             </div>
         </div>
         <div class="modal-field">
-            <label class="modal-label">Notas</label>
-            <textarea class="modal-textarea" id="eeNotas"></textarea>
+            <label class="modal-label" for="eeNotas">Notas</label>
+            <textarea class="modal-textarea" id="eeNotas" placeholder="Accesorios, cargador, detalles físicos…"></textarea>
         </div>
         <div class="modal-msg" id="eeMsg"></div>
         <div class="modal-footer">
             <button class="btn-danger" onclick="eliminarEquipo()"><i data-lucide="trash-2"></i> Eliminar</button>
             <button class="btn-secondary" onclick="cerrarModalEditarEquipo()">Cancelar</button>
             <button class="btn-primary" id="eeGuardar" onclick="guardarEditarEquipo()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<datalist id="listaUsuariosEquipo"></datalist>
+<datalist id="listaTiposEquipo"><option value="Laptop"><option value="Computadora de escritorio"><option value="Monitor"><option value="Impresora"><option value="Teléfono"><option value="Tablet"><option value="Teclado"><option value="Mouse"><option value="Audífonos"><option value="Router"><option value="Proyector"></datalist>
+
+<!-- FICHA DE EQUIPO: datos, garantía, QR, actas e historial -->
+<div class="modal-overlay" id="modalFichaEquipo">
+    <div class="modal modal-wide eq-ficha" role="dialog" aria-modal="true" aria-labelledby="fqTitulo">
+        <div class="fq-cab">
+            <div>
+                <div class="fq-codigo" id="fqCodigo"></div>
+                <div class="modal-title" id="fqTitulo" style="margin:2px 0 4px">—</div>
+                <div class="fq-sub" id="fqSub"></div>
+            </div>
+            <button class="drawer-close" onclick="cerrarFichaEquipo()" aria-label="Cerrar ficha"><i data-lucide="x"></i></button>
+        </div>
+        <div class="fq-cuerpo">
+            <div class="fq-principal">
+                <div id="fqAlertas"></div>
+                <div class="fq-st">Datos del equipo</div>
+                <dl class="fq-datos" id="fqDatos"></dl>
+                <div class="fq-st">Historial</div>
+                <div class="fq-tl" id="fqHistorial"><div class="fq-vacio">Cargando…</div></div>
+            </div>
+            <aside class="fq-lado">
+                <div class="fq-qr" id="fqQr" aria-label="Código QR de la ficha"></div>
+                <div class="fq-qr-nota">Escanéalo con el celular para abrir esta ficha</div>
+                <button class="btn-secondary" onclick="imprimirEtiquetas([fichaEquipoId], 'individual')"><i data-lucide="printer"></i> Imprimir etiqueta</button>
+                <button class="btn-primary" id="fqBtnEntrega" onclick="abrirActa('entrega')"><i data-lucide="file-signature"></i> Acta de entrega</button>
+                <button class="btn-secondary" id="fqBtnDevolucion" onclick="abrirActa('devolucion')"><i data-lucide="undo-2"></i> Acta de devolución</button>
+                <button class="btn-secondary" onclick="abrirEditarEquipo(fichaEquipoId)"><i data-lucide="pencil"></i> Editar equipo</button>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<!-- ACTA DE ENTREGA / DEVOLUCIÓN -->
+<div class="modal-overlay" id="modalActa">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acTitulo">
+        <div class="modal-title" id="acTitulo">Acta de entrega</div>
+        <p class="ac-intro" id="acIntro"></p>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="acPersona" id="acPersonaLabel">Colaborador que recibe *</label>
+                <input class="modal-input" id="acPersona" type="text" list="listaUsuariosEquipo" autocomplete="off" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="acFecha">Fecha</label>
+                <input class="modal-input" id="acFecha" type="date" />
+            </div>
+        </div>
+        <div class="modal-grid-2">
+            <div class="modal-field">
+                <label class="modal-label" for="acPuesto">Puesto o área (opcional)</label>
+                <input class="modal-input" id="acPuesto" type="text" placeholder="Ej. Contabilidad" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label" for="acCondicion">Condición del equipo</label>
+                <select class="modal-select" id="acCondicion">
+                    <option>Nuevo</option>
+                    <option selected>Buen estado</option>
+                    <option>Con detalles de uso</option>
+                    <option>Dañado</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-field">
+            <span class="modal-label">Accesorios incluidos</span>
+            <div class="ac-accesorios" id="acAccesorios">
+                <label><input type="checkbox" value="Cargador"> Cargador</label>
+                <label><input type="checkbox" value="Mouse"> Mouse</label>
+                <label><input type="checkbox" value="Teclado"> Teclado</label>
+                <label><input type="checkbox" value="Mochila o funda"> Mochila o funda</label>
+                <label><input type="checkbox" value="Audífonos"> Audífonos</label>
+                <label><input type="checkbox" value="Cable de red"> Cable de red</label>
+            </div>
+            <input class="modal-input" id="acOtros" type="text" placeholder="Otros accesorios, separados por coma" style="margin-top:8px" />
+        </div>
+        <div class="modal-field">
+            <label class="modal-label" for="acObs">Observaciones</label>
+            <textarea class="modal-textarea" id="acObs" style="min-height:56px" placeholder="Rayones, detalles, software instalado…"></textarea>
+        </div>
+        <label class="ac-actualizar" id="acActualizarWrap"><input type="checkbox" id="acActualizar" checked> <span id="acActualizarTxt">Marcar el equipo como asignado a esta persona</span></label>
+        <div class="modal-msg" id="acMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="cerrarActa()">Cancelar</button>
+            <button class="btn-primary" id="acGenerar" onclick="generarActa()"><i data-lucide="download"></i> Generar PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- ETIQUETAS QR -->
+<div class="modal-overlay" id="modalEtiquetas">
+    <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="etqTitulo">
+        <div class="modal-title" id="etqTitulo">Imprimir etiquetas QR</div>
+        <p class="ac-intro">Pega la etiqueta en el equipo. Al escanearla con el celular se abre su ficha (pide iniciar sesión).</p>
+        <div class="etq-barra">
+            <label class="etq-todos"><input type="checkbox" id="etqTodos" checked onchange="marcarTodasEtiquetas(this.checked)"> Todos (<span id="etqCuenta">0</span>)</label>
+            <select class="modal-select" id="etqFormato" style="max-width:260px">
+                <option value="hoja">Hoja carta · 3 columnas</option>
+                <option value="individual">Una por página · 62 × 29 mm</option>
+            </select>
+        </div>
+        <div class="etq-lista" id="etqLista"></div>
+        <div class="modal-msg" id="etqMsg"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="document.getElementById('modalEtiquetas').classList.remove('open')">Cancelar</button>
+            <button class="btn-primary" onclick="imprimirEtiquetasSeleccionadas()"><i data-lucide="printer"></i> Imprimir</button>
         </div>
     </div>
 </div>
@@ -2355,9 +2617,11 @@
 </div>
 
 
-<script src="sesion.js?v=20261103b"></script>
-<script src="dashboard.js?v=20261103e"></script>
-<script src="ai-assistant.js?v=20261103a"></script>
+<script src="sesion.js?v=20261104a"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="dashboard.js?v=20261104a"></script>
+<script src="it-equipos.js?v=20261104a"></script>
+<script src="ai-assistant.js?v=20261104a"></script>
 
 
 </body>

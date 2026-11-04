@@ -58,17 +58,19 @@ export const HERRAMIENTAS_ACCION = [
     type: "function",
     function: {
       name: "programar_mantenimiento",
-      description: "Propone programar un mantenimiento para un equipo. Usa el id real del equipo (del contexto). El usuario debe confirmar.",
+      description: "Propone programar un mantenimiento (ticket) para un equipo del inventario. Usa el id real del equipo que devuelve consultar_it (EQ-0012 → 12). El usuario debe confirmar.",
       parameters: {
         type: "object",
         properties: {
-          computadora_id: { type: "integer", description: "Id del equipo (del contexto)" },
+          equipo_id: { type: "integer", description: "Id del equipo (de consultar_it)" },
+          titulo: { type: "string", description: "Título corto del mantenimiento" },
           tipo: { type: "string", enum: TIPOS_MANT },
+          prioridad: { type: "string", enum: NIVELES },
           fecha_programada: fecha,
           descripcion: { type: "string" },
           tecnico: { type: "string" },
         },
-        required: ["computadora_id", "tipo", "fecha_programada"],
+        required: ["equipo_id", "tipo", "fecha_programada"],
       },
     },
   },
@@ -104,14 +106,23 @@ export async function proponer(db: any, user: any, convId: string, nombre: strin
     datos = { id, titulo: act.actividad, cambios };
     resumen = `Actualizar actividad #${id} «${act.actividad}»`;
   } else if (nombre === "programar_mantenimiento") {
-    const cid = Number(a.computadora_id);
-    const { data: pc } = await db.from("computadoras").select("id, nombre_equipo").eq("id", cid).maybeSingle();
-    if (!pc) return { error: `No existe el equipo #${a.computadora_id}.` };
+    const eid = Number(a.equipo_id ?? a.computadora_id);
+    const { data: eq } = await db.from("inventario_equipos").select("id, tipo, marca, modelo, asignado_a, usuario_id").eq("id", eid).maybeSingle();
+    if (!eq) return { error: `No existe el equipo EQ-${String(eid).padStart(4, "0")}.` };
     const tipo = TIPOS_MANT.find((t) => t.toLowerCase() === String(a.tipo ?? "").toLowerCase());
     if (!tipo) return { error: "Tipo de mantenimiento no válido (Preventivo o Correctivo)." };
     if (!esFecha(a.fecha_programada)) return { error: "La fecha programada debe tener formato AAAA-MM-DD." };
-    datos = { computadora_id: cid, equipo: pc.nombre_equipo, tipo, fecha_programada: a.fecha_programada, descripcion: txt(a.descripcion, 1000), tecnico: txt(a.tecnico) };
-    resumen = `Programar mantenimiento ${tipo.toLowerCase()} para «${pc.nombre_equipo}»`;
+    const nombreEq = [eq.tipo, eq.marca, eq.modelo].filter(Boolean).join(" ") || `Equipo ${eid}`;
+    let usuarioId = eq.usuario_id ?? null;
+    if (!usuarioId && eq.asignado_a) {
+      const { data: u } = await db.from("usuarios").select("id").ilike("nombre", eq.asignado_a).limit(1).maybeSingle();
+      usuarioId = u?.id ?? null;
+    }
+    datos = {
+      equipo_id: eid, equipo: nombreEq, usuario_id: usuarioId, titulo: txt(a.titulo, 120) ?? `Mantenimiento ${tipo.toLowerCase()} · ${nombreEq}`,
+      tipo, prioridad: nivel(a.prioridad, "Media"), fecha_programada: a.fecha_programada, descripcion: txt(a.descripcion, 1000), tecnico: txt(a.tecnico),
+    };
+    resumen = `Programar mantenimiento ${tipo.toLowerCase()} para «${nombreEq}» (EQ-${String(eid).padStart(4, "0")})`;
   } else return { error: "Acción no soportada." };
 
   const { data, error } = await db.from("ia_acciones").insert({ usuario_id: user.id, conversacion_id: convId, tipo: nombre, datos, resumen }).select("id").single();
@@ -169,11 +180,24 @@ export async function resolver(db: any, user: any, id: string, confirmar: boolea
       return cerrar("ejecutada", `Actividad #${d.id} actualizada.`);
     }
     if (acc.tipo === "programar_mantenimiento") {
-      const { data, error } = await db.from("mantenimientos").insert({
-        computadora_id: d.computadora_id, tipo: d.tipo, descripcion: d.descripcion, fecha_programada: d.fecha_programada, tecnico: d.tecnico, estado: "Programado",
-      }).select("id").single();
-      if (error) throw error;
-      return cerrar("ejecutada", `Mantenimiento #${data.id} programado.`);
+      // Mismo consecutivo que la página de Mantenimientos: MANT-AAAA-0001 (con reintento si dos se crean a la vez)
+      const anio = new Date().getFullYear();
+      for (let intento = 0; intento < 3; intento++) {
+        const { data: ult } = await db.from("mantenimientos").select("numero_ticket").like("numero_ticket", `MANT-${anio}-%`)
+          .order("numero_ticket", { ascending: false }).limit(1);
+        const seq = (parseInt(String(ult?.[0]?.numero_ticket ?? "").split("-")[2]) || 0) + 1 + intento;
+        const ticket = `MANT-${anio}-${String(seq).padStart(4, "0")}`;
+        const { data: existe } = await db.from("mantenimientos").select("id").eq("numero_ticket", ticket).maybeSingle();
+        if (existe) continue;
+        const { data, error } = await db.from("mantenimientos").insert({
+          numero_ticket: ticket, titulo: d.titulo, equipo_id: d.equipo_id ?? null, computadora_id: d.equipo_id ? null : d.computadora_id ?? null,
+          usuario_id: d.usuario_id ?? null, tipo: d.tipo, prioridad: d.prioridad ?? "Media", descripcion: d.descripcion,
+          fecha_programada: d.fecha_programada, tecnico: d.tecnico, estado: "Programado", creado_por: quien,
+        }).select("id").single();
+        if (error) throw error;
+        return cerrar("ejecutada", `Ticket ${ticket} programado (#${data.id}).`);
+      }
+      return cerrar("error", "No se pudo asignar un número de ticket. Intenta de nuevo.");
     }
     return cerrar("error", "Tipo de acción desconocido.");
   } catch (e) {
