@@ -21,6 +21,7 @@ import { HERRAMIENTAS_IT, NOMBRES_IT, consultarIT, resumenIT } from "./it.ts";
 const OPENAI = "https://api.openai.com/v1";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const BUCKET = "ia-imagenes";
+const BUCKET_ARCHIVOS = "ia-archivos"; // pptx, docx, xlsx, pdf… que crea la IA
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +40,7 @@ const MAX_BYTES_ADJUNTO = 5 * 1024 * 1024;
 const HISTORIAL_MODELO = 24;
 // Marcas de progreso: la interfaz las muestra como "generando imagen…", "buscando en internet…", etc.
 const MARCA_IMAGEN = "⟦imagen⟧";
-const MARCA_HERRAMIENTA: Record<string, string> = { buscar_web: "⟦buscando⟧", ejecutar_codigo: "⟦ejecutando⟧" };
+const MARCA_HERRAMIENTA: Record<string, string> = { buscar_web: "⟦buscando⟧", ejecutar_codigo: "⟦ejecutando⟧", crear_archivo: "⟦creando⟧" };
 
 const log = (nivel: string, evento: string, datos: Record<string, unknown> = {}) =>
   console.log(JSON.stringify({ nivel, evento, ...datos }));
@@ -234,6 +235,15 @@ async function subirImagen(db: any, usuarioId: number, bytes: Uint8Array, mime: 
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${ruta}`;
 }
 
+// El nombre se conserva en la ruta para que la descarga salga con él
+async function subirArchivo(db: any, usuarioId: number, bytes: Uint8Array, mime: string, nombre: string): Promise<string> {
+  const limpio = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.-]+/g, "_").slice(0, 80) || "archivo";
+  const ruta = `${usuarioId}/${crypto.randomUUID()}/${limpio}`;
+  const { error } = await db.storage.from(BUCKET_ARCHIVOS).upload(ruta, bytes, { contentType: mime, upsert: false });
+  if (error) throw new Error("No se pudo guardar el archivo: " + error.message);
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_ARCHIVOS}/${ruta}`;
+}
+
 async function generarImagen(key: string, prompt: string, tamano: string): Promise<{ bytes: Uint8Array; modelo: string }> {
   const modelos = await candidatosImagen(key);
   if (!modelos.length) throw new Error("Esta cuenta de OpenAI no tiene un modelo de imágenes habilitado.");
@@ -341,6 +351,10 @@ Deno.serve(async (req) => {
         const rutas = new Set<string>();
         for (const m of ms ?? []) for (const x of String(m.contenido).matchAll(IMG_RE)) { const i = x[2].indexOf(`/${BUCKET}/`); if (i >= 0) rutas.add(x[2].slice(i + BUCKET.length + 2)); }
         if (rutas.size) await db.storage.from(BUCKET).remove([...rutas]);
+        // …y los archivos que creó la IA (pptx, docx, xlsx, pdf…)
+        const rutasArch = new Set<string>();
+        for (const m of ms ?? []) for (const x of String(m.contenido).matchAll(/\/storage\/v1\/object\/public\/ia-archivos\/([^\s)]+)/g)) rutasArch.add(decodeURIComponent(x[1]));
+        if (rutasArch.size) await db.storage.from(BUCKET_ARCHIVOS).remove([...rutasArch]);
         await db.from("ia_conversaciones").delete().eq("id", p.id);
         return json({ ok: true });
       }
@@ -540,6 +554,7 @@ ${user.rol === "admin" ? '- Proponer cambios en el sistema con las herramientas 
 ${puedeImagenes ? '- Generar imágenes con la herramienta "generar_imagen" cuando el usuario lo pida (logos, ilustraciones, banners, pósters, mockups). Escribe un prompt visual detallado. No describas la imagen antes de generarla; después, una línea breve.' : ""}
 - Buscar en internet con la herramienta "buscar_web" cuando la respuesta dependa de información actual o verificable (noticias, precios, tipos de cambio, clima, versiones, documentación, leyes, datos de empresas) o cuando el usuario pida buscar o citar fuentes. Si sabes la respuesta y no cambia con el tiempo, no busques.
 - Ejecutar código Python con la herramienta "ejecutar_codigo" cuando haga falta un resultado calculado de verdad: cálculos exactos, estadísticas, análisis de datos que el usuario pegó o adjuntó, conversiones, o probar un programa.
+- CREAR ARCHIVOS DESCARGABLES con la herramienta "crear_archivo": presentaciones PowerPoint (.pptx), documentos Word (.docx), hojas Excel (.xlsx), PDF, CSV o texto. Úsala siempre que la persona pida un archivo («dame el PPT», «pásalo a Word», «hazme la presentación», «devuélveme el documento corregido»), también para editar un documento que adjuntó y devolverlo. El archivo aparece en el chat listo para descargar. NUNCA digas que no puedes entregar o adjuntar archivos, ni ofrezcas scripts o macros para que la persona lo genere: créalo tú. En "contenido" pasa todo el texto completo y la estructura.
 - Leer y analizar DOCUMENTOS adjuntos (PDF, Word, Excel, CSV, PowerPoint, texto): aparecen en el mensaje entre <<<INICIO DEL DOCUMENTO>>> y <<<FIN DEL DOCUMENTO>>>. Resume, compara, extrae datos, responde preguntas y cita la sección o página cuando ayude. En hojas de cálculo cada hoja viene como CSV con su nombre. Si el documento se recortó, avísalo. Si la persona adjunta un documento sin decir qué quiere, da un resumen breve (de qué trata, puntos clave, cifras importantes) y ofrece 2 o 3 cosas concretas que puedes hacer con él.
 
 GRÁFICAS
@@ -732,9 +747,12 @@ async function chat(db: any, user: any, p: Record<string, any>) {
           controller.enqueue(enc.encode(`${completo ? "\n\n" : ""}${MARCA_HERRAMIENTA[avz.name]}`));
           if (completo) completo += "\n\n";
           const subir = (bytes: Uint8Array, mime: string) => subirImagen(db, user.id, bytes, mime);
-          const r = await responderConHerramienta(key, candidatos, avz.name, args, String(messages[0].content), mensajesModelo, emitir, maxSalida, subir);
+          const subirArch = (bytes: Uint8Array, mime: string, nombre: string) => subirArchivo(db, user.id, bytes, mime, nombre);
+          const r = await responderConHerramienta(key, candidatos, avz.name, args, String(messages[0].content), mensajesModelo, emitir, maxSalida, subir, subirArch);
           if (r) { uso = { entrada: uso.entrada + r.entrada, salida: uso.salida + r.salida }; log("info", "herramienta", { usuario: user.id, nombre: avz.name, modelo: r.modelo }); }
-          else emitir(avz.name === "buscar_web" ? "⚠️ No pude buscar en internet en este momento. Intenta de nuevo en unos minutos." : "⚠️ No pude ejecutar el código en este momento. Intenta de nuevo en unos minutos.");
+          else emitir(avz.name === "buscar_web" ? "⚠️ No pude buscar en internet en este momento. Intenta de nuevo en unos minutos."
+            : avz.name === "crear_archivo" ? "⚠️ No pude crear el archivo en este momento. Intenta de nuevo en unos minutos."
+            : "⚠️ No pude ejecutar el código en este momento. Intenta de nuevo en unos minutos.");
         }
 
         // Memoria personal: guardar u olvidar datos (la persona puede revisarlos en «Personalizar»)

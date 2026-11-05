@@ -86,6 +86,14 @@ function inline(s) {
             (_, alt, url) => `<span class="imgbox"><img src="${url}" alt="${alt}" loading="lazy"><span class="imgtools"><button type="button" data-dl="${url}">${I.dl} Descargar</button></span></span>`)
          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
          .replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, "$1<em>$2</em>")
+         // Archivo creado por la IA (pptx, docx, xlsx, pdf…): tarjeta de descarga
+         .replace(/(?:📎\s*)?\[([^\]]+)\]\((https:\/\/[^\s)]+\/storage\/v1\/object\/public\/ia-archivos\/[^\s)]+)\)/g, (_, nom, url) => {
+             const ext = (nom.match(/\.([a-z0-9]{2,5})$/i) || [, "archivo"])[1].toLowerCase();
+             const color = { pptx: "#d24726", docx: "#2563eb", xlsx: "#059669", pdf: "#dc2626", csv: "#059669" }[ext] || "#6b7280";
+             return `<span class="archivo"><span class="archivo-ic" style="background:${color}">${ext.toUpperCase().slice(0, 4)}</span><span class="archivo-n">${nom}</span><button type="button" data-dlf="${url}" data-nombre="${nom}">${I.dl} Descargar</button></span>`;
+         })
+         // Enlaces internos del entorno de código (sandbox:/mnt/data/…) no sirven fuera: solo el texto
+         .replace(/\[([^\]]+)\]\(sandbox:[^)]*\)/g, "$1")
          .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     s = s.replace(/&lt;br\s*\/?&gt;/gi, "<br>");
     return s.replace(/\u0000(\d+)\u0000/g, (_, i) => "<code>" + codes[i] + "</code>");
@@ -109,8 +117,10 @@ function bloques(texto) {
         if (/^>\s?/.test(l)) { let q = []; while (i < L.length && /^>\s?/.test(L[i])) q.push(L[i++].replace(/^>\s?/, "")); out += "<blockquote>" + inline(q.join(" ")) + "</blockquote>"; continue; }
         if (/^\s*[-*•]\s+/.test(l) || /^\s*\d+[.)]\s+/.test(l)) {
             const ord = /^\s*\d+[.)]\s+/.test(l); let items = "";
+            // Una lista numerada partida por texto sigue en su número (no vuelve a 1)
+            const inicio = ord ? parseInt(l.match(/\d+/)[0], 10) : 1;
             while (i < L.length && (ord ? /^\s*\d+[.)]\s+/.test(L[i]) : /^\s*[-*•]\s+/.test(L[i]))) { items += "<li>" + inline(L[i].replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")) + "</li>"; i++; }
-            out += (ord ? "<ol>" : "<ul>") + items + (ord ? "</ol>" : "</ul>"); continue;
+            out += (ord ? (inicio > 1 ? `<ol start="${inicio}">` : "<ol>") : "<ul>") + items + (ord ? "</ol>" : "</ul>"); continue;
         }
         let p = [];
         while (i < L.length && L[i].trim() && !/^(#{1,4}\s|>\s?|\s*[-*•]\s+|\s*\d+[.)]\s+)/.test(L[i]) && !esTabla(i)) p.push(L[i++]);
@@ -134,13 +144,14 @@ function mdSinFuentes(src) {
 }
 
 // Marcas de progreso del backend: solo se muestran mientras son lo último que llegó.
-const MARCAS_RE = /⟦(imagen|buscando|ejecutando|consultando)⟧/g;
+const MARCAS_RE = /⟦(imagen|buscando|ejecutando|consultando|creando)⟧/g;
 const MSG_RE = /⟦msg:(\d+)⟧/;
 const quitarMarcas = t => t.replace(MARCAS_RE, "").replace(/⟦msg:\d+⟧/g, "");
-const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando|consultando)⟧$/) || [])[1] || null;
+const marcaFinal = t => (t.trimEnd().match(/⟦(imagen|buscando|ejecutando|consultando|creando)⟧$/) || [])[1] || null;
 const PROGRESO = {
     consultando: `<div class="prog">${svg('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>', 16, 'class="prog-ic late"')}<span>Consultando datos de IT</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
     buscando: `<div class="prog">${svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>', 16, 'class="prog-ic gira"')}<span>Buscando en internet</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
+    creando: `<div class="prog">${svg('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5zM14 3v5h5M12 12v6M9 15l3 3 3-3"/>', 16, 'class="prog-ic late"')}<span>Creando archivo</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
     ejecutando: `<div class="prog">${svg('<path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/>', 16, 'class="prog-ic late"')}<span>Ejecutando código</span><i class="prog-dots"><b></b><b></b><b></b></i></div>`,
 };
 
@@ -464,14 +475,16 @@ $("vista").addEventListener("click", e => {
     const dc = e.target.closest("[data-dlcode]"); if (dc) return descargarCodigo(dc.closest("pre"));
     const pv = e.target.closest("[data-preview]"); if (pv) return vistaPrevia(pv.closest("pre"));
     const xl = e.target.closest("[data-xls]"); if (xl) return descargarExcel(xl.closest(".msg").dataset.raw || "");
+    const df = e.target.closest("[data-dlf]"); if (df) return descargar(df.dataset.dlf, df.dataset.nombre);
     const dl = e.target.closest("[data-dl]"); if (dl) return descargar(dl.dataset.dl);
     const im = e.target.closest(".imgbox img, .thumbs img"); if (im) return abrirLightbox(im.src);
 });
 
-async function descargar(url) {
+async function descargar(url, nombre) {
     try {
-        const b = await (await fetch(url)).blob(); const a = document.createElement("a");
-        a.href = URL.createObjectURL(b); a.download = "alterna-ia-" + Date.now() + ".png"; document.body.appendChild(a); a.click(); a.remove();
+        const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+        const b = await r.blob(); const a = document.createElement("a");
+        a.href = URL.createObjectURL(b); a.download = nombre || "alterna-ia-" + Date.now() + ".png"; document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     } catch { window.open(url, "_blank", "noopener"); }
 }
