@@ -84,6 +84,82 @@
         .app .ir { margin-top: auto; font-size: 13px; color: var(--text); opacity: .7; }
         .app:hover .ir { opacity: 1; }
 
+        /* ── Liquid Glass ──
+           Fondo: cuadrícula fina sobre un degradado plata oscuro, con reflejos que se desplazan lento.
+           Selector: una lente de vidrio flota sobre la tarjeta elegida. Al cambiar de tarjeta la lente
+           viaja con efecto resorte y la forma anterior se encoge: el filtro #vidrio las funde (cuello
+           líquido entre las dos) y les da relieve, brillo especular, borde de luz y una franja irisada. */
+        body {
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, #2a2a2e 0%, transparent 60%),
+                radial-gradient(ellipse 70% 70% at 90% 100%, #050506 0%, transparent 70%),
+                linear-gradient(160deg, #1b1b1e 0%, #121214 55%, #0b0b0c 100%);
+        }
+        body::before {
+            background-image:
+                linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+            background-size: 132px 132px;
+            background-position: -1px -1px;
+            -webkit-mask-image: radial-gradient(ellipse 90% 80% at 40% 35%, #000 30%, transparent 85%);
+            mask-image: radial-gradient(ellipse 90% 80% at 40% 35%, #000 30%, transparent 85%);
+        }
+        .fondo-liquido { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+        .fondo-liquido i {
+            position: absolute; width: 44vmax; height: 44vmax; opacity: .10; filter: blur(70px);
+            background: radial-gradient(circle at 40% 35%, #d8dbe4, transparent 66%);
+            animation: deriva 30s ease-in-out infinite alternate;
+        }
+        .fondo-liquido i:nth-child(1) { left: -14vmax; top: -16vmax; }
+        .fondo-liquido i:nth-child(2) { right: -18vmax; top: 22vh; opacity: .07; animation-duration: 36s; animation-delay: -10s; }
+        @keyframes deriva {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(7vmax, 6vmax) scale(1.15); }
+        }
+        header, main { z-index: 1; }
+        header { background: rgba(15,15,16,.35); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+        html, body { overflow-x: clip; }
+        .grid { position: relative; }
+        .vidrio {
+            position: absolute; inset: -40px; pointer-events: none; z-index: 2;
+            filter: url(#vidrio); opacity: 0;
+        }
+        /* La lente y su rastro los mueve la física de resortes (JavaScript), no transiciones CSS */
+        .lente {
+            position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 26px; background: #fff;
+            transform-origin: 0 0; will-change: transform, width, height;
+        }
+        .lente.hebra { border-radius: 999px; }
+        .lente.bulto { border-radius: 50%; }
+
+        .app {
+            position: relative; overflow: hidden;
+            background: rgba(30, 30, 33, .58);
+            border-color: rgba(255,255,255,.07);
+            -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+            transition: background .25s ease, transform .3s cubic-bezier(.34, 1.45, .45, 1);
+        }
+        .app:hover, .app:focus-visible { background: rgba(38, 38, 42, .62); border-color: rgba(255,255,255,.07); }
+        .app h2, .app p, .app .ir { transition: color .25s ease, opacity .25s ease, transform .4s cubic-bezier(.34, 1.45, .45, 1); }
+        .app:hover .ir, .app:focus-visible .ir { transform: translateX(3px); }
+        /* Brillo suave que sigue al puntero bajo el vidrio */
+        .app::before {
+            content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+            background: radial-gradient(260px circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,.07), transparent 62%);
+        }
+        .app:hover::before { opacity: 1; }
+        .app > * { position: relative; }
+        .ico { transition: transform .45s cubic-bezier(.34, 1.6, .45, 1); }
+        .app:hover .ico, .app:focus-visible .ico { transform: scale(1.07); }
+        .app:active { transform: scale(.985); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .fondo-liquido i { animation: none; }
+            .app, .ico, .app h2, .app p, .app .ir { transition: none; }
+            .app:hover .ico, .app:hover .ir { transform: none; }
+        }
+
         .estado { margin-top: 36px; padding: 28px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--muted); line-height: 1.6; }
         .estado b { color: var(--text); }
         .skel { height: 168px; border-radius: 16px; background: var(--surface); animation: pulso 1.2s ease-in-out infinite; }
@@ -98,6 +174,58 @@
     </style>
 </head>
 <body>
+<div class="fondo-liquido" aria-hidden="true"><i></i><i></i></div>
+<!-- Filtro "vidrio líquido": funde las formas (goo) y las pinta como vidrio: relleno tenue,
+     brillo especular por relieve, borde de luz, sombra suave y una franja irisada en el canto. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="vidrio" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <!-- 1. Forma líquida: une las lentes cercanas con un cuello suave -->
+        <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="difusa" />
+        <feColorMatrix in="difusa" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 30 -14" result="forma" />
+        <!-- 2. Sombra bajo el vidrio (solo por fuera) -->
+        <feGaussianBlur in="forma" stdDeviation="14" result="s1" />
+        <feOffset in="s1" dy="12" result="s2" />
+        <feFlood flood-color="#000" flood-opacity=".5" />
+        <feComposite in2="s2" operator="in" result="s3" />
+        <feComposite in="s3" in2="forma" operator="out" result="sombra" />
+        <!-- 3. Cuerpo: un velo blanco muy tenue -->
+        <feFlood flood-color="#fff" flood-opacity=".045" />
+        <feComposite in2="forma" operator="in" result="relleno" />
+        <!-- 4. Relieve y brillo especular (luz desde arriba a la izquierda) -->
+        <feGaussianBlur in="forma" stdDeviation="5" result="relieve" />
+        <feSpecularLighting in="relieve" surfaceScale="7" specularConstant=".85" specularExponent="22" lighting-color="#ffffff" result="luz">
+            <feDistantLight azimuth="235" elevation="48" />
+        </feSpecularLighting>
+        <feComposite in="luz" in2="forma" operator="in" result="luz2" />
+        <feComponentTransfer in="luz2" result="brillo"><feFuncA type="linear" slope=".55" /></feComponentTransfer>
+        <!-- 5. Borde de luz fino y halo interior -->
+        <feMorphology in="forma" operator="erode" radius="1.2" result="dentro" />
+        <feComposite in="forma" in2="dentro" operator="out" result="canto" />
+        <feFlood flood-color="#fff" flood-opacity=".42" />
+        <feComposite in2="canto" operator="in" result="bordeLuz" />
+        <feGaussianBlur in="canto" stdDeviation="5" result="h1" />
+        <feFlood flood-color="#fff" flood-opacity=".22" />
+        <feComposite in2="h1" operator="in" result="h2" />
+        <feComposite in="h2" in2="forma" operator="in" result="halo" />
+        <!-- 6. Franja irisada en el canto inferior -->
+        <feOffset in="canto" dx="-1.5" dy="1.5" result="c1" />
+        <feFlood flood-color="#ff7a59" flood-opacity=".55" />
+        <feComposite in2="c1" operator="in" result="calido" />
+        <feOffset in="canto" dx="1.5" dy="1.5" result="c2" />
+        <feFlood flood-color="#5ab8ff" flood-opacity=".55" />
+        <feComposite in2="c2" operator="in" result="frio" />
+        <feMerge result="iris0"><feMergeNode in="calido" /><feMergeNode in="frio" /></feMerge>
+        <feComposite in="iris0" in2="forma" operator="out" result="iris" />
+        <feMerge>
+            <feMergeNode in="sombra" />
+            <feMergeNode in="relleno" />
+            <feMergeNode in="halo" />
+            <feMergeNode in="brillo" />
+            <feMergeNode in="iris" />
+            <feMergeNode in="bordeLuz" />
+        </feMerge>
+    </filter>
+</svg>
 <header>
     <img src="logo-alterna.png" alt="Alterna">
     <div class="sp"></div>
@@ -168,11 +296,205 @@
             return;
         }
         grid.innerHTML = apps.map(a => `
-            <a class="app" href="${esc(urlSegura(a.url))}">
+            <a class="app" href="${esc(urlSegura(a.url))}" data-color="${/^#[0-9a-f]{3,8}$/i.test(a.color || "") ? a.color : "#8e8e93"}">
                 ${icono(a)}
                 <div><h2>${esc(a.nombre)}</h2>${a.descripcion ? `<p>${esc(a.descripcion)}</p>` : ""}</div>
                 <span class="ir">Entrar →</span>
             </a>`).join("");
+        iniciarLiquido();
+    }
+
+    /* Lente de vidrio "slime" con física de resortes:
+       • Cuerpo viscoso: viaja con inercia y rebota al llegar como gelatina (se aplasta y se estira
+         varias veces hasta quedar quieta). Se puede interrumpir a mitad del camino sin saltos.
+       • Hebra: una cadena de gotas la sigue, cada una más blanda y pequeña que la anterior. Al
+         viajar se estira como un hilo de slime, se adelgaza y termina reabsorbiéndose.
+       • Abultamiento: una gota pegada al cursor empuja el borde del vidrio hacia el puntero.
+       • El filtro #vidrio funde todo en una sola masa y le da relieve, brillo y borde de luz;
+         la luz especular gira hacia el cursor.
+       • El ciclo se detiene solo cuando todo está en reposo (no consume batería). */
+    function iniciarLiquido() {
+        const N_HEBRA = 4;
+        const capa = document.createElement("div");
+        capa.className = "vidrio";
+        capa.setAttribute("aria-hidden", "true");
+        capa.innerHTML = Array.from({ length: N_HEBRA }, () => `<div class="lente hebra"></div>`).join("")
+            + `<div class="lente bulto"></div><div class="lente principal"></div>`;
+        grid.append(capa);
+        const elsHebra = [...capa.querySelectorAll(".hebra")];
+        const elBulto = capa.querySelector(".bulto"), elLente = capa.querySelector(".principal");
+        const luz = document.querySelector("#vidrio feDistantLight");
+        const reducir = matchMedia("(prefers-reduced-motion: reduce)");
+        const MARGEN = 40, BORDE = 6, PRESION = 6;
+
+        const resorte = (k, z) => ({ k, c: 2 * z * Math.sqrt(k) });
+        const TAM_HEBRA = [.78, .58, .42, .3];              // tamaño de cada gota respecto a la lente
+        const SP = () => reducir.matches ? {
+            lente: resorte(900, 1), hebra: TAM_HEBRA.map(() => resorte(900, 1)), bulto: resorte(900, 1), gel: resorte(900, 1), vis: resorte(600, 1),
+        } : {
+            lente: resorte(260, .7),                         // viscoso, con un rebote corto
+            hebra: [resorte(170, .66), resorte(120, .7), resorte(85, .74), resorte(60, .8)],
+            bulto: resorte(280, .62),
+            gel: resorte(210, .28),                          // gelatina: poca amortiguación, varios temblores
+            vis: resorte(240, 1),
+        };
+        const cuerpo = () => ({ x: 0, y: 0, w: 0, h: 0, vx: 0, vy: 0, vw: 0, vh: 0 });
+        const lente = cuerpo(), bulto = cuerpo(), hebra = TAM_HEBRA.map(cuerpo);
+        const gel = { sx: 1, sy: 1, vsx: 0, vsy: 0 };       // aplastamiento de gelatina
+        let vis = 0, vVis = 0, metaVis = 0, vAntX = 0, vAntY = 0;
+        let objetivo = null, actual = null, presionado = false, salida = null;
+        let puntero = null, az = 235, raf = 0, tAnt = 0;
+
+        const caja = card => {
+            const g = grid.getBoundingClientRect(), r = card.getBoundingClientRect();
+            return { x: r.left - g.left + MARGEN - BORDE, y: r.top - g.top + MARGEN - BORDE, w: r.width + BORDE * 2, h: r.height + BORDE * 2 };
+        };
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const centrada = (b, f) => ({ x: b.x + b.w * (1 - f) / 2, y: b.y + b.h * (1 - f) / 2, w: b.w * f, h: b.h * f });
+
+        function paso(c, m, sp, dt) {
+            for (const p of ["x", "y", "w", "h"]) {
+                const v = "v" + p;
+                c[v] += (-sp.k * (c[p] - m[p]) - sp.c * c[v]) * dt;
+                c[p] += c[v] * dt;
+            }
+        }
+
+        function meta() {
+            if (!objetivo) return null;
+            let { x, y, w, h } = objetivo;
+            if (puntero && actual && !reducir.matches) {
+                x += clamp((puntero.x - (x + w / 2)) * .04, -8, 8);
+                y += clamp((puntero.y - (y + h / 2)) * .06, -6, 6);
+            }
+            if (presionado) { x += PRESION; y += PRESION; w -= PRESION * 2; h -= PRESION * 2; }
+            return { x, y, w, h };
+        }
+
+        // Gota del cursor: dentro de la lente, pero puede asomar por el borde y abultarlo
+        function metaBulto() {
+            const t = Math.min(lente.h, lente.w) * .46;
+            if (!puntero || !actual || reducir.matches) return centrada(lente, .4);
+            const sale = 14;
+            const x = clamp(puntero.x - t / 2, lente.x - sale, lente.x + lente.w - t + sale);
+            const y = clamp(puntero.y - t / 2, lente.y - sale, lente.y + lente.h - t + sale);
+            return { x, y, w: t, h: t };
+        }
+
+        function dibujar(el, c, opc = {}) {
+            const w = Math.max(c.w, 0), h = Math.max(c.h, 0);
+            let sx = opc.sx ?? 1, sy = opc.sy ?? 1, giro = "";
+            if (opc.estirar) {
+                const vel = Math.hypot(c.vx, c.vy), s = clamp(vel / 2600, 0, .13);
+                if (s > .002) {
+                    const a = Math.atan2(c.vy, c.vx) * 180 / Math.PI;
+                    giro = `rotate(${a}deg) scale(${1 + s}, ${1 - s * .6}) rotate(${-a}deg) `;
+                }
+            }
+            el.style.width = w + "px"; el.style.height = h + "px";
+            el.style.transform = `translate(${c.x + w / 2}px, ${c.y + h / 2}px) ${giro}scale(${sx}, ${sy}) translate(${-w / 2}px, ${-h / 2}px)`;
+            if (opc.radio) el.style.borderRadius = opc.radio;
+        }
+
+        function cuadro(ahora) {
+            const dtTotal = Math.min((ahora - tAnt) / 1000 || 1 / 60, 1 / 30);
+            tAnt = ahora;
+            const sp = SP(), m = meta(), PASOS = 3, dt = dtTotal / PASOS;
+            for (let i = 0; i < PASOS; i++) {
+                if (m) paso(lente, m, sp.lente, dt);
+                // Cada gota de la hebra persigue a la anterior (la primera, a la lente)
+                let previa = lente;
+                hebra.forEach((g, j) => { paso(g, centrada(previa === lente ? lente : previa, previa === lente ? TAM_HEBRA[0] : TAM_HEBRA[j] / TAM_HEBRA[j - 1]), sp.hebra[j], dt); previa = g; });
+                paso(bulto, metaBulto(), sp.bulto, dt);
+                // Gelatina: los frenazos y arranques bruscos la aplastan; luego tiembla hasta reposar
+                const ax = (lente.vx - vAntX) / dt, ay = (lente.vy - vAntY) / dt;
+                vAntX = lente.vx; vAntY = lente.vy;
+                if (!reducir.matches) {
+                    gel.vsx += (-Math.abs(ax) * 1.3e-4 + Math.abs(ay) * .7e-4) * dt;
+                    gel.vsy += (-Math.abs(ay) * 1.3e-4 + Math.abs(ax) * .7e-4) * dt;
+                }
+                gel.vsx += (-sp.gel.k * (gel.sx - 1) - sp.gel.c * gel.vsx) * dt; gel.sx += gel.vsx * dt;
+                gel.vsy += (-sp.gel.k * (gel.sy - 1) - sp.gel.c * gel.vsy) * dt; gel.sy += gel.vsy * dt;
+                vVis += (-sp.vis.k * (vis - metaVis) - sp.vis.c * vVis) * dt;
+                vis += vVis * dt;
+            }
+            gel.sx = clamp(gel.sx, .86, 1.12); gel.sy = clamp(gel.sy, .86, 1.12);
+            vis = clamp(vis, 0, 1);
+
+            // Al moverse se redondea (más gota); quieta vuelve a la forma de tarjeta
+            const vel = Math.hypot(lente.vx, lente.vy);
+            const r = 26 + clamp(vel / 45, 0, 34);
+            dibujar(elLente, lente, { estirar: !reducir.matches, sx: gel.sx, sy: gel.sy, radio: `${r}px ${r * .9}px ${r * 1.05}px ${r * .95}px / ${r * .95}px ${r * 1.05}px ${r * .9}px ${r}px` });
+            hebra.forEach((g, j) => dibujar(elsHebra[j], g, { estirar: !reducir.matches }));
+            dibujar(elBulto, bulto);
+            capa.style.opacity = vis.toFixed(3);
+            capa.classList.toggle("activa", vis > .02);
+
+            if (luz && puntero && !reducir.matches) {
+                const cx = lente.x + lente.w / 2, cy = lente.y + lente.h / 2;
+                const ang = Math.atan2(puntero.y - cy, puntero.x - cx) * 180 / Math.PI;
+                az += (((ang - az + 540) % 360) - 180) * .12;
+                luz.setAttribute("azimuth", az.toFixed(1));
+            }
+
+            const mov = c => Math.abs(c.vx) + Math.abs(c.vy) + Math.abs(c.vw) + Math.abs(c.vh);
+            const quieto = mov(lente) < .4 && hebra.every(g => mov(g) < .4) && mov(bulto) < .4
+                && Math.abs(gel.sx - 1) + Math.abs(gel.sy - 1) < .002 && Math.abs(gel.vsx) + Math.abs(gel.vsy) < .01
+                && (!m || Math.abs(lente.x - m.x) + Math.abs(lente.y - m.y) + Math.abs(lente.w - m.w) + Math.abs(lente.h - m.h) < .3)
+                && Math.abs(vis - metaVis) < .002 && Math.abs(vVis) < .01;
+            raf = quieto ? 0 : requestAnimationFrame(cuadro);
+            if (quieto && metaVis === 0) { objetivo = null; capa.style.opacity = "0"; capa.classList.remove("activa"); }
+        }
+        const arrancar = () => { if (!raf) { tAnt = performance.now(); vAntX = lente.vx; vAntY = lente.vy; raf = requestAnimationFrame(cuadro); } };
+
+        function irA(card) {
+            clearTimeout(salida);
+            objetivo = caja(card); actual = card; metaVis = 1;
+            if (vis < .08) {
+                // Nace como una gota desde el cursor y se expande
+                const o = puntero || { x: objetivo.x + objetivo.w / 2, y: objetivo.y + objetivo.h / 2 };
+                const t = Math.min(objetivo.h * .45, 52);
+                const semilla = { x: o.x - t / 2, y: o.y - t / 2, w: t, h: t, vx: 0, vy: 0, vw: 0, vh: 0 };
+                [lente, bulto, ...hebra].forEach(c => Object.assign(c, semilla));
+                Object.assign(gel, { sx: 1, sy: 1, vsx: 0, vsy: 0 });
+            }
+            arrancar();
+        }
+        function soltar() {
+            clearTimeout(salida);
+            salida = setTimeout(() => {
+                const c = puntero || { x: lente.x + lente.w / 2, y: lente.y + lente.h / 2 };
+                objetivo = { x: c.x - 22, y: c.y - 22, w: 44, h: 44 };
+                actual = null; metaVis = 0; presionado = false;
+                arrancar();
+            }, 90);
+        }
+        const posPuntero = e => {
+            const g = grid.getBoundingClientRect();
+            puntero = { x: e.clientX - g.left + MARGEN, y: e.clientY - g.top + MARGEN };
+        };
+
+        grid.addEventListener("pointermove", e => { if (e.pointerType !== "touch") { posPuntero(e); if (actual) arrancar(); } });
+        grid.querySelectorAll(".app").forEach(card => {
+            card.addEventListener("pointerenter", e => { posPuntero(e); irA(card); });
+            card.addEventListener("focus", () => { if (!card.matches(":hover")) puntero = null; irA(card); });
+            card.addEventListener("blur", () => { if (!grid.matches(":hover")) soltar(); });
+            card.addEventListener("pointermove", e => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty("--x", `${e.clientX - r.left}px`);
+                card.style.setProperty("--y", `${e.clientY - r.top}px`);
+            });
+            card.addEventListener("pointerdown", () => {
+                if (actual !== card) return;
+                presionado = true;
+                if (!reducir.matches) { gel.vsx -= 1.6; gel.vsy -= 1.6; }   // "plop" al presionar
+                arrancar();
+            });
+        });
+        addEventListener("pointerup", () => { if (presionado) { presionado = false; if (!reducir.matches) { gel.vsx += 2.2; gel.vsy += 2.2; } arrancar(); } });
+        grid.addEventListener("pointerleave", e => { if (e.pointerType !== "touch" || !actual) soltar(); });
+        addEventListener("resize", () => { if (actual) { objetivo = caja(actual); const m = meta(); [lente, bulto, ...hebra].forEach(c => Object.assign(c, m, { vx: 0, vy: 0, vw: 0, vh: 0 })); arrancar(); } });
+        addEventListener("pageshow", e => { if (e.persisted) { vis = 0; metaVis = 0; actual = null; capa.style.opacity = "0"; } });
     }
 
     document.getElementById("salir").addEventListener("click", async () => {
