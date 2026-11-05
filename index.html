@@ -752,6 +752,11 @@
         document.getElementById("btnText").textContent = on ? texto : "Iniciar sesión";
     }
 
+    // Zona horaria del navegador (p. ej. "America/Guatemala"); el servidor la guarda en el historial de inicios
+    function zonaHoraria() {
+        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; }
+    }
+
     function showError(msg) {
         const box = document.getElementById("errorBox");
         box.textContent = msg;
