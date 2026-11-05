@@ -228,6 +228,30 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* FOOTER */
+        .otro-metodo {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted, #8e8e93);
+        }
+        .btn-zoho {
+            width: 100%;
+            padding: 11px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-zoho:hover { background: rgba(255,255,255,.06); }
+        .btn-zoho:disabled { opacity: .5; cursor: default; }
+
         .form-footer {
             margin-top: 28px;
             text-align: center;
@@ -575,6 +599,12 @@
             <span id="btnText">Iniciar sesión</span>
         </button>
 
+        <!-- PIN, OneAuth, código por SMS/correo, llave de seguridad…: lo resuelve Zoho en su página -->
+        <div class="otro-metodo">
+            <span>¿Entras a Zoho con PIN, OneAuth, código o sin contraseña?</span>
+            <button type="button" class="btn-zoho" id="btnZoho" onclick="loginZoho(document.getElementById('correo').value.trim())">Entrar con Zoho</button>
+        </div>
+
         <div class="form-footer">Asociación Alterna ONG</div>
     </div>
 </div>
@@ -693,7 +723,7 @@
     // Venimos de una página abierta cuya sesión cerró un admin (sesion.js)
     if (new URLSearchParams(location.search).get("sesion") === "cerrada") {
         history.replaceState(null, "", location.pathname);
-        showError("Tu sesión se cerró o tu acceso fue bloqueado. Si crees que es un error, avisa al área de IT.");
+        showError("Tu sesión se cerró (todas las sesiones terminan a las 12 a.m.) o tu acceso fue bloqueado. Vuelve a iniciar sesión; si no puedes, avisa al área de IT.");
     }
 
     // Cargar stat
@@ -864,7 +894,7 @@
             const r = await fetch(SUPABASE_URL + "/functions/v1/zoho-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-                body: JSON.stringify({ accion: "password", correo, contrasena })
+                body: JSON.stringify({ accion: "password", correo, contrasena, zona_horaria: zonaHoraria() })
             });
             d = await r.json().catch(() => ({}));
             if (r.ok && d.token) {
@@ -879,7 +909,9 @@
         }
         if (d.zoho) { loginZoho(correo); return; }
         setLoading(false);
-        showError(d.error || "Correo o contraseña incorrectos.");
+        // Quien entra a Zoho con PIN, OneAuth o sin contraseña no puede validarse aquí: que use Zoho
+        showError((d.error || "Correo o contraseña incorrectos.") +
+            (!d.error || /incorrect/i.test(d.error) ? " Si entras a Zoho con PIN, OneAuth o código, usa «Entrar con Zoho»." : ""));
     }
 
     /* ═══════════════════════════════════════════
@@ -923,7 +955,7 @@
             const r = await fetch(SUPABASE_URL + "/functions/v1/zoho-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-                body: JSON.stringify({ code: p.get("code"), redirect_uri: ZOHO_REDIRECT, accounts_server: p.get("accounts-server") || ZOHO_ACCOUNTS })
+                body: JSON.stringify({ code: p.get("code"), redirect_uri: ZOHO_REDIRECT, accounts_server: p.get("accounts-server") || ZOHO_ACCOUNTS, zona_horaria: zonaHoraria() })
             });
             const d = await r.json().catch(() => ({}));
             if (!r.ok || !d.token) { showError(d.error || "No fue posible iniciar sesión con Zoho."); return; }

@@ -29,7 +29,7 @@ export const HERRAMIENTAS_IT = [{
 const DIA = 86400000;
 const hoy = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d; };
 const dias = (iso: string | null) => iso ? Math.round((Date.parse(iso.slice(0, 10) + "T00:00:00Z") - hoy().getTime()) / DIA) : null;
-const codigo = (id: number) => "EQ-" + String(id).padStart(4, "0");
+const codigo = (e: any) => e?.codigo || "EQ-" + String(e?.id ?? 0).padStart(4, "0");
 const norm = (s: unknown) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const coincide = (q: string, ...vals: unknown[]) => !q || vals.some((v) => norm(v).includes(q));
 
@@ -46,7 +46,7 @@ function vistaEquipo(e: any) {
   const anios = e.fecha_compra ? Math.max(0, (hoy().getTime() - Date.parse(e.fecha_compra + "T00:00:00Z")) / (365.25 * DIA)) : null;
   const dg = dias(e.garantia_hasta);
   return {
-    id: e.id, codigo: codigo(e.id), tipo: e.tipo, marca: e.marca, modelo: e.modelo, serie: e.numero_serie, estado: e.estado,
+    id: e.id, codigo: codigo(e), tipo: e.tipo, marca: e.marca, modelo: e.modelo, serie: e.numero_serie, estado: e.estado,
     asignado_a: e.asignado_a, procesador: e.procesador, ram: e.ram, almacenamiento: e.almacenamiento, sistema_operativo: e.sistema_operativo,
     fecha_compra: e.fecha_compra, antiguedad_anios: anios === null ? null : Math.round(anios * 10) / 10,
     garantia_hasta: e.garantia_hasta,
@@ -55,7 +55,7 @@ function vistaEquipo(e: any) {
   };
 }
 
-const COLS_EQ = "id, tipo, marca, modelo, numero_serie, estado, asignado_a, procesador, ram, almacenamiento, sistema_operativo, fecha_compra, garantia_hasta, notas";
+const COLS_EQ = "id, codigo, tipo, marca, modelo, numero_serie, estado, asignado_a, procesador, ram, almacenamiento, sistema_operativo, fecha_compra, garantia_hasta, notas";
 
 function idDeBusqueda(q: string): number | null {
   const m = q.match(/^eq-?0*(\d{1,9})$/i);
@@ -69,10 +69,16 @@ export async function consultarIT(db: any, a: Record<string, any>): Promise<unkn
   const n = Number.isFinite(Number(a.dias)) && Number(a.dias) > 0 ? Math.min(Number(a.dias), 3650) : null;
 
   if (consulta === "equipo") {
-    let id = Number(a.equipo_id) || idDeBusqueda(q);
+    let id = Number(a.equipo_id) || null;
     if (!id && q) {
       const { data } = await db.from("inventario_equipos").select(COLS_EQ).limit(2000);
-      const hall = (data ?? []).filter((e: any) => coincide(q, e.numero_serie, e.asignado_a, e.tipo, e.marca, e.modelo, codigo(e.id)));
+      // Primero el código exacto (los códigos se escriben a mano al crear el equipo)
+      id = (data ?? []).find((e: any) => norm(codigo(e)) === q)?.id ?? null;
+    }
+    if (!id && q) id = idDeBusqueda(q);
+    if (!id && q) {
+      const { data } = await db.from("inventario_equipos").select(COLS_EQ).limit(2000);
+      const hall = (data ?? []).filter((e: any) => coincide(q, e.numero_serie, e.asignado_a, e.tipo, e.marca, e.modelo, codigo(e)));
       if (hall.length > 1) return { aviso: "Hay varios equipos que coinciden; pide que elija uno.", coincidencias: hall.slice(0, 15).map(vistaEquipo) };
       id = hall[0]?.id;
     }
@@ -82,7 +88,7 @@ export async function consultarIT(db: any, a: Record<string, any>): Promise<unkn
       db.from("equipos_historial").select("accion, campo, valor_anterior, valor_nuevo, usuario_nombre, created_at").eq("equipo_id", id).order("created_at", { ascending: false }).limit(40),
       db.from("mantenimientos").select("numero_ticket, titulo, tipo, estado, fecha_programada, tecnico").eq("equipo_id", id).order("fecha_programada", { ascending: false }).limit(30),
     ]);
-    if (!eq.data) return { error: `No existe el equipo ${codigo(id)}.` };
+    if (!eq.data) return { error: `No existe el equipo ${codigo({ id })}.` };
     return { equipo: vistaEquipo(eq.data), historial: hist.data ?? [], mantenimientos: mts.data ?? [] };
   }
 
@@ -115,10 +121,11 @@ export async function consultarIT(db: any, a: Record<string, any>): Promise<unkn
         },
       };
     }
-    const idq = idDeBusqueda(q);
+    const exacto = q ? todos.find((e) => norm(codigo(e)) === q) : null;
+    const idq = exacto ? exacto.id : idDeBusqueda(q);
     const lista = todos.filter((e) =>
       (!estado || norm(e.estado) === estado) &&
-      (idq ? e.id === idq : coincide(q, e.tipo, e.marca, e.modelo, e.numero_serie, e.asignado_a, e.procesador, codigo(e.id))) &&
+      (idq ? e.id === idq : coincide(q, e.tipo, e.marca, e.modelo, e.numero_serie, e.asignado_a, e.procesador, codigo(e))) &&
       (!n || (() => { const d = dias(e.garantia_hasta); return d !== null && d <= n; })()))
       .sort((x, y) => x.id - y.id);
     return { total: lista.length, mostrados: Math.min(lista.length, 60), equipos: lista.slice(0, 60).map(vistaEquipo) };
@@ -127,7 +134,7 @@ export async function consultarIT(db: any, a: Record<string, any>): Promise<unkn
   if (consulta === "mantenimientos") {
     const [mts, eqs, us] = await Promise.all([
       db.from("mantenimientos").select("id, numero_ticket, titulo, tipo, estado, prioridad, fecha_programada, fecha_realizada, tecnico, equipo_id, usuario_id, descripcion").order("fecha_programada", { ascending: false }).limit(3000),
-      db.from("inventario_equipos").select("id, tipo, marca, modelo").limit(2000),
+      db.from("inventario_equipos").select("id, codigo, tipo, marca, modelo").limit(2000),
       db.from("usuarios").select("id, nombre").limit(2000),
     ]);
     const E = new Map((eqs.data ?? []).map((e: any) => [e.id, e]));
@@ -137,7 +144,7 @@ export async function consultarIT(db: any, a: Record<string, any>): Promise<unkn
       return {
         ticket: m.numero_ticket, titulo: m.titulo, tipo: m.tipo, estado: m.estado, prioridad: m.prioridad, fecha_programada: m.fecha_programada,
         fecha_realizada: m.fecha_realizada, tecnico: m.tecnico, usuario: U.get(m.usuario_id) ?? null,
-        equipo: e ? `${codigo(e.id)} ${[e.tipo, e.marca, e.modelo].filter(Boolean).join(" ")}` : null,
+        equipo: e ? `${codigo(e)} ${[e.tipo, e.marca, e.modelo].filter(Boolean).join(" ")}` : null,
         descripcion: m.descripcion ? String(m.descripcion).slice(0, 160) : null,
       };
     }).filter((m: any) => (!estado || norm(m.estado) === estado)

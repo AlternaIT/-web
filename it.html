@@ -97,8 +97,8 @@
                     <span>Office</span>
                 </div>
                 <div class="submenu-item" onclick="navegarSubmenu('licencias-kanva', null)" data-sub="kanva">
-                    <span class="submenu-icon"><i data-lucide="palette"></i></span>
-                    <span>Canva</span>
+                    <span class="submenu-icon"><i data-lucide="key-round"></i></span>
+                    <span>Otras licencias</span>
                 </div>
             </div>
 
@@ -1364,16 +1364,16 @@
         </section>
 
         <!-- ══════════════════════════════════════
-             PÁGINA: LICENCIAS — CANVA
+             PÁGINA: LICENCIAS — OTRAS (Adobe, Canva, Zoom, antivirus…)
         ══════════════════════════════════════ -->
         <section class="page" id="page-licencias-kanva">
 
-            <!-- Header con branding Canva -->
+            <!-- Header otras licencias -->
             <div style="background:linear-gradient(135deg,#1c1c1e 0%,#3a3a3c 100%);border-radius:14px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:18px">
-                <div class="hero-icon"><i data-lucide="palette"></i></div>
+                <div class="hero-icon"><i data-lucide="key-round"></i></div>
                 <div>
-                    <div style="font-size:20px;font-weight:800;color:white">Canva</div>
-                    <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:3px">Gestión de licencias de diseño</div>
+                    <div style="font-size:20px;font-weight:800;color:white">Otras licencias</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:3px">Adobe, Canva, Zoom, antivirus y cualquier otro software</div>
                 </div>
                 <div style="margin-left:auto">
                     <button class="btn-primary sobre-oscuro" onclick="abrirModalNuevaLicenciaKanva()"
@@ -1385,7 +1385,7 @@
 
             <div class="filters">
                 <input class="filter-input" id="kanvaBusqueda" type="text"
-                    placeholder="Buscar por nombre, correo..."
+                    placeholder="Buscar por software, nombre, correo..."
                     oninput="renderTablaKanva()" style="width:300px" />
                 <select class="filter-select" id="kanvaFiltroEstado" onchange="renderTablaKanva()">
                     <option value="">Todos los estados</option>
@@ -1401,7 +1401,7 @@
                 <div class="card">
                     <div class="card-top">
                         <div class="card-title">Total licencias</div>
-                        <div class="card-icon"><i data-lucide="palette"></i></div>
+                        <div class="card-icon"><i data-lucide="key-round"></i></div>
                     </div>
                     <div class="card-number" id="kanvaCntTotal">—</div>
                     <div class="card-description">Registradas</div>
@@ -1429,6 +1429,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Software</th>
                             <th>Nombre</th>
                             <th>Correo</th>
                             <th>Plan</th>
@@ -1439,7 +1440,7 @@
                         </tr>
                     </thead>
                     <tbody id="kanvaBody">
-                        <tr class="loading-row"><td colspan="8">Cargando...</td></tr>
+                        <tr class="loading-row"><td colspan="9">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1646,10 +1647,14 @@
 
 </div>
 
-<!-- MODAL NUEVA LICENCIA CANVA -->
+<!-- MODAL NUEVA LICENCIA (OTRAS) -->
 <div class="modal-overlay" id="modalNuevaLicenciaKanva">
     <div class="modal modal-wide">
-        <div class="modal-title" >Nueva Licencia Canva</div>
+        <div class="modal-title" >Nueva licencia</div>
+        <div class="modal-field">
+            <label class="modal-label" for="nkSoftware">Software *</label>
+            <input class="modal-input" id="nkSoftware" type="text" list="listaSoftwareLic" placeholder="Adobe, Canva, Zoom, antivirus…" />
+        </div>
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label">Nombre *</label>
@@ -1663,12 +1668,7 @@
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label">Plan</label>
-                <select class="modal-select" id="nkPlan">
-                    <option value="Pro">Pro</option>
-                    <option value="Teams">Teams</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="Free">Free</option>
-                </select>
+                <input class="modal-input" id="nkPlan" type="text" list="listaPlanesLic" placeholder="Pro, Teams, anual…" />
             </div>
             <div class="modal-field">
                 <label class="modal-label">Fecha de expiración</label>
@@ -1687,11 +1687,15 @@
     </div>
 </div>
 
-<!-- MODAL EDITAR LICENCIA CANVA -->
+<!-- MODAL EDITAR LICENCIA (OTRAS) -->
 <div class="modal-overlay" id="modalEditarKanva">
     <div class="modal modal-wide">
-        <div class="modal-title">Editar Licencia Canva</div>
+        <div class="modal-title">Editar licencia</div>
         <input type="hidden" id="ekId" />
+        <div class="modal-field">
+            <label class="modal-label" for="ekSoftware">Software *</label>
+            <input class="modal-input" id="ekSoftware" type="text" list="listaSoftwareLic" />
+        </div>
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label">Nombre *</label>
@@ -1705,12 +1709,7 @@
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label">Plan</label>
-                <select class="modal-select" id="ekPlan">
-                    <option value="Pro">Pro</option>
-                    <option value="Teams">Teams</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="Free">Free</option>
-                </select>
+                <input class="modal-input" id="ekPlan" type="text" list="listaPlanesLic" />
             </div>
             <div class="modal-field">
                 <label class="modal-label">Fecha de expiración</label>
@@ -1729,6 +1728,14 @@
         </div>
     </div>
 </div>
+<datalist id="listaSoftwareLic">
+    <option value="Adobe Creative Cloud"></option><option value="Adobe Acrobat"></option><option value="Canva"></option>
+    <option value="Zoom"></option><option value="Antivirus"></option><option value="AutoCAD"></option><option value="ChatGPT"></option>
+</datalist>
+<datalist id="listaPlanesLic">
+    <option value="Pro"></option><option value="Teams"></option><option value="Enterprise"></option><option value="Free"></option>
+    <option value="Mensual"></option><option value="Anual"></option>
+</datalist>
 
 <!-- MODAL NUEVO USUARIO -->
 <!-- MODAL APLICACIÓN (nueva / editar) -->
@@ -2129,6 +2136,11 @@
     <div class="modal modal-wide">
         <div class="modal-title">Nuevo equipo</div>
         <div class="modal-section-title">Equipo</div>
+        <div class="modal-field">
+            <label class="modal-label" for="neCodigo">Código de equipo</label>
+            <input class="modal-input" id="neCodigo" type="text" maxlength="40" placeholder="Ej. LAP-001 (vacío = automático)" style="text-transform:uppercase" />
+            <div style="font-size:11px;color:#9ca3af;margin-top:4px">Solo se puede escribir ahora: después de guardar el equipo ya no se cambia.</div>
+        </div>
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label" for="neTipo">Tipo de equipo *</label>
@@ -2218,6 +2230,10 @@
         <div class="modal-title">Editar equipo</div>
         <input type="hidden" id="eeId" />
         <div class="modal-section-title">Equipo</div>
+        <div class="modal-field">
+            <label class="modal-label" for="eeCodigo">Código de equipo</label>
+            <input class="modal-input" id="eeCodigo" type="text" readonly disabled title="El código se fija al crear el equipo" />
+        </div>
         <div class="modal-grid-2">
             <div class="modal-field">
                 <label class="modal-label" for="eeTipo">Tipo de equipo *</label>

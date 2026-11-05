@@ -12,7 +12,7 @@ let fichaEquipoId = null;
 let fichaEquipo = null;
 
 const DIA_MS = 86400000;
-const codigoEquipo = e => "EQ-" + String(e?.id ?? 0).padStart(4, "0");
+const codigoEquipo = e => e?.codigo || "EQ-" + String(e?.id ?? 0).padStart(4, "0");
 const nombreEquipo = e => [e?.tipo, e?.marca, e?.modelo].filter(Boolean).join(" ") || "Equipo";
 const urlFichaEquipo = id => {
     const base = /^https?:/.test(location.protocol) ? location.href.split("#")[0].replace(/[^/]*$/, "") : URL_PUBLICA_APP;

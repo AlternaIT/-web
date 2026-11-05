@@ -107,22 +107,23 @@ export async function proponer(db: any, user: any, convId: string, nombre: strin
     resumen = `Actualizar actividad #${id} «${act.actividad}»`;
   } else if (nombre === "programar_mantenimiento") {
     const eid = Number(a.equipo_id ?? a.computadora_id);
-    const { data: eq } = await db.from("inventario_equipos").select("id, tipo, marca, modelo, asignado_a, usuario_id").eq("id", eid).maybeSingle();
+    const { data: eq } = await db.from("inventario_equipos").select("id, codigo, tipo, marca, modelo, asignado_a, usuario_id").eq("id", eid).maybeSingle();
     if (!eq) return { error: `No existe el equipo EQ-${String(eid).padStart(4, "0")}.` };
     const tipo = TIPOS_MANT.find((t) => t.toLowerCase() === String(a.tipo ?? "").toLowerCase());
     if (!tipo) return { error: "Tipo de mantenimiento no válido (Preventivo o Correctivo)." };
     if (!esFecha(a.fecha_programada)) return { error: "La fecha programada debe tener formato AAAA-MM-DD." };
     const nombreEq = [eq.tipo, eq.marca, eq.modelo].filter(Boolean).join(" ") || `Equipo ${eid}`;
+    const codEq = eq.codigo || `EQ-${String(eid).padStart(4, "0")}`;
     let usuarioId = eq.usuario_id ?? null;
     if (!usuarioId && eq.asignado_a) {
       const { data: u } = await db.from("usuarios").select("id").ilike("nombre", eq.asignado_a).limit(1).maybeSingle();
       usuarioId = u?.id ?? null;
     }
     datos = {
-      equipo_id: eid, equipo: nombreEq, usuario_id: usuarioId, titulo: txt(a.titulo, 120) ?? `Mantenimiento ${tipo.toLowerCase()} · ${nombreEq}`,
+      equipo_id: eid, equipo: nombreEq, equipo_codigo: codEq, usuario_id: usuarioId, titulo: txt(a.titulo, 120) ?? `Mantenimiento ${tipo.toLowerCase()} · ${nombreEq}`,
       tipo, prioridad: nivel(a.prioridad, "Media"), fecha_programada: a.fecha_programada, descripcion: txt(a.descripcion, 1000), tecnico: txt(a.tecnico),
     };
-    resumen = `Programar mantenimiento ${tipo.toLowerCase()} para «${nombreEq}» (EQ-${String(eid).padStart(4, "0")})`;
+    resumen = `Programar mantenimiento ${tipo.toLowerCase()} para «${nombreEq}» (${codEq})`;
   } else return { error: "Acción no soportada." };
 
   const { data, error } = await db.from("ia_acciones").insert({ usuario_id: user.id, conversacion_id: convId, tipo: nombre, datos, resumen }).select("id").single();

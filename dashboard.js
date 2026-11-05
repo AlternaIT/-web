@@ -51,7 +51,7 @@
         reportes:           { titulo: "Reportes",            subtitulo: "Análisis y estadísticas" },
         configuracion:      { titulo: "Configuración",       subtitulo: "Ajustes del sistema" },
         "licencias-office": { titulo: "Licencias — Office",  subtitulo: "Gestión de licencias Microsoft 365" },
-        "licencias-kanva":  { titulo: "Licencias — Canva",   subtitulo: "Gestión de licencias de diseño Canva" },
+        "licencias-kanva":  { titulo: "Otras licencias",     subtitulo: "Adobe, Canva, Zoom, antivirus y cualquier otro software" },
         mantenimientos:     { titulo: "Mantenimientos",      subtitulo: "Calendario y tickets de mantenimiento de equipos" },
         basedatos:          { titulo: "Base de datos",       subtitulo: "Vista en tiempo real de todas las tablas" },
         aplicaciones:       { titulo: "Aplicaciones",        subtitulo: "Aplicaciones disponibles después del login" },
@@ -2581,6 +2581,9 @@
             const el = document.getElementById(p + id);
             if (el) el.value = r[col] ?? (col === "estado" ? "Disponible" : "");
         });
+        // Código: se escribe solo al crear (ne); al editar (ee) se muestra fijo
+        const cod = document.getElementById(p + "Codigo");
+        if (cod) cod.value = p === "ee" ? codigoEquipo(r) : "";
         document.getElementById(p + "Msg").textContent = "";
         document.getElementById(p + "Guardar").disabled = false;
         llenarListaUsuariosEquipo();
@@ -2608,6 +2611,14 @@
         if (!payload.tipo) { msg.textContent = "El tipo de equipo es obligatorio."; return false; }
         if (payload.fecha_compra && payload.garantia_hasta && payload.garantia_hasta < payload.fecha_compra) {
             msg.textContent = "La garantía no puede terminar antes de la fecha de compra."; return false;
+        }
+        if (payload.codigo !== undefined) {
+            if (payload.codigo && !/^[A-Z0-9][A-Z0-9._\-\/]{0,39}$/.test(payload.codigo)) {
+                msg.textContent = "El código solo puede llevar letras, números, guion, punto o barra."; return false;
+            }
+            if (payload.codigo && todosEquipos.some(e => codigoEquipo(e).toUpperCase() === payload.codigo)) {
+                msg.textContent = "Ya existe un equipo con ese código."; return false;
+            }
         }
         const serie = (payload.numero_serie || "").toLowerCase();
         const idActual = p === "ee" ? parseInt(document.getElementById("eeId").value) : null;
@@ -2641,6 +2652,8 @@
 
     async function guardarNuevoEquipo() {
         const payload = leerFormEquipo("ne");
+        // Vacío = la base de datos le pone el automático (EQ-0004…)
+        payload.codigo = document.getElementById("neCodigo").value.trim().toUpperCase() || null;
         if (!validarFormEquipo("ne", payload)) return;
         const btn = document.getElementById("neGuardar");
         btn.disabled = true;
@@ -2649,7 +2662,8 @@
 
         const { data, error } = await supabaseClient.from("inventario_equipos").insert([payload]).select("id").single();
         if (error) {
-            document.getElementById("neMsg").textContent = "" + error.message;
+            document.getElementById("neMsg").textContent = error.code === "23505" && /codigo/.test(error.message)
+                ? "Ya existe un equipo con ese código." : "" + error.message;
             document.getElementById("neMsg").style.color = "#ef4444";
             btn.disabled = false;
             return;
@@ -2828,21 +2842,21 @@
 
 
     /* ═══════════════════════════════════════════
-       LICENCIAS — CANVA
+       LICENCIAS — OTRAS (antes Canva; tabla licencias_otras)
     ═══════════════════════════════════════════ */
     let todasLicenciasKanva = [];
 
     async function cargarLicenciasKanva() {
         const tbody = document.getElementById("kanvaBody");
-        tbody.innerHTML = `<tr class="loading-row"><td colspan="8">Cargando...</td></tr>`;
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="9">Cargando...</td></tr>`;
 
         const { data, error } = await supabaseClient
-            .from("licencias_canva")
+            .from("licencias_otras")
             .select("*")
-            .order("id", { ascending: true });
+            .order("software").order("id", { ascending: true });
 
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="8" style="color:#ef4444;padding:20px">Error: ${esc(error.message)}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="color:#ef4444;padding:20px">Error: ${esc(error.message)}</td></tr>`;
             return;
         }
 
@@ -2898,7 +2912,7 @@
         const filtradas = todasLicenciasKanva.filter(l => {
             if (fEstado && estadoKanva(l) !== fEstado) return false;
             if (busq) {
-                const h = `${l.nombre||""} ${l.correo||""} ${l.plan||""}`.toLowerCase();
+                const h = `${l.software||""} ${l.nombre||""} ${l.correo||""} ${l.plan||""}`.toLowerCase();
                 if (!h.includes(busq)) return false;
             }
             return true;
@@ -2908,7 +2922,7 @@
         if (cnt) cnt.textContent = `${filtradas.length} de ${todasLicenciasKanva.length}`;
 
         if (!filtradas.length) {
-            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No hay licencias Canva registradas.</div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No hay licencias registradas.</div></td></tr>`;
             return;
         }
 
@@ -2922,6 +2936,7 @@
 
             return `<tr class="clickable-row" onclick="abrirEditarKanva(${l.id})">
                 <td data-label="#">${i + 1}</td>
+                <td data-label="Software"><strong>${esc(l.software||"—")}</strong></td>
                 <td data-label="Nombre"><strong>${esc(l.nombre||"—")}</strong></td>
                 <td data-label="Correo" style="color:#6b7280">${esc(l.correo||"—")}</td>
                 <td data-label="Plan"><span class="asignado-chip">${esc(l.plan||"—")}</span></td>
@@ -2934,8 +2949,8 @@
     }
 
     function abrirModalNuevaLicenciaKanva() {
-        ["nkNombre","nkCorreo","nkNotas"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-        const plan = document.getElementById("nkPlan"); if (plan) plan.value = "Pro";
+        ["nkSoftware","nkNombre","nkCorreo","nkNotas"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        const plan = document.getElementById("nkPlan"); if (plan) plan.value = "";
         const exp  = document.getElementById("nkExpiracion"); if (exp) exp.value = "";
         const msg  = document.getElementById("nkMsg"); if (msg) msg.textContent = "";
         const btn  = document.getElementById("nkGuardar"); if (btn) btn.disabled = false;
@@ -2947,10 +2962,11 @@
     }
 
     async function guardarNuevaLicenciaKanva() {
+        const software = document.getElementById("nkSoftware").value.trim();
         const nombre = document.getElementById("nkNombre").value.trim();
         const correo = document.getElementById("nkCorreo").value.trim();
-        if (!nombre || !correo) {
-            document.getElementById("nkMsg").textContent = "Nombre y correo son obligatorios.";
+        if (!software || !nombre || !correo) {
+            document.getElementById("nkMsg").textContent = "Software, nombre y correo son obligatorios.";
             document.getElementById("nkMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("nkGuardar"); btn.disabled = true;
@@ -2958,13 +2974,13 @@
         document.getElementById("nkMsg").style.color = "#6b7280";
 
         const payload = {
-            nombre, correo,
-            plan:       document.getElementById("nkPlan").value,
+            software, nombre, correo,
+            plan:       document.getElementById("nkPlan").value.trim() || null,
             expiracion: document.getElementById("nkExpiracion").value || null,
             notas:      document.getElementById("nkNotas").value.trim() || null,
         };
 
-        const { error } = await supabaseClient.from("licencias_canva").insert([payload]);
+        const { error } = await supabaseClient.from("licencias_otras").insert([payload]);
         if (error) {
             document.getElementById("nkMsg").textContent = "" + error.message;
             document.getElementById("nkMsg").style.color = "#ef4444";
@@ -2984,9 +3000,10 @@
         const l = todasLicenciasKanva.find(x => x.id === id);
         if (!l) return;
         document.getElementById("ekId").value         = l.id;
+        document.getElementById("ekSoftware").value   = l.software   || "";
         document.getElementById("ekNombre").value     = l.nombre     || "";
         document.getElementById("ekCorreo").value     = l.correo     || "";
-        document.getElementById("ekPlan").value       = l.plan       || "Pro";
+        document.getElementById("ekPlan").value       = l.plan       || "";
         document.getElementById("ekExpiracion").value = l.expiracion || "";
         document.getElementById("ekNotas").value      = l.notas      || "";
         document.getElementById("ekMsg").textContent  = "";
@@ -3000,9 +3017,10 @@
 
     async function guardarEditarKanva() {
         const id     = parseInt(document.getElementById("ekId").value);
+        const software = document.getElementById("ekSoftware").value.trim();
         const nombre = document.getElementById("ekNombre").value.trim();
-        if (!nombre) {
-            document.getElementById("ekMsg").textContent = "El nombre es obligatorio.";
+        if (!software || !nombre) {
+            document.getElementById("ekMsg").textContent = "Software y nombre son obligatorios.";
             document.getElementById("ekMsg").style.color = "#ef4444"; return;
         }
         const btn = document.getElementById("ekGuardar"); btn.disabled = true;
@@ -3010,14 +3028,14 @@
         document.getElementById("ekMsg").style.color = "#6b7280";
 
         const payload = {
-            nombre,
+            software, nombre,
             correo:     document.getElementById("ekCorreo").value.trim() || null,
-            plan:       document.getElementById("ekPlan").value,
+            plan:       document.getElementById("ekPlan").value.trim() || null,
             expiracion: document.getElementById("ekExpiracion").value || null,
             notas:      document.getElementById("ekNotas").value.trim() || null,
         };
 
-        const { error } = await supabaseClient.from("licencias_canva").update(payload).eq("id", id);
+        const { error } = await supabaseClient.from("licencias_otras").update(payload).eq("id", id);
         if (error) {
             document.getElementById("ekMsg").textContent = "" + error.message;
             document.getElementById("ekMsg").style.color = "#ef4444";
@@ -3029,8 +3047,8 @@
 
     async function eliminarLicenciaKanva() {
         const id = parseInt(document.getElementById("ekId").value);
-        if (!confirm("¿Eliminar esta licencia Canva? Esta acción no se puede deshacer.")) return;
-        const { error } = await supabaseClient.from("licencias_canva").delete().eq("id", id);
+        if (!confirm("¿Eliminar esta licencia? Esta acción no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from("licencias_otras").delete().eq("id", id);
         if (error) { alert("Error al eliminar: " + error.message); return; }
         cerrarModalEditarKanva();
         await cargarLicenciasKanva();

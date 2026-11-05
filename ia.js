@@ -1053,7 +1053,7 @@ function tarjetaAccion(a) {
     let filas = "";
     if (a.tipo === "crear_actividad") filas = F("Actividad", d.actividad) + F("Prioridad", d.prioridad) + F("Importancia", d.importancia) + F("Área", d.area) + F("Responsable", d.asignado) + F("Entrega", d.fecha_entrega) + F("Proyecto", d.proyecto_macro) + F("Notas", d.notas);
     else if (a.tipo === "actualizar_actividad") filas = F("Actividad", "#" + d.id + " " + (d.titulo || "")) + Object.entries(d.cambios || {}).map(([k, v]) => F(ETIQ[k] || k, (v.antes ?? "—") + "  →  " + (v.despues ?? "—"))).join("");
-    else filas = F("Equipo", d.equipo_id ? `${d.equipo} (EQ-${String(d.equipo_id).padStart(4, "0")})` : d.equipo) + F("Título", d.titulo) + F("Tipo", d.tipo) + F("Prioridad", d.prioridad) + F("Fecha", d.fecha_programada) + F("Técnico", d.tecnico) + F("Descripción", d.descripcion);
+    else filas = F("Equipo", d.equipo_id ? `${d.equipo} (${d.equipo_codigo || "EQ-" + String(d.equipo_id).padStart(4, "0")})` : d.equipo) + F("Título", d.titulo) + F("Tipo", d.tipo) + F("Prioridad", d.prioridad) + F("Fecha", d.fecha_programada) + F("Técnico", d.tecnico) + F("Descripción", d.descripcion);
     const est = { ejecutada: ["ok", "Ejecutada"], cancelada: ["no", "Cancelada"], error: ["err", "No se pudo ejecutar"] }[a.estado];
     const pie = a.estado === "pendiente"
         ? `<div class="acc-btns"><button type="button" class="acc-ok" data-acc-ok>Confirmar</button><button type="button" class="acc-no" data-acc-no>Cancelar</button></div>`
