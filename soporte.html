@@ -184,6 +184,18 @@
 
         [hidden] { display: none !important; }
 
+        /* Escritorio: la solicitud a la izquierda; adjuntos y envío a la derecha, sin hacer scroll */
+        @media (min-width: 960px) {
+            main { max-width: 1080px; }
+            #form { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto 1fr; column-gap: 20px; align-items: start; }
+            #cSolicitud { grid-column: 1; grid-row: 1 / span 2; margin-top: 32px; }
+            #cArchivos { grid-column: 2; grid-row: 1; margin-top: 32px; }
+            #form > .acciones { grid-column: 2; grid-row: 2; flex-direction: column-reverse; align-items: stretch; gap: 12px; margin-top: 16px; }
+            #form > .acciones .btn { width: 100%; }
+            #form > .acciones .nota { text-align: center; }
+            .estado, .skel { max-width: 720px; margin-left: auto; margin-right: auto; }
+        }
+
         @media (max-width: 600px) {
             header { padding: 16px; gap: 10px; }
             .me span { display: none; }
@@ -256,7 +268,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="cSolicitud">
             <div class="card-title">Tu solicitud</div>
             <div class="field">
                 <label for="fAsunto">Asunto <span class="req">*</span></label>
@@ -323,7 +335,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="cArchivos">
             <div class="card-title">Archivos adjuntos <span>(opcional)</span></div>
             <label class="zona" id="zona">
                 <input type="file" id="fArchivos" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.log">
