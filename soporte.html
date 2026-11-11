@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <title>Alterna | Soporte</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f0f0f">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:       #0f0f0f;
+            --surface:  #1c1c1e;
+            --hover:    #242427;
+            --input:    #141416;
+            --border:   rgba(255,255,255,.08);
+            --border-h: rgba(255,255,255,.18);
+            --text:     #f5f5f7;
+            --muted:    #8e8e93;
+            --faint:    #636366;
+            --accent:   #21b894;
+            --accent-h: #1aa07e;
+            --error:    #ff453a;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            display: flex; flex-direction: column;
+        }
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 50% at 30% 30%, rgba(255,255,255,.035) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 80% 85%, rgba(255,255,255,.02) 0%, transparent 60%);
+        }
+
+        /* Encabezado (igual que apps.html) */
+        header {
+            position: relative; display: flex; align-items: center; gap: 14px;
+            padding: 20px 32px; border-bottom: 1px solid var(--border);
+        }
+        header > img { height: 26px; width: auto; filter: brightness(0) invert(1); }
+        header .sp { flex: 1; }
+        .volver {
+            color: var(--muted); text-decoration: none; font-size: 13px;
+            border: 1px solid var(--border); padding: 7px 14px; border-radius: 9px;
+        }
+        .volver:hover { color: var(--text); border-color: var(--border-h); }
+        .me { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+        .me .av { width: 32px; height: 32px; border-radius: 50%; background: #3a3a3c; color: var(--text); display: grid; place-items: center; font-size: 12px; font-weight: 600; overflow: hidden; }
+        .me .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .me b { color: var(--text); font-weight: 500; }
+
+        main { position: relative; flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 48px 32px 64px; }
+        h1 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+        .sub { margin-top: 8px; font-size: 15px; color: var(--muted); }
+
+        .card {
+            margin-top: 16px; padding: 24px; border-radius: 16px;
+            border: 1px solid var(--border); background: var(--surface);
+        }
+        .card:first-of-type { margin-top: 32px; }
+        .card-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+            color: var(--muted); margin-bottom: 18px;
+        }
+        .card-title span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--faint); }
+
+        /* Campos */
+        .field { margin-bottom: 18px; }
+        .field:last-child { margin-bottom: 0; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        label, .label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
+        label .opc, .label .opc { font-weight: 400; color: var(--faint); }
+        label .req { color: var(--accent); }
+        input[type="text"], input[type="tel"], input[type="email"], select, textarea {
+            width: 100%; background: var(--input); color: var(--text);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 11px 13px; font: inherit; font-size: 14px;
+            transition: border-color .15s, box-shadow .15s;
+            appearance: none; -webkit-appearance: none;
+        }
+        input::placeholder, textarea::placeholder { color: var(--faint); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(33,184,148,.18); }
+        input[readonly] { color: var(--muted); cursor: default; }
+        input[readonly]:focus { border-color: var(--border); box-shadow: none; }
+        .invalido { border-color: var(--error) !important; }
+        textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
+        .sel { position: relative; }
+        .sel::after {
+            content: ""; position: absolute; right: 14px; top: 50%; margin-top: -2px; pointer-events: none;
+            border: 5px solid transparent; border-top-color: var(--muted);
+        }
+        select { padding-right: 34px; cursor: pointer; }
+        select option { background: var(--surface); }
+        .err { display: none; margin-top: 6px; font-size: 12.5px; color: var(--error); }
+        .err.ver { display: block; }
+        .contador { margin-top: 5px; font-size: 12px; color: var(--faint); text-align: right; }
+
+        /* Prioridad */
+        .prioridad { display: flex; flex-wrap: wrap; gap: 8px; }
+        .prioridad input { position: absolute; opacity: 0; pointer-events: none; }
+        .prioridad label {
+            display: inline-flex; align-items: center; gap: 7px; margin: 0;
+            padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+            font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+            transition: border-color .15s, color .15s, background .15s;
+        }
+        .prioridad label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); opacity: .6; }
+        .prioridad label:hover { border-color: var(--border-h); color: var(--text); }
+        .prioridad input:checked + label { color: var(--text); border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+        .prioridad input:checked + label::before { opacity: 1; }
+        .prioridad input:focus-visible + label { box-shadow: 0 0 0 3px rgba(255,255,255,.15); }
+
+        /* Archivos */
+        .zona {
+            display: block; border: 1.5px dashed var(--border-h); border-radius: 12px;
+            padding: 22px; text-align: center; cursor: pointer; font-size: 13.5px; color: var(--muted);
+            transition: border-color .15s, background .15s;
+        }
+        .zona:hover, .zona.sobre { border-color: var(--accent); background: rgba(33,184,148,.05); }
+        .zona b { color: var(--accent); font-weight: 600; }
+        .zona small { display: block; margin-top: 4px; font-size: 12px; color: var(--faint); }
+        .zona input { display: none; }
+        .archivos { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .archivo {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px;
+            background: var(--input); border: 1px solid var(--border); font-size: 13px;
+        }
+        .archivo span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .archivo small { color: var(--faint); }
+        .archivo button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+        .archivo button:hover { color: var(--error); }
+
+        /* Botones */
+        .acciones { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .nota { font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+        .nota a { color: var(--muted); }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            background: var(--accent); color: #fff; border: 0; border-radius: 10px;
+            padding: 12px 22px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
+        .btn:hover { background: var(--accent-h); }
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { background: #3a3a3c; color: var(--muted); cursor: not-allowed; transform: none; }
+        .btn.sec { background: none; border: 1px solid var(--border-h); color: var(--text); }
+        .btn.sec:hover { border-color: var(--accent); color: var(--accent); }
+        .giro { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: girar .7s linear infinite; }
+        @keyframes girar { to { transform: rotate(360deg); } }
+
+        /* Pantallas de estado */
+        .estado { text-align: center; padding: 40px 28px; margin-top: 32px; }
+        .estado h2 { font-size: 19px; font-weight: 700; }
+        .estado p { margin: 8px auto 22px; max-width: 420px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+        .estado .icono { width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: rgba(33,184,148,.14); color: var(--accent); }
+        .estado .icono.mal { background: rgba(255,69,58,.14); color: var(--error); }
+        .estado .num { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: .04em; }
+        .aviso { margin-top: 14px; font-size: 13px; color: #ffd60a; }
+        .skel { height: 120px; margin-top: 32px; border-radius: 16px; background: var(--surface); animation: pulso 1.2s ease-in-out infinite; }
+        @keyframes pulso { 50% { opacity: .55; } }
+
+        .toast {
+            position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 50;
+            transform: translate(-50%, 120px); transition: transform .25s ease;
+            max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 10px;
+            background: #2c2c2e; border: 1px solid var(--border-h); font-size: 13.5px; text-align: center;
+        }
+        .toast.ver { transform: translate(-50%, 0); }
+        .toast.mal { background: #3a1513; border-color: rgba(255,69,58,.4); }
+
+        [hidden] { display: none !important; }
+
+        @media (max-width: 600px) {
+            header { padding: 16px; gap: 10px; }
+            .me span { display: none; }
+            main { padding: 32px 16px 48px; }
+            h1 { font-size: 23px; }
+            .card { padding: 18px; }
+            .row { grid-template-columns: 1fr; gap: 0; }
+            .row .field { margin-bottom: 18px; }
+            .acciones .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <img src="logo-alterna.png" alt="Alterna">
+    <div class="sp"></div>
+    <a class="volver" href="apps.html">← Aplicaciones</a>
+    <div class="me"><div class="av" id="av">--</div><span><b id="nombre">—</b></span></div>
+</header>
+
+<main>
+    <h1>Enviar un ticket de soporte</h1>
+    <p class="sub">Cuéntanos qué está pasando y el equipo de soporte te ayudará a resolverlo.</p>
+
+    <!-- Cargando -->
+    <div class="skel" id="vCargando"></div>
+
+    <!-- Conectar con Zoho Desk -->
+    <div class="card estado" id="vConectar" hidden>
+        <div class="icono"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg></div>
+        <h2 id="conectarTitulo">Conecta tu cuenta de Zoho</h2>
+        <p id="conectarTexto">Los tickets se crean en Zoho Desk a tu nombre. Conecta tu cuenta de Zoho para continuar; tus datos se completan solos.</p>
+        <button class="btn" id="btnConectar" type="button">Conectar con Zoho</button>
+    </div>
+
+    <!-- Sin acceso / error -->
+    <div class="card estado" id="vError" hidden>
+        <div class="icono mal"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></div>
+        <h2 id="errorTitulo"></h2>
+        <p id="errorTexto"></p>
+        <a class="btn sec" href="apps.html">Volver a Aplicaciones</a>
+    </div>
+
+    <!-- Ticket enviado -->
+    <div class="card estado" id="vListo" hidden>
+        <div class="icono"><svg width="26" height="26" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+        <div class="num" id="listoNum"></div>
+        <h2>¡Ticket enviado!</h2>
+        <p>Tu solicitud quedó registrada. Te responderemos a tu correo.</p>
+        <div class="aviso" id="listoAviso" hidden></div>
+        <button class="btn sec" id="btnOtro" type="button">Enviar otro ticket</button>
+    </div>
+
+    <!-- Formulario -->
+    <form id="form" novalidate hidden>
+        <div class="card">
+            <div class="card-title">Tus datos</div>
+            <div class="row">
+                <div class="field">
+                    <label for="fNombre">Nombre</label>
+                    <input type="text" id="fNombre" readonly>
+                </div>
+                <div class="field">
+                    <label for="fCorreo">Correo</label>
+                    <input type="email" id="fCorreo" readonly>
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="fTelefono">Teléfono <span class="opc">(opcional)</span></label>
+                    <input type="tel" id="fTelefono" placeholder="+502 5555 0000" autocomplete="tel" maxlength="30">
+                </div>
+                <div class="field">
+                    <label for="fDepartamento">Departamento</label>
+                    <input type="text" id="fDepartamento" readonly placeholder="—">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Tu solicitud</div>
+            <div class="field">
+                <label for="fAsunto">Asunto <span class="req">*</span></label>
+                <input type="text" id="fAsunto" placeholder="Describe el problema en pocas palabras" maxlength="200">
+                <div class="err" id="eAsunto">Escribe un asunto.</div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="fCategoria">Categoría <span class="req">*</span></label>
+                    <div class="sel"><select id="fCategoria">
+                        <option value="">Selecciona…</option>
+                        <option>Facturación</option>
+                        <option>Soporte técnico</option>
+                        <option>Consulta general</option>
+                        <option>Conectividad</option>
+                        <option>Hardware</option>
+                        <option>Software</option>
+                        <option>Otro</option>
+                    </select></div>
+                    <div class="err" id="eCategoria">Elige una categoría.</div>
+                </div>
+                <div class="field">
+                    <label for="fSubcategoria">Subcategoría <span class="opc">(opcional)</span></label>
+                    <div class="sel"><select id="fSubcategoria"><option value="">Selecciona…</option></select></div>
+                </div>
+            </div>
+            <div class="field">
+                <label for="fAplicacion">Aplicación <span class="req">*</span></label>
+                <div class="sel"><select id="fAplicacion">
+                    <option value="">Selecciona…</option>
+                    <option>Mail</option>
+                    <option>Cliq</option>
+                    <option>CRM</option>
+                    <option>Calendar</option>
+                    <option>Project</option>
+                    <option>Form</option>
+                    <option>Sitio Web</option>
+                    <option>Sprints</option>
+                    <option>People</option>
+                    <option>Drive</option>
+                    <option>Sign</option>
+                    <option>Expense</option>
+                    <option>Books</option>
+                    <option>Aplicativo control de honorarios</option>
+                    <option>Analytics</option>
+                    <option>Otro</option>
+                </select></div>
+                <div class="err" id="eAplicacion">Elige la aplicación.</div>
+            </div>
+            <div class="field">
+                <label for="fDescripcion">Descripción <span class="req">*</span></label>
+                <textarea id="fDescripcion" maxlength="3000" placeholder="Explica el problema con detalle: qué intentabas hacer, qué pasó y qué mensaje de error viste."></textarea>
+                <div class="contador"><span id="cuenta">0</span>/3000</div>
+                <div class="err" id="eDescripcion">Describe el problema.</div>
+            </div>
+            <div class="field">
+                <span class="label">Prioridad</span>
+                <div class="prioridad" role="radiogroup" aria-label="Prioridad">
+                    <input type="radio" name="prioridad" id="pLow" value="Low" checked><label for="pLow" style="--c:#30d158">Baja</label>
+                    <input type="radio" name="prioridad" id="pMedium" value="Medium"><label for="pMedium" style="--c:#ffd60a">Media</label>
+                    <input type="radio" name="prioridad" id="pHigh" value="High"><label for="pHigh" style="--c:#ff453a">Alta</label>
+                    <input type="radio" name="prioridad" id="pUrgent" value="Urgent"><label for="pUrgent" style="--c:#bf5af2">Urgente</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Archivos adjuntos <span>(opcional)</span></div>
+            <label class="zona" id="zona">
+                <input type="file" id="fArchivos" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.log">
+                <b>Haz clic para adjuntar</b> o arrastra archivos aquí
+                <small>Hasta 10 MB por archivo · imágenes, PDF, Word, Excel, ZIP…</small>
+            </label>
+            <div class="archivos" id="archivos"></div>
+        </div>
+
+        <div class="acciones">
+            <p class="nota">Al enviar aceptas nuestra <a href="https://alterna.com.gt/privacidad" target="_blank" rel="noopener">política de privacidad</a>.</p>
+            <button class="btn" id="btnEnviar" type="submit">Enviar ticket</button>
+        </div>
+    </form>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="sesion.js?v=20261104a"></script>
+<script>
+    // ── Configuración ─────────────────────────────────────────────
+    const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
+    const ZOHO = {
+        clientId:     "1000.W1EOK2E2K7FCOBAU391B3UZAT2P7HY",
+        cuentas:      "https://accounts.zoho.com",
+        desk:         "https://desk.zoho.com/api/v1",
+        // UPDATE es para subir los adjuntos al ticket ya creado
+        scopes:       "Desk.tickets.CREATE,Desk.tickets.UPDATE,Desk.contacts.ALL,Desk.basic.READ,AaaServer.profile.READ",
+        orgId:        "718939940",
+        departmentId: "512816000000006907",
+        // Campos personalizados de Zoho Desk (Configuración → Tickets → Campos → nombre de API)
+        cfDepartamento: "cf_departamento_area",
+        cfAplicacion:   "cf_aplicacion_en_la_que_necesita_apoyo",
+    };
+    // Esta dirección exacta debe estar registrada como "Redirect URI" del cliente en api-console.zoho.com
+    const REDIRECCION = location.origin + location.pathname;
+    const CLAVE_TOKEN = "alterna_soporte_zoho";
+    const CLAVE_ESTADO = "alterna_soporte_estado";
+    const CLAVE_BORRADOR = "alterna_soporte_borrador";
+    const MAX_ARCHIVO = 10 * 1024 * 1024;
+
+    const SUBCATEGORIAS = {
+        "Facturación":      ["Consulta de factura", "Error en cobro", "Cambio de plan", "Cancelación"],
+        "Soporte técnico":  ["Configuración", "Error de sistema", "Rendimiento", "Reinstalación"],
+        "Consulta general": ["Información de producto", "Precios", "Horarios", "Otros"],
+        "Conectividad":     ["Sin conexión", "Velocidad lenta", "Intermitencia", "VPN"],
+        "Hardware":         ["Equipo dañado", "Solicitud de equipo", "Reposición", "Mantenimiento"],
+        "Software":         ["Instalación", "Actualización", "Licencia", "Error de aplicación"],
+        "Otro":             ["Otro"],
+    };
+    const PRIORIDAD = {
+        Low:    { nombre: "Baja",    bg: "#ecfdf5", tx: "#065f46", bd: "#6ee7b7" },
+        Medium: { nombre: "Media",   bg: "#fffbeb", tx: "#92400e", bd: "#fcd34d" },
+        High:   { nombre: "Alta",    bg: "#fff1f2", tx: "#9f1239", bd: "#fca5a5" },
+        Urgent: { nombre: "Urgente", bg: "#faf5ff", tx: "#581c87", bd: "#c084fc" },
+    };
+    const CAMPOS_BORRADOR = ["fTelefono", "fAsunto", "fCategoria", "fSubcategoria", "fAplicacion", "fDescripcion"];
+
+    // ── Sesión de Alterna (la misma de apps.html) ─────────────────
+    let usuario = null;
+    try { usuario = JSON.parse(localStorage.getItem("usuario")); } catch { /* sin sesión */ }
+    if (!usuario?.token) { localStorage.removeItem("usuario"); location.replace("index.html"); }
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    const iniciales = t => String(t || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase().replace(/[^\p{L}\p{N}]/gu, "") || "?";
+    const leer = (almacen, clave) => { try { return JSON.parse(almacen.getItem(clave)); } catch { return null; } };
+    const guardar = (almacen, clave, valor) => { try { valor == null ? almacen.removeItem(clave) : almacen.setItem(clave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
+
+    const nombreSesion = usuario?.nombre || usuario?.correo || "";
+    $("nombre").textContent = nombreSesion;
+    $("av").textContent = iniciales(nombreSesion);
+    if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(usuario?.foto || ""))
+        $("av").innerHTML = `<img src="${usuario.foto}" alt="">`;
+
+    // ── Pantallas ─────────────────────────────────────────────────
+    function ver(id) {
+        ["vCargando", "vConectar", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
+    }
+    function mostrarError(titulo, texto) {
+        $("errorTitulo").textContent = titulo;
+        $("errorTexto").textContent = texto;
+        ver("vError");
+    }
+    function mostrarConectar(titulo, texto) {
+        $("conectarTitulo").textContent = titulo || "Conecta tu cuenta de Zoho";
+        $("conectarTexto").textContent = texto || "Los tickets se crean en Zoho Desk a tu nombre. Conecta tu cuenta de Zoho para continuar; tus datos se completan solos.";
+        ver("vConectar");
+    }
+    let tiempoToast;
+    function toast(texto, mal = false) {
+        const t = $("toast");
+        t.textContent = texto;
+        t.className = "toast ver" + (mal ? " mal" : "");
+        clearTimeout(tiempoToast);
+        tiempoToast = setTimeout(() => t.classList.remove("ver"), 4500);
+    }
+
+    // ── Acceso a la app (lo que se configura en el panel) ─────────
+    async function tieneAcceso() {
+        const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/mis_aplicaciones", {
+            method: "POST", body: "{}",
+            headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": usuario.token },
+        });
+        if (!r.ok) {
+            const cuerpo = await r.text();
+            if (/28000|sesion_invalida/.test(cuerpo)) { localStorage.removeItem("usuario"); location.replace("index.html"); return null; }
+            throw new Error("mis_aplicaciones " + r.status);
+        }
+        const apps = await r.json();
+        return (apps || []).some(a => /(^|\/)soporte\.html([?#]|$)/i.test(a.url || ""));
+    }
+
+    // ── Zoho: conexión (OAuth implícito, el token llega en el #) ──
+    function conectar() {
+        guardarBorrador();
+        const estado = crypto.getRandomValues(new Uint32Array(4)).join("-");
+        try { sessionStorage.setItem(CLAVE_ESTADO, estado); } catch { /* sin almacenamiento */ }
+        const p = new URLSearchParams({
+            response_type: "token",
+            client_id:     ZOHO.clientId,
+            redirect_uri:  REDIRECCION,
+            scope:         ZOHO.scopes,
+            state:         estado,
+        });
+        location.href = ZOHO.cuentas + "/oauth/v2/auth?" + p;
+    }
+    $("btnConectar").addEventListener("click", conectar);
+
+    function tokenGuardado() {
+        const t = leer(sessionStorage, CLAVE_TOKEN);
+        return t?.token && t.vence > Date.now() + 60_000 ? t.token : null;
+    }
+    function olvidarToken() { guardar(sessionStorage, CLAVE_TOKEN, null); }
+
+    // Respuesta de Zoho al volver del login: #access_token=…&expires_in=…&state=…  o  ?error=…
+    function leerRespuestaZoho() {
+        const h = new URLSearchParams(location.hash.slice(1));
+        const q = new URLSearchParams(location.search);
+        const token = h.get("access_token");
+        const error = h.get("error") || q.get("error");
+        if (!token && !error) return null;
+        history.replaceState(null, "", location.pathname);
+        let esperado = null;
+        try { esperado = sessionStorage.getItem(CLAVE_ESTADO); sessionStorage.removeItem(CLAVE_ESTADO); } catch { /* sin almacenamiento */ }
+        if (error) return { error };
+        if (!esperado || h.get("state") !== esperado) return { error: "estado_invalido" };
+        const segundos = Math.min(Number(h.get("expires_in")) || 3600, 3600);
+        guardar(sessionStorage, CLAVE_TOKEN, { token, vence: Date.now() + segundos * 1000 });
+        return { ok: true };
+    }
+
+    class TokenVencido extends Error {}
+    async function desk(token, ruta, opciones = {}) {
+        const r = await fetch(ZOHO.desk + ruta, {
+            ...opciones,
+            headers: { Authorization: "Zoho-oauthtoken " + token, orgId: ZOHO.orgId, ...(opciones.headers || {}) },
+        });
+        if (r.status === 401) throw new TokenVencido();
+        return r;
+    }
+    async function mensajeZoho(r) {
+        try { const d = await r.json(); return d.message || d.errorCode || ""; } catch { return ""; }
+    }
+
+    // ── Perfil: Zoho Desk → Zoho Accounts → sesión de Alterna ─────
+    async function perfil(token) {
+        try {
+            const r = await desk(token, "/myinfo");
+            if (r.ok) {
+                const d = await r.json();
+                let departamento = "";
+                const idDep = (d.associatedDepartmentIds || [])[0];
+                if (idDep) {
+                    try {
+                        const rd = await desk(token, "/departments/" + encodeURIComponent(idDep));
+                        if (rd.ok) departamento = (await rd.json()).name || "";
+                    } catch (e) { if (e instanceof TokenVencido) throw e; }
+                }
+                if (d.emailId || d.email) return { nombre: d.firstName || "", apellido: d.lastName || "", correo: d.emailId || d.email, telefono: d.phone || "", departamento };
+            }
+        } catch (e) { if (e instanceof TokenVencido) throw e; }
+
+        try {
+            const r = await fetch(ZOHO.cuentas + "/oauth/user/info", { headers: { Authorization: "Zoho-oauthtoken " + token } });
+            if (r.status === 401) throw new TokenVencido();
+            if (r.ok) {
+                const d = await r.json();
+                const partes = String(d.Display_Name || "").split(" ");
+                const correo = d.Email || d.email || "";
+                if (correo) return { nombre: d.First_Name || partes[0] || "", apellido: d.Last_Name || partes.slice(1).join(" "), correo, telefono: "", departamento: "" };
+            }
+        } catch (e) { if (e instanceof TokenVencido) throw e; }
+
+        // Último recurso: los datos con los que entró a Alterna
+        const partes = String(usuario.nombre || "").trim().split(/\s+/);
+        return { nombre: partes[0] || "", apellido: partes.slice(1).join(" "), correo: usuario.correo || "", telefono: "", departamento: "" };
+    }
+
+    let yo = null;
+    function llenarDatos(p) {
+        yo = p;
+        $("fNombre").value = [p.nombre, p.apellido].filter(Boolean).join(" ");
+        $("fCorreo").value = p.correo;
+        if (p.telefono && !$("fTelefono").value) $("fTelefono").value = p.telefono;
+        $("fDepartamento").value = p.departamento || "";
+    }
+
+    // ── Borrador (para no perder lo escrito si hay que reconectar) ─
+    function guardarBorrador() {
+        if ($("form").hidden) return;
+        const b = {};
+        CAMPOS_BORRADOR.forEach(id => { b[id] = $(id).value; });
+        b.prioridad = document.querySelector("input[name=prioridad]:checked")?.value;
+        guardar(sessionStorage, CLAVE_BORRADOR, b);
+    }
+    function restaurarBorrador() {
+        const b = leer(sessionStorage, CLAVE_BORRADOR);
+        guardar(sessionStorage, CLAVE_BORRADOR, null);
+        if (!b) return;
+        $("fCategoria").value = b.fCategoria || "";
+        llenarSubcategorias();
+        CAMPOS_BORRADOR.forEach(id => { if (typeof b[id] === "string") $(id).value = b[id]; });
+        const radio = b.prioridad && $("p" + b.prioridad);
+        if (radio) radio.checked = true;
+        $("cuenta").textContent = $("fDescripcion").value.length;
+    }
+
+    // ── Formulario ────────────────────────────────────────────────
+    function llenarSubcategorias() {
+        const sub = $("fSubcategoria");
+        sub.innerHTML = '<option value="">Selecciona…</option>';
+        (SUBCATEGORIAS[$("fCategoria").value] || []).forEach(o => sub.add(new Option(o, o)));
+    }
+    $("fCategoria").addEventListener("change", llenarSubcategorias);
+    $("fDescripcion").addEventListener("input", e => { $("cuenta").textContent = e.target.value.length; });
+
+    const OBLIGATORIOS = ["Asunto", "Categoria", "Aplicacion", "Descripcion"];
+    OBLIGATORIOS.forEach(n => {
+        const quitar = () => { $("f" + n).classList.remove("invalido"); $("e" + n).classList.remove("ver"); };
+        $("f" + n).addEventListener("input", quitar);
+        $("f" + n).addEventListener("change", quitar);
+    });
+    function validar() {
+        let primero = null;
+        OBLIGATORIOS.forEach(n => {
+            const vacio = !$("f" + n).value.trim();
+            $("f" + n).classList.toggle("invalido", vacio);
+            $("e" + n).classList.toggle("ver", vacio);
+            if (vacio && !primero) primero = $("f" + n);
+        });
+        if (primero) primero.focus();
+        return !primero;
+    }
+
+    // Archivos
+    let archivos = [];
+    const zona = $("zona"), entrada = $("fArchivos");
+    function agregarArchivos(lista) {
+        for (const f of lista) {
+            if (f.size > MAX_ARCHIVO) { toast(`"${f.name}" pesa más de 10 MB`, true); continue; }
+            if (!archivos.some(x => x.name === f.name && x.size === f.size)) archivos.push(f);
+        }
+        pintarArchivos();
+    }
+    function pintarArchivos() {
+        $("archivos").innerHTML = archivos.map((f, i) => `
+            <div class="archivo"><span>${esc(f.name)}</span><small>${Math.max(1, Math.round(f.size / 1024))} KB</small>
+            <button type="button" data-i="${i}" aria-label="Quitar ${esc(f.name)}">×</button></div>`).join("");
+    }
+    $("archivos").addEventListener("click", e => {
+        const b = e.target.closest("button[data-i]");
+        if (b) { archivos.splice(Number(b.dataset.i), 1); pintarArchivos(); }
+    });
+    entrada.addEventListener("change", () => { agregarArchivos([...entrada.files]); entrada.value = ""; });
+    zona.addEventListener("dragover", e => { e.preventDefault(); zona.classList.add("sobre"); });
+    zona.addEventListener("dragleave", () => zona.classList.remove("sobre"));
+    zona.addEventListener("drop", e => { e.preventDefault(); zona.classList.remove("sobre"); agregarArchivos([...e.dataTransfer.files]); });
+
+    // Descripción en HTML para el agente de Zoho Desk (todo escapado)
+    function descripcionHtml(d) {
+        const p = PRIORIDAD[d.prioridad] || PRIORIDAD.Low;
+        const fecha = new Date().toLocaleString("es-GT", { dateStyle: "full", timeStyle: "short", timeZone: "America/Guatemala" });
+        const fila = (k, v, alt) => `<tr style="${alt ? "background:#f9fafb;" : ""}"><td style="padding:10px 18px;width:36%;font-size:13px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">${k}</td><td style="padding:10px 18px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${v}</td></tr>`;
+        const tabla = (titulo, filas) => `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td colspan="2" style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">${titulo}</td></tr>${filas}</table>`;
+        const solicitante = [
+            ["Nombre", esc(d.nombreCompleto)],
+            ["Correo", `<a href="mailto:${esc(d.correo)}" style="color:#21b894;text-decoration:none;">${esc(d.correo)}</a>`],
+            d.telefono ? ["Teléfono", esc(d.telefono)] : null,
+            ["Departamento", esc(d.departamento || "—")],
+        ].filter(Boolean);
+        const solicitud = [
+            ["Aplicación", `<strong>${esc(d.aplicacion)}</strong>`],
+            ["Categoría", esc(d.categoria)],
+            d.subcategoria ? ["Subcategoría", esc(d.subcategoria)] : null,
+            ["Prioridad", `<span style="display:inline-block;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${p.bg};color:${p.tx};border:1px solid ${p.bd};">${p.nombre}</span>`],
+        ].filter(Boolean);
+        return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#111827;line-height:1.6;max-width:680px;">
+<div style="background:#21b894;padding:16px 20px;border-radius:8px;margin-bottom:20px;"><div style="color:#fff;font-size:15px;font-weight:700;">Ticket de soporte técnico</div><div style="color:rgba(255,255,255,.8);font-size:12px;margin-top:3px;">${esc(fecha)} · enviado desde Alterna Apps</div></div>
+${tabla("Solicitante", solicitante.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
+${tabla("Solicitud", solicitud.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
+<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">Descripción del problema</td></tr><tr><td style="padding:16px 18px;font-size:13px;line-height:1.75;color:#1f2937;white-space:pre-wrap;">${esc(d.descripcion)}</td></tr></table>
+</div>`;
+    }
+
+    async function contactoId(token, d) {
+        const r = await desk(token, "/contacts/search?email=" + encodeURIComponent(d.correo) + "&limit=1");
+        if (r.ok && r.status !== 204) {
+            const lista = (await r.json()).data || [];
+            if (lista[0]?.id) return lista[0].id;
+        }
+        const cuerpo = { email: d.correo, firstName: d.nombre || undefined, lastName: d.apellido || d.nombre || d.correo };
+        if (d.telefono) cuerpo.phone = d.telefono;
+        const rc = await desk(token, "/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+        if (!rc.ok) throw new Error("No se pudo registrar tu contacto en Zoho Desk. " + await mensajeZoho(rc));
+        return (await rc.json()).id;
+    }
+
+    function botonEnviando(texto) {
+        const b = $("btnEnviar");
+        b.disabled = !!texto;
+        b.innerHTML = texto ? `<span class="giro"></span>${esc(texto)}` : "Enviar ticket";
+    }
+
+    $("form").addEventListener("submit", async e => {
+        e.preventDefault();
+        if (!validar()) return;
+        const token = tokenGuardado();
+        if (!token) {
+            guardarBorrador();
+            mostrarConectar("Tu conexión con Zoho venció", "Vuelve a conectar tu cuenta. Lo que escribiste se conserva; los archivos adjuntos tendrás que agregarlos de nuevo.");
+            return;
+        }
+        const d = {
+            nombre:       yo.nombre,
+            apellido:     yo.apellido,
+            nombreCompleto: [yo.nombre, yo.apellido].filter(Boolean).join(" "),
+            correo:       yo.correo,
+            departamento: yo.departamento,
+            telefono:     $("fTelefono").value.trim(),
+            asunto:       $("fAsunto").value.trim(),
+            categoria:    $("fCategoria").value,
+            subcategoria: $("fSubcategoria").value,
+            aplicacion:   $("fAplicacion").value,
+            descripcion:  $("fDescripcion").value.trim(),
+            prioridad:    document.querySelector("input[name=prioridad]:checked")?.value || "Low",
+        };
+
+        try {
+            botonEnviando("Buscando tu contacto…");
+            const idContacto = await contactoId(token, d);
+
+            botonEnviando("Creando ticket…");
+            const r = await desk(token, "/tickets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subject: d.asunto,
+                    description: descripcionHtml(d),
+                    contactId: idContacto,
+                    email: d.correo,
+                    phone: d.telefono || undefined,
+                    priority: d.prioridad,
+                    category: d.categoria,
+                    departmentId: ZOHO.departmentId,
+                    cf: {
+                        cf_nombre_completo: d.nombreCompleto,
+                        [ZOHO.cfDepartamento]: d.departamento || "",
+                        [ZOHO.cfAplicacion]: d.aplicacion,
+                    },
+                }),
+            });
+            if (!r.ok) throw new Error("Zoho Desk no aceptó el ticket. " + await mensajeZoho(r));
+            const ticket = await r.json();
+
+            // Adjuntos: se suben al ticket ya creado
+            const fallidos = [];
+            for (let i = 0; i < archivos.length; i++) {
+                botonEnviando(`Subiendo archivo ${i + 1} de ${archivos.length}…`);
+                try {
+                    const fd = new FormData();
+                    fd.append("file", archivos[i], archivos[i].name);
+                    const ra = await desk(token, `/tickets/${encodeURIComponent(ticket.id)}/attachments?isPublic=true`, { method: "POST", body: fd });
+                    if (!ra.ok) fallidos.push(archivos[i].name);
+                } catch { fallidos.push(archivos[i].name); }
+            }
+
+            $("listoNum").textContent = "TICKET #" + (ticket.ticketNumber || ticket.id);
+            $("listoAviso").hidden = !fallidos.length;
+            $("listoAviso").textContent = fallidos.length
+                ? `No se pudieron adjuntar: ${fallidos.join(", ")}. Puedes enviarlos respondiendo el correo del ticket.`
+                : "";
+            ver("vListo");
+            window.scrollTo(0, 0);
+        } catch (err) {
+            console.error(err);
+            if (err instanceof TokenVencido) {
+                olvidarToken();
+                guardarBorrador();
+                mostrarConectar("Tu conexión con Zoho venció", "Vuelve a conectar tu cuenta. Lo que escribiste se conserva; los archivos adjuntos tendrás que agregarlos de nuevo.");
+            } else {
+                toast(err.message && !/Failed to fetch|NetworkError/i.test(err.message) ? err.message : "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.", true);
+            }
+        } finally {
+            botonEnviando("");
+        }
+    });
+
+    $("btnOtro").addEventListener("click", () => {
+        $("form").reset();
+        llenarSubcategorias();
+        if (yo) llenarDatos(yo);
+        archivos = []; pintarArchivos();
+        $("cuenta").textContent = "0";
+        OBLIGATORIOS.forEach(n => { $("f" + n).classList.remove("invalido"); $("e" + n).classList.remove("ver"); });
+        ver("form");
+        window.scrollTo(0, 0);
+    });
+
+    // ── Inicio ────────────────────────────────────────────────────
+    async function iniciar() {
+        const respuesta = leerRespuestaZoho();
+
+        try {
+            const acceso = await tieneAcceso();
+            if (acceso === null) return;
+            if (!acceso) { mostrarError("No tienes acceso a Soporte", "Pide acceso al área de IT."); return; }
+        } catch (e) {
+            console.error(e);
+            mostrarError("No se pudo cargar", "Revisa tu conexión y recarga la página.");
+            return;
+        }
+
+        if (respuesta?.error) {
+            const negado = /access_denied/i.test(respuesta.error);
+            mostrarConectar(negado ? "No se conectó tu cuenta" : "No se pudo conectar con Zoho",
+                negado ? "Para crear tickets necesitamos permiso para usar tu cuenta de Zoho Desk." : "Inténtalo de nuevo. Si el problema sigue, avisa al área de IT.");
+            return;
+        }
+
+        const token = tokenGuardado();
+        if (!token) { mostrarConectar(); return; }
+
+        try {
+            llenarDatos(await perfil(token));
+            ver("form");
+            restaurarBorrador();
+            if (respuesta?.ok) toast("Cuenta de Zoho conectada");
+        } catch (e) {
+            if (e instanceof TokenVencido) { olvidarToken(); mostrarConectar(); return; }
+            console.error(e);
+            mostrarError("No se pudo cargar", "Revisa tu conexión y recarga la página.");
+        }
+    }
+
+    if (usuario?.token) iniciar();
+</script>
+</body>
+</html>
