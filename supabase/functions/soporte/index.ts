@@ -125,16 +125,24 @@ const mensajeZoho = async (r: Response) => {
   return [d.errorCode, d.message].filter(Boolean).join(": ");
 };
 
-// Departamento del usuario en Zoho Desk (si es agente); si no, vacío
+// Departamento del usuario en Zoho People (árbol de departamentos de la organización), por su correo
+const cacheDepartamento = new Map<string, { valor: string; vence: number }>();
 async function departamentoDe(cfg: Config, correo: string): Promise<string> {
+  const clave = correo.toLowerCase();
+  const guardado = cacheDepartamento.get(clave);
+  if (guardado && guardado.vence > Date.now()) return guardado.valor;
   try {
-    const r = await desk(cfg, "/agents/email/" + encodeURIComponent(correo));
-    if (!r.ok) return "";
-    const ids: string[] = (await r.json()).associatedDepartmentIds ?? [];
-    const id = ids.includes(DEPARTAMENTO_ID) && ids.length > 1 ? ids.find((x) => x !== DEPARTAMENTO_ID) : ids[0];
-    if (!id) return "";
-    const rd = await desk(cfg, "/departments/" + encodeURIComponent(id));
-    return rd.ok ? String((await rd.json()).name ?? "") : "";
+    const people = (DESK_DE[cfg.servidor] ?? "https://desk.zoho.com").replace("://desk.", "://people.");
+    const busqueda = JSON.stringify({ searchField: "EmailID", searchOperator: "Is", searchText: clave });
+    const r = await fetch(`${people}/people/api/forms/employee/getRecords?searchParams=${encodeURIComponent(busqueda)}`, {
+      headers: { Authorization: "Zoho-oauthtoken " + await tokenDesk(cfg) },
+    });
+    const d = await r.json().catch(() => ({}));
+    const registros = (d?.response?.result ?? []).flatMap((x: Record<string, unknown[]>) => Object.values(x).flat());
+    const valor = String((registros[0] as Record<string, unknown> | undefined)?.Department ?? "").trim();
+    if (!valor) log("warn", "people_sin_departamento", { status: r.status, codigo: d?.response?.errors?.code, mensaje: d?.response?.errors?.message ?? d?.response?.message });
+    cacheDepartamento.set(clave, { valor, vence: Date.now() + (valor ? 3600_000 : 300_000) });
+    return valor;
   } catch (e) {
     log("warn", "departamento_fallo", { error: String(e) });
     return "";
