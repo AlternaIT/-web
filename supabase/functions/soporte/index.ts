@@ -5,7 +5,7 @@
 //  • El ticket se crea con la conexión de Zoho Desk de la empresa (tabla zoho_desk_config, solo
 //    servidor), a nombre del correo verificado del usuario: Zoho Desk lo asocia a su contacto.
 //  • La conexión es interna: se guarda una vez en zoho_desk_config (no se pide en la página).
-// Acciones (JSON): "perfil", "mis_tickets", "ticket" (detalle con conversación). Envío del ticket: multipart/form-data con los campos y archivos.
+// Acciones (JSON): "perfil", "mis_tickets", "ticket" (detalle). Envío del ticket: multipart/form-data con los campos y archivos.
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ORG_ID = Deno.env.get("ZOHO_DESK_ORG_ID") || "718939940";
@@ -193,26 +193,6 @@ async function verTicket(cfg: Config, user: Usuario, id: string) {
   // Solo el dueño del ticket lo puede ver (mismo mensaje que si no existiera)
   if (!esDelUsuario(t, user.correo)) throw new ErrorUsuario("No encontramos ese ticket.", 404);
 
-  // Conversación pública (las notas internas de soporte no se muestran)
-  const rh = await desk(cfg, `/tickets/${id}/threads?limit=50`);
-  const hilos: Record<string, any>[] = rh.ok && rh.status !== 204 ? ((await rh.json()).data ?? []) : [];
-  const publicos = hilos.filter((h) => h.visibility !== "private").slice(-30);
-  const mensajes = await Promise.all(publicos.map(async (h) => {
-    let texto = String(h.summary ?? "");
-    try {
-      const rd = await desk(cfg, `/tickets/${id}/threads/${h.id}?include=plainText`);
-      if (rd.ok) { const d = await rd.json(); texto = String(d.plainText ?? d.summary ?? texto); }
-    } catch { /* se queda el resumen */ }
-    return {
-      id: String(h.id), fecha: h.createdTime ?? null,
-      deSoporte: h.direction === "out" || /AGENT/i.test(String(h.author?.type ?? "")),
-      autor: nombreDe(h.author) || (h.direction === "out" ? "Soporte" : user.nombre),
-      texto: texto.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 8000),
-      adjuntos: Number(h.attachmentCount ?? 0),
-    };
-  }));
-  mensajes.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
-
   let adjuntos: { nombre: string; tamano: number }[] = [];
   try {
     const ra = await desk(cfg, `/tickets/${id}/attachments?limit=50`);
@@ -228,7 +208,7 @@ async function verTicket(cfg: Config, user: Usuario, id: string) {
       responsable: nombreDe(t.assignee), creado: t.createdTime ?? null, actualizado: t.modifiedTime ?? null,
       cerrado: t.closedTime ?? null, vence: t.dueDate ?? null,
     },
-    mensajes, adjuntos,
+    adjuntos,
   });
 }
 
