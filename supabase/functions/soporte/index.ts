@@ -1,0 +1,318 @@
+// Alterna — app Soporte (soporte.html): crea tickets en Zoho Desk.
+//  • El usuario ya entró a Alterna (con su cuenta de Zoho); aquí no vuelve a conectar nada.
+//    La sesión se valida igual que en alterna-ai (usuario_id + token de sesiones_app) y se
+//    comprueba el acceso a la app (catálogo "aplicaciones", url soporte.html).
+//  • El ticket se crea con la conexión de Zoho Desk de la empresa (tabla zoho_desk_config, solo
+//    servidor), a nombre del correo verificado del usuario: Zoho Desk lo asocia a su contacto.
+//  • Un administrador configura esa conexión una sola vez desde la misma página (accion "configurar").
+// Acciones (JSON): "perfil", "configurar". Envío del ticket: multipart/form-data con los campos y archivos.
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const ORG_ID = Deno.env.get("ZOHO_DESK_ORG_ID") || "718939940";
+const DEPARTAMENTO_ID = Deno.env.get("ZOHO_DESK_DEPARTMENT_ID") || "512816000000006907";
+// Campos personalizados de Zoho Desk (Configuración → Tickets → Campos → nombre de API)
+const CF_NOMBRE = "cf_nombre_completo";
+const CF_DEPARTAMENTO = "cf_departamento_area";
+const CF_APLICACION = "cf_aplicacion_en_la_que_necesita_apoyo";
+
+const MAX_ARCHIVOS = 5;
+const MAX_BYTES_ARCHIVO = 10 * 1024 * 1024;
+const MAX_BYTES_TOTAL = 20 * 1024 * 1024;
+const MAX_TICKETS_HORA = 10;
+
+const CATEGORIAS = ["Facturación", "Soporte técnico", "Consulta general", "Conectividad", "Hardware", "Software", "Otro"];
+const APLICACIONES = ["Mail", "Cliq", "CRM", "Calendar", "Project", "Form", "Sitio Web", "Sprints", "People", "Drive", "Sign",
+  "Expense", "Books", "Aplicativo control de honorarios", "Analytics", "Otro"];
+const PRIORIDADES: Record<string, { nombre: string; bg: string; tx: string; bd: string }> = {
+  Low:    { nombre: "Baja",    bg: "#ecfdf5", tx: "#065f46", bd: "#6ee7b7" },
+  Medium: { nombre: "Media",   bg: "#fffbeb", tx: "#92400e", bd: "#fcd34d" },
+  High:   { nombre: "Alta",    bg: "#fff1f2", tx: "#9f1239", bd: "#fca5a5" },
+  Urgent: { nombre: "Urgente", bg: "#faf5ff", tx: "#581c87", bd: "#c084fc" },
+};
+
+// Servidores de cuentas de Zoho aceptados (ahí se envía el secreto) y su Zoho Desk
+const DESK_DE: Record<string, string> = {
+  "https://accounts.zoho.com": "https://desk.zoho.com",
+  "https://accounts.zoho.eu": "https://desk.zoho.eu",
+  "https://accounts.zoho.in": "https://desk.zoho.in",
+  "https://accounts.zoho.com.au": "https://desk.zoho.com.au",
+  "https://accounts.zoho.jp": "https://desk.zoho.jp",
+  "https://accounts.zoho.ca": "https://desk.zohocloud.ca",
+  "https://accounts.zoho.sa": "https://desk.zoho.sa",
+  "https://accounts.zoho.uk": "https://desk.zoho.uk",
+};
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const log = (nivel: string, evento: string, datos: Record<string, unknown> = {}) =>
+  console.log(JSON.stringify({ nivel, evento, ...datos }));
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+const texto = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+
+class ErrorUsuario extends Error {
+  constructor(mensaje: string, public status = 400) { super(mensaje); }
+}
+
+/* ───────────── Sesión y acceso ───────────── */
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type Usuario = { id: number; nombre: string; rol: string; activo: boolean; correo: string };
+
+async function autenticar(db: SupabaseClient, usuarioId: unknown, token: unknown): Promise<Usuario | null> {
+  const id = Number(usuarioId), t = String(token ?? "");
+  if (!Number.isFinite(id) || !UUID.test(t)) return null;
+  const { data: user } = await db.from("usuarios").select("id, nombre, rol, activo, correo").eq("id", id).maybeSingle();
+  if (!user || user.activo !== true) return null;
+  const { data: s } = await db.from("sesiones_app").select("usuario_id, expira").eq("token", t).maybeSingle();
+  if (!s || s.usuario_id !== user.id || new Date(s.expira) < new Date()) return null;
+  return user as Usuario;
+}
+
+async function tieneAcceso(db: SupabaseClient, usuarioId: number): Promise<boolean> {
+  // La clave la pone quien crea la app en el panel: se busca por su enlace
+  const { data: apps } = await db.from("aplicaciones").select("clave, url").eq("activa", true);
+  const app = (apps ?? []).find((a) => /(^|\/)soporte\.html([?#]|$)/i.test(a.url ?? ""));
+  if (!app) return false;
+  const { data } = await db.rpc("usuario_tiene_acceso", { p_usuario: usuarioId, p_clave: app.clave });
+  return data === true;
+}
+
+/* ───────────── Conexión de la empresa con Zoho Desk ───────────── */
+
+type Config = { client_id: string; client_secret: string; refresh_token: string; servidor: string };
+let cacheToken: { token: string; vence: number; refresh: string } | null = null;
+
+async function leerConfig(db: SupabaseClient): Promise<Config | null> {
+  const { data, error } = await db.from("zoho_desk_config").select("client_id, client_secret, refresh_token, servidor").eq("id", 1).maybeSingle();
+  if (error) { log("error", "leer_config", { error: error.message }); return null; }
+  return data as Config | null;
+}
+
+async function tokenDesk(cfg: Config, forzar = false): Promise<string> {
+  if (!forzar && cacheToken && cacheToken.refresh === cfg.refresh_token && cacheToken.vence > Date.now() + 60_000) return cacheToken.token;
+  const r = await fetch(`${cfg.servidor}/oauth/v2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: cfg.refresh_token, client_id: cfg.client_id, client_secret: cfg.client_secret }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) {
+    log("error", "zoho_refresh_fallo", { status: r.status, error: d.error });
+    throw new ErrorUsuario("La conexión con Zoho Desk dejó de funcionar. Avisa al área de IT.", 503);
+  }
+  cacheToken = { token: d.access_token, vence: Date.now() + (Number(d.expires_in) || 3600) * 1000, refresh: cfg.refresh_token };
+  return d.access_token;
+}
+
+// Llamada a Zoho Desk; si el token venció se renueva una vez
+async function desk(cfg: Config, ruta: string, opciones: RequestInit = {}): Promise<Response> {
+  const base = (DESK_DE[cfg.servidor] ?? "https://desk.zoho.com") + "/api/v1";
+  const llamar = async (forzar: boolean) => fetch(base + ruta, {
+    ...opciones,
+    headers: { ...(opciones.headers ?? {}), Authorization: "Zoho-oauthtoken " + await tokenDesk(cfg, forzar), orgId: ORG_ID },
+  });
+  let r = await llamar(false);
+  if (r.status === 401) r = await llamar(true);
+  return r;
+}
+const mensajeZoho = async (r: Response) => {
+  const d = await r.json().catch(() => ({}));
+  return [d.errorCode, d.message].filter(Boolean).join(": ");
+};
+
+// Departamento del usuario en Zoho Desk (si es agente); si no, vacío
+async function departamentoDe(cfg: Config, correo: string): Promise<string> {
+  try {
+    const r = await desk(cfg, "/agents/email/" + encodeURIComponent(correo));
+    if (!r.ok) return "";
+    const ids: string[] = (await r.json()).associatedDepartmentIds ?? [];
+    const id = ids.includes(DEPARTAMENTO_ID) && ids.length > 1 ? ids.find((x) => x !== DEPARTAMENTO_ID) : ids[0];
+    if (!id) return "";
+    const rd = await desk(cfg, "/departments/" + encodeURIComponent(id));
+    return rd.ok ? String((await rd.json()).name ?? "") : "";
+  } catch (e) {
+    log("warn", "departamento_fallo", { error: String(e) });
+    return "";
+  }
+}
+
+/* ───────────── Acciones ───────────── */
+
+async function perfil(db: SupabaseClient, user: Usuario) {
+  const cfg = await leerConfig(db);
+  return json({
+    nombre: user.nombre, correo: user.correo,
+    departamento: cfg ? await departamentoDe(cfg, user.correo) : "",
+    configurado: !!cfg, admin: user.rol === "admin",
+  });
+}
+
+async function configurar(db: SupabaseClient, user: Usuario, p: Record<string, unknown>) {
+  if (user.rol !== "admin") return json({ error: "Solo un administrador puede configurar Zoho Desk." }, 403);
+  const clientId = texto(p.client_id, 200), clientSecret = texto(p.client_secret, 200), code = texto(p.code, 400);
+  const servidor = texto(p.servidor || "https://accounts.zoho.com", 60).replace(/\/+$/, "");
+  if (!clientId || !clientSecret || !code) return json({ error: "Completa Client ID, Client Secret y el código." }, 400);
+  if (!DESK_DE[servidor]) return json({ error: "Servidor de Zoho no válido." }, 400);
+
+  const r = await fetch(`${servidor}/oauth/v2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: clientId, client_secret: clientSecret }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.refresh_token) {
+    log("warn", "configurar_fallo", { status: r.status, error: d.error });
+    const motivo = d.error === "invalid_code" ? "El código venció o ya se usó: genera uno nuevo."
+      : d.error === "invalid_client" ? "El Client ID o el Client Secret no coinciden."
+      : d.access_token ? "Zoho no entregó un token permanente: genera un código nuevo."
+      : "Zoho rechazó los datos (" + (d.error || r.status) + ").";
+    return json({ error: motivo }, 400);
+  }
+
+  const cfg: Config = { client_id: clientId, client_secret: clientSecret, refresh_token: d.refresh_token, servidor };
+  cacheToken = { token: d.access_token, vence: Date.now() + (Number(d.expires_in) || 3600) * 1000, refresh: d.refresh_token };
+  // Prueba: el departamento de soporte debe poder leerse con esta conexión
+  const prueba = await desk(cfg, "/departments/" + DEPARTAMENTO_ID);
+  if (!prueba.ok) {
+    log("warn", "configurar_prueba_fallo", { status: prueba.status });
+    return json({ error: "La conexión no tiene acceso a Zoho Desk de Alterna. Revisa los permisos (scopes) del código. " + await mensajeZoho(prueba) }, 400);
+  }
+
+  const { error } = await db.from("zoho_desk_config").upsert({ id: 1, ...cfg, actualizado: new Date().toISOString(), actualizado_por: user.id });
+  if (error) { log("error", "guardar_config", { error: error.message }); return json({ error: "No se pudo guardar la configuración." }, 500); }
+  log("info", "configurado", { usuario_id: user.id });
+  return json({ ok: true });
+}
+
+function descripcionHtml(d: Record<string, string>) {
+  const p = PRIORIDADES[d.prioridad] ?? PRIORIDADES.Low;
+  const fecha = new Date().toLocaleString("es-GT", { dateStyle: "full", timeStyle: "short", timeZone: "America/Guatemala" });
+  const fila = (k: string, v: string, alt: boolean) => `<tr style="${alt ? "background:#f9fafb;" : ""}"><td style="padding:10px 18px;width:36%;font-size:13px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">${k}</td><td style="padding:10px 18px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${v}</td></tr>`;
+  const tabla = (titulo: string, filas: [string, string][]) => `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td colspan="2" style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">${titulo}</td></tr>${filas.map(([k, v], i) => fila(k, v, i % 2 === 1)).join("")}</table>`;
+  const solicitante: [string, string][] = [
+    ["Nombre", esc(d.nombre)],
+    ["Correo", `<a href="mailto:${esc(d.correo)}" style="color:#21b894;text-decoration:none;">${esc(d.correo)}</a>`],
+    ...(d.telefono ? [["Teléfono", esc(d.telefono)] as [string, string]] : []),
+    ["Departamento", esc(d.departamento || "—")],
+  ];
+  const solicitud: [string, string][] = [
+    ["Aplicación", `<strong>${esc(d.aplicacion)}</strong>`],
+    ["Categoría", esc(d.categoria)],
+    ...(d.subcategoria ? [["Subcategoría", esc(d.subcategoria)] as [string, string]] : []),
+    ["Prioridad", `<span style="display:inline-block;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${p.bg};color:${p.tx};border:1px solid ${p.bd};">${p.nombre}</span>`],
+  ];
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#111827;line-height:1.6;max-width:680px;">`
+    + `<div style="background:#21b894;padding:16px 20px;border-radius:8px;margin-bottom:20px;"><div style="color:#fff;font-size:15px;font-weight:700;">Ticket de soporte técnico</div><div style="color:rgba(255,255,255,.8);font-size:12px;margin-top:3px;">${esc(fecha)} · enviado desde Alterna</div></div>`
+    + tabla("Solicitante", solicitante) + tabla("Solicitud", solicitud)
+    + `<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">Descripción del problema</td></tr><tr><td style="padding:16px 18px;font-size:13px;line-height:1.75;color:#1f2937;white-space:pre-wrap;">${esc(d.descripcion)}</td></tr></table>`
+    + `</div>`;
+}
+
+async function crearTicket(db: SupabaseClient, user: Usuario, f: FormData) {
+  const cfg = await leerConfig(db);
+  if (!cfg) throw new ErrorUsuario("Zoho Desk aún no está configurado. Avisa al área de IT.", 503);
+
+  const d: Record<string, string> = {
+    nombre: user.nombre || user.correo, correo: user.correo,
+    telefono: texto(f.get("telefono"), 30),
+    asunto: texto(f.get("asunto"), 200),
+    categoria: texto(f.get("categoria"), 60),
+    subcategoria: texto(f.get("subcategoria"), 80),
+    aplicacion: texto(f.get("aplicacion"), 80),
+    descripcion: texto(f.get("descripcion"), 3000),
+    prioridad: texto(f.get("prioridad"), 10),
+  };
+  if (!d.asunto || !d.descripcion) throw new ErrorUsuario("Escribe el asunto y la descripción.");
+  if (!CATEGORIAS.includes(d.categoria) || !APLICACIONES.includes(d.aplicacion)) throw new ErrorUsuario("Elige la categoría y la aplicación.");
+  if (!PRIORIDADES[d.prioridad]) d.prioridad = "Low";
+
+  const archivos = f.getAll("archivos").filter((x): x is File => x instanceof File && x.size > 0);
+  if (archivos.length > MAX_ARCHIVOS) throw new ErrorUsuario(`Puedes adjuntar hasta ${MAX_ARCHIVOS} archivos.`);
+  if (archivos.some((a) => a.size > MAX_BYTES_ARCHIVO)) throw new ErrorUsuario("Cada archivo puede pesar hasta 10 MB.");
+  if (archivos.reduce((s, a) => s + a.size, 0) > MAX_BYTES_TOTAL) throw new ErrorUsuario("Los archivos juntos pueden pesar hasta 20 MB.");
+
+  const { count } = await db.from("soporte_tickets").select("id", { count: "exact", head: true })
+    .eq("usuario_id", user.id).gte("created_at", new Date(Date.now() - 3600_000).toISOString());
+  if ((count ?? 0) >= MAX_TICKETS_HORA) throw new ErrorUsuario("Enviaste muchos tickets en la última hora. Espera un poco e intenta de nuevo.", 429);
+
+  d.departamento = await departamentoDe(cfg, user.correo);
+  const partes = d.nombre.split(/\s+/);
+  const r = await desk(cfg, "/tickets", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      subject: d.asunto,
+      description: descripcionHtml(d),
+      departmentId: DEPARTAMENTO_ID,
+      // Zoho Desk asocia el ticket al contacto con este correo (o lo crea si no existe)
+      contact: { email: d.correo, firstName: partes.length > 1 ? partes[0] : undefined, lastName: partes.length > 1 ? partes.slice(1).join(" ") : d.nombre, phone: d.telefono || undefined },
+      email: d.correo,
+      phone: d.telefono || undefined,
+      priority: d.prioridad,
+      category: d.categoria,
+      channel: "Web",
+      cf: { [CF_NOMBRE]: d.nombre, [CF_DEPARTAMENTO]: d.departamento, [CF_APLICACION]: d.aplicacion },
+    }),
+  });
+  if (!r.ok) {
+    const motivo = await mensajeZoho(r);
+    log("error", "crear_ticket_fallo", { status: r.status, motivo, usuario_id: user.id });
+    throw new ErrorUsuario("Zoho Desk no aceptó el ticket. Avisa al área de IT." + (motivo ? ` (${motivo})` : ""), 502);
+  }
+  const ticket = await r.json();
+
+  const fallidos: string[] = [];
+  for (const a of archivos) {
+    try {
+      const fd = new FormData();
+      fd.append("file", a, a.name);
+      const ra = await desk(cfg, `/tickets/${encodeURIComponent(ticket.id)}/attachments?isPublic=true`, { method: "POST", body: fd });
+      if (!ra.ok) { fallidos.push(a.name); log("warn", "adjunto_fallo", { status: ra.status, motivo: await mensajeZoho(ra) }); }
+    } catch (e) {
+      fallidos.push(a.name);
+      log("warn", "adjunto_fallo", { error: String(e) });
+    }
+  }
+
+  const { error } = await db.from("soporte_tickets").insert({ usuario_id: user.id, ticket_id: String(ticket.id), numero: String(ticket.ticketNumber ?? ""), asunto: d.asunto });
+  if (error) log("warn", "registrar_ticket", { error: error.message });
+  log("info", "ticket_creado", { usuario_id: user.id, ticket: ticket.ticketNumber, adjuntos: archivos.length, fallidos: fallidos.length });
+  return json({ numero: ticket.ticketNumber ?? ticket.id, fallidos });
+}
+
+/* ───────────── Servidor ───────────── */
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
+
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  try {
+    const multipart = (req.headers.get("content-type") ?? "").startsWith("multipart/form-data");
+    let p: Record<string, unknown> = {}, formulario: FormData | null = null;
+    if (multipart) {
+      formulario = await req.formData();
+      p = { usuario_id: formulario.get("usuario_id"), token: formulario.get("token"), accion: "crear" };
+    } else {
+      p = await req.json();
+    }
+
+    const user = await autenticar(db, p.usuario_id, p.token);
+    if (!user) return json({ error: "sesion_invalida" }, 401);
+    if (!(await tieneAcceso(db, user.id))) return json({ error: "No tienes acceso a Soporte. Pide acceso al área de IT." }, 403);
+
+    if (p.accion === "perfil") return await perfil(db, user);
+    if (p.accion === "configurar") return await configurar(db, user, p);
+    if (p.accion === "crear" && formulario) return await crearTicket(db, user, formulario);
+    return json({ error: "Acción no válida" }, 400);
+  } catch (e) {
+    if (e instanceof ErrorUsuario) return json({ error: e.message }, e.status);
+    log("error", "soporte_fallo", { error: String(e) });
+    return json({ error: "Error del servidor. Intenta de nuevo." }, 500);
+  }
+});

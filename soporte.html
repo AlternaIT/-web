@@ -182,6 +182,26 @@
         .toast.ver { transform: translate(-50%, 0); }
         .toast.mal { background: #3a1513; border-color: rgba(255,69,58,.4); }
 
+        /* Configuración de Zoho Desk */
+        .pasos-intro { font-size: 14px; color: var(--muted); line-height: 1.6; }
+        .pasos { margin: 14px 0 22px 20px; font-size: 14px; line-height: 1.6; color: var(--text); }
+        .pasos li { margin-bottom: 8px; padding-left: 4px; }
+        .pasos a { color: var(--accent); }
+        .pasos code {
+            display: block; margin-top: 8px; padding: 10px 12px; border-radius: 9px;
+            background: var(--input); border: 1px solid var(--border);
+            font: 12.5px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--muted);
+            overflow-wrap: anywhere; user-select: all;
+        }
+        input[type="password"] {
+            width: 100%; background: var(--input); color: var(--text);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 11px 13px; font: inherit; font-size: 14px;
+        }
+        input[type="password"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(33,184,148,.18); }
+        #eConfig { margin-top: 14px; }
+        #vConfigurar { margin-top: 32px; }
+
         [hidden] { display: none !important; }
 
         @media (max-width: 600px) {
@@ -211,13 +231,36 @@
     <!-- Cargando -->
     <div class="skel" id="vCargando"></div>
 
-    <!-- Conectar con Zoho Desk -->
-    <div class="card estado" id="vConectar" hidden>
-        <div class="icono"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg></div>
-        <h2 id="conectarTitulo">Conecta tu cuenta de Zoho</h2>
-        <p id="conectarTexto">Los tickets se crean en Zoho Desk a tu nombre. Conecta tu cuenta de Zoho para continuar; tus datos se completan solos.</p>
-        <button class="btn" id="btnConectar" type="button">Conectar con Zoho</button>
-    </div>
+    <!-- Configuración única de Zoho Desk (solo administradores) -->
+    <form class="card" id="vConfigurar" novalidate hidden>
+        <div class="card-title">Configurar Zoho Desk · una sola vez</div>
+        <p class="pasos-intro">Los tickets se crean con la conexión de Zoho Desk de la empresa, así nadie tiene que volver a conectar su cuenta. Solo hace falta configurarla una vez:</p>
+        <ol class="pasos">
+            <li>Entra a <a href="https://api-console.zoho.com" target="_blank" rel="noopener">api-console.zoho.com</a> con una cuenta administradora de Zoho Desk y crea un cliente <b>Self Client</b>.</li>
+            <li>En la pestaña <b>Generate Code</b> pega estos permisos, elige 10 minutos y crea el código (si lo pide, elige el portal de Alterna):
+                <code id="scopes">Desk.tickets.CREATE,Desk.tickets.UPDATE,Desk.contacts.CREATE,Desk.contacts.READ,Desk.basic.READ</code></li>
+            <li>Copia aquí el código, y de la pestaña <b>Client Secret</b> el Client ID y el Client Secret.</li>
+        </ol>
+        <div class="row">
+            <div class="field">
+                <label for="cId">Client ID</label>
+                <input type="text" id="cId" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="field">
+                <label for="cSecreto">Client Secret</label>
+                <input type="password" id="cSecreto" autocomplete="off">
+            </div>
+        </div>
+        <div class="field">
+            <label for="cCodigo">Código generado</label>
+            <input type="text" id="cCodigo" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="err" id="eConfig"></div>
+        <div class="acciones">
+            <p class="nota">Se guarda solo en el servidor; no queda en este navegador.</p>
+            <button class="btn" id="btnConfigurar" type="submit">Guardar conexión</button>
+        </div>
+    </form>
 
     <!-- Sin acceso / error -->
     <div class="card estado" id="vError" hidden>
@@ -335,7 +378,7 @@
             <label class="zona" id="zona">
                 <input type="file" id="fArchivos" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.log">
                 <b>Haz clic para adjuntar</b> o arrastra archivos aquí
-                <small>Hasta 10 MB por archivo · imágenes, PDF, Word, Excel, ZIP…</small>
+                <small>Hasta 5 archivos de 10 MB · imágenes, PDF, Word, Excel, ZIP…</small>
             </label>
             <div class="archivos" id="archivos"></div>
         </div>
@@ -352,26 +395,14 @@
 <script src="sesion.js?v=20261104a"></script>
 <script>
     // ── Configuración ─────────────────────────────────────────────
+    // El ticket lo crea el servidor (función "soporte") a nombre del usuario con sesión en Alterna:
+    // aquí no se conecta ninguna cuenta de Zoho.
     const SUPABASE_URL = "https://nxbncqixxlmdvepapuqe.supabase.co";
     const SUPABASE_KEY = "sb_publishable_2nsr-fPUd1FJYLyWJf_UiQ_N7kaYKFv";
-    const ZOHO = {
-        clientId:     "1000.W1EOK2E2K7FCOBAU391B3UZAT2P7HY",
-        cuentas:      "https://accounts.zoho.com",
-        desk:         "https://desk.zoho.com/api/v1",
-        // UPDATE es para subir los adjuntos al ticket ya creado
-        scopes:       "Desk.tickets.CREATE,Desk.tickets.UPDATE,Desk.contacts.ALL,Desk.basic.READ,AaaServer.profile.READ",
-        orgId:        "718939940",
-        departmentId: "512816000000006907",
-        // Campos personalizados de Zoho Desk (Configuración → Tickets → Campos → nombre de API)
-        cfDepartamento: "cf_departamento_area",
-        cfAplicacion:   "cf_aplicacion_en_la_que_necesita_apoyo",
-    };
-    // Esta dirección exacta debe estar registrada como "Redirect URI" del cliente en api-console.zoho.com
-    const REDIRECCION = location.origin + location.pathname;
-    const CLAVE_TOKEN = "alterna_soporte_zoho";
-    const CLAVE_ESTADO = "alterna_soporte_estado";
-    const CLAVE_BORRADOR = "alterna_soporte_borrador";
+    const ENDPOINT = SUPABASE_URL + "/functions/v1/soporte";
+    const MAX_ARCHIVOS = 5;
     const MAX_ARCHIVO = 10 * 1024 * 1024;
+    const MAX_TOTAL = 20 * 1024 * 1024;
 
     const SUBCATEGORIAS = {
         "Facturación":      ["Consulta de factura", "Error en cobro", "Cambio de plan", "Cancelación"],
@@ -382,13 +413,6 @@
         "Software":         ["Instalación", "Actualización", "Licencia", "Error de aplicación"],
         "Otro":             ["Otro"],
     };
-    const PRIORIDAD = {
-        Low:    { nombre: "Baja",    bg: "#ecfdf5", tx: "#065f46", bd: "#6ee7b7" },
-        Medium: { nombre: "Media",   bg: "#fffbeb", tx: "#92400e", bd: "#fcd34d" },
-        High:   { nombre: "Alta",    bg: "#fff1f2", tx: "#9f1239", bd: "#fca5a5" },
-        Urgent: { nombre: "Urgente", bg: "#faf5ff", tx: "#581c87", bd: "#c084fc" },
-    };
-    const CAMPOS_BORRADOR = ["fTelefono", "fAsunto", "fCategoria", "fSubcategoria", "fAplicacion", "fDescripcion"];
 
     // ── Sesión de Alterna (la misma de apps.html) ─────────────────
     let usuario = null;
@@ -398,8 +422,6 @@
     const $ = id => document.getElementById(id);
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
     const iniciales = t => String(t || "?").trim().split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase().replace(/[^\p{L}\p{N}]/gu, "") || "?";
-    const leer = (almacen, clave) => { try { return JSON.parse(almacen.getItem(clave)); } catch { return null; } };
-    const guardar = (almacen, clave, valor) => { try { valor == null ? almacen.removeItem(clave) : almacen.setItem(clave, JSON.stringify(valor)); } catch { /* sin almacenamiento */ } };
 
     const nombreSesion = usuario?.nombre || usuario?.correo || "";
     $("nombre").textContent = nombreSesion;
@@ -409,17 +431,12 @@
 
     // ── Pantallas ─────────────────────────────────────────────────
     function ver(id) {
-        ["vCargando", "vConectar", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
+        ["vCargando", "vConfigurar", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
     }
     function mostrarError(titulo, texto) {
         $("errorTitulo").textContent = titulo;
         $("errorTexto").textContent = texto;
         ver("vError");
-    }
-    function mostrarConectar(titulo, texto) {
-        $("conectarTitulo").textContent = titulo || "Conecta tu cuenta de Zoho";
-        $("conectarTexto").textContent = texto || "Los tickets se crean en Zoho Desk a tu nombre. Conecta tu cuenta de Zoho para continuar; tus datos se completan solos.";
-        ver("vConectar");
     }
     let tiempoToast;
     function toast(texto, mal = false) {
@@ -427,140 +444,35 @@
         t.textContent = texto;
         t.className = "toast ver" + (mal ? " mal" : "");
         clearTimeout(tiempoToast);
-        tiempoToast = setTimeout(() => t.classList.remove("ver"), 4500);
+        tiempoToast = setTimeout(() => t.classList.remove("ver"), 5000);
+    }
+    function sesionCerrada() {
+        localStorage.removeItem("usuario");
+        location.replace("index.html?sesion=cerrada");
     }
 
-    // ── Acceso a la app (lo que se configura en el panel) ─────────
-    async function tieneAcceso() {
-        const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/mis_aplicaciones", {
-            method: "POST", body: "{}",
-            headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, "x-app-token": usuario.token },
+    // ── Servidor ──────────────────────────────────────────────────
+    const credenciales = () => ({ usuario_id: usuario.id, token: usuario.token });
+    async function api(cuerpo) {
+        const esFormulario = cuerpo instanceof FormData;
+        if (esFormulario) Object.entries(credenciales()).forEach(([k, v]) => cuerpo.append(k, v));
+        const r = await fetch(ENDPOINT, {
+            method: "POST",
+            headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, ...(esFormulario ? {} : { "Content-Type": "application/json" }) },
+            body: esFormulario ? cuerpo : JSON.stringify({ ...cuerpo, ...credenciales() }),
         });
-        if (!r.ok) {
-            const cuerpo = await r.text();
-            if (/28000|sesion_invalida/.test(cuerpo)) { localStorage.removeItem("usuario"); location.replace("index.html"); return null; }
-            throw new Error("mis_aplicaciones " + r.status);
-        }
-        const apps = await r.json();
-        return (apps || []).some(a => /(^|\/)soporte\.html([?#]|$)/i.test(a.url || ""));
-    }
-
-    // ── Zoho: conexión (OAuth implícito, el token llega en el #) ──
-    function conectar() {
-        guardarBorrador();
-        const estado = crypto.getRandomValues(new Uint32Array(4)).join("-");
-        try { sessionStorage.setItem(CLAVE_ESTADO, estado); } catch { /* sin almacenamiento */ }
-        const p = new URLSearchParams({
-            response_type: "token",
-            client_id:     ZOHO.clientId,
-            redirect_uri:  REDIRECCION,
-            scope:         ZOHO.scopes,
-            state:         estado,
-        });
-        location.href = ZOHO.cuentas + "/oauth/v2/auth?" + p;
-    }
-    $("btnConectar").addEventListener("click", conectar);
-
-    function tokenGuardado() {
-        const t = leer(sessionStorage, CLAVE_TOKEN);
-        return t?.token && t.vence > Date.now() + 60_000 ? t.token : null;
-    }
-    function olvidarToken() { guardar(sessionStorage, CLAVE_TOKEN, null); }
-
-    // Respuesta de Zoho al volver del login: #access_token=…&expires_in=…&state=…  o  ?error=…
-    function leerRespuestaZoho() {
-        const h = new URLSearchParams(location.hash.slice(1));
-        const q = new URLSearchParams(location.search);
-        const token = h.get("access_token");
-        const error = h.get("error") || q.get("error");
-        if (!token && !error) return null;
-        history.replaceState(null, "", location.pathname);
-        let esperado = null;
-        try { esperado = sessionStorage.getItem(CLAVE_ESTADO); sessionStorage.removeItem(CLAVE_ESTADO); } catch { /* sin almacenamiento */ }
-        if (error) return { error };
-        if (!esperado || h.get("state") !== esperado) return { error: "estado_invalido" };
-        const segundos = Math.min(Number(h.get("expires_in")) || 3600, 3600);
-        guardar(sessionStorage, CLAVE_TOKEN, { token, vence: Date.now() + segundos * 1000 });
-        return { ok: true };
-    }
-
-    class TokenVencido extends Error {}
-    async function desk(token, ruta, opciones = {}) {
-        const r = await fetch(ZOHO.desk + ruta, {
-            ...opciones,
-            headers: { Authorization: "Zoho-oauthtoken " + token, orgId: ZOHO.orgId, ...(opciones.headers || {}) },
-        });
-        if (r.status === 401) throw new TokenVencido();
-        return r;
-    }
-    async function mensajeZoho(r) {
-        try { const d = await r.json(); return d.message || d.errorCode || ""; } catch { return ""; }
-    }
-
-    // ── Perfil: Zoho Desk → Zoho Accounts → sesión de Alterna ─────
-    async function perfil(token) {
-        try {
-            const r = await desk(token, "/myinfo");
-            if (r.ok) {
-                const d = await r.json();
-                let departamento = "";
-                const idDep = (d.associatedDepartmentIds || [])[0];
-                if (idDep) {
-                    try {
-                        const rd = await desk(token, "/departments/" + encodeURIComponent(idDep));
-                        if (rd.ok) departamento = (await rd.json()).name || "";
-                    } catch (e) { if (e instanceof TokenVencido) throw e; }
-                }
-                if (d.emailId || d.email) return { nombre: d.firstName || "", apellido: d.lastName || "", correo: d.emailId || d.email, telefono: d.phone || "", departamento };
-            }
-        } catch (e) { if (e instanceof TokenVencido) throw e; }
-
-        try {
-            const r = await fetch(ZOHO.cuentas + "/oauth/user/info", { headers: { Authorization: "Zoho-oauthtoken " + token } });
-            if (r.status === 401) throw new TokenVencido();
-            if (r.ok) {
-                const d = await r.json();
-                const partes = String(d.Display_Name || "").split(" ");
-                const correo = d.Email || d.email || "";
-                if (correo) return { nombre: d.First_Name || partes[0] || "", apellido: d.Last_Name || partes.slice(1).join(" "), correo, telefono: "", departamento: "" };
-            }
-        } catch (e) { if (e instanceof TokenVencido) throw e; }
-
-        // Último recurso: los datos con los que entró a Alterna
-        const partes = String(usuario.nombre || "").trim().split(/\s+/);
-        return { nombre: partes[0] || "", apellido: partes.slice(1).join(" "), correo: usuario.correo || "", telefono: "", departamento: "" };
-    }
-
-    let yo = null;
-    function llenarDatos(p) {
-        yo = p;
-        $("fNombre").value = [p.nombre, p.apellido].filter(Boolean).join(" ");
-        $("fCorreo").value = p.correo;
-        if (p.telefono && !$("fTelefono").value) $("fTelefono").value = p.telefono;
-        $("fDepartamento").value = p.departamento || "";
-    }
-
-    // ── Borrador (para no perder lo escrito si hay que reconectar) ─
-    function guardarBorrador() {
-        if ($("form").hidden) return;
-        const b = {};
-        CAMPOS_BORRADOR.forEach(id => { b[id] = $(id).value; });
-        b.prioridad = document.querySelector("input[name=prioridad]:checked")?.value;
-        guardar(sessionStorage, CLAVE_BORRADOR, b);
-    }
-    function restaurarBorrador() {
-        const b = leer(sessionStorage, CLAVE_BORRADOR);
-        guardar(sessionStorage, CLAVE_BORRADOR, null);
-        if (!b) return;
-        $("fCategoria").value = b.fCategoria || "";
-        llenarSubcategorias();
-        CAMPOS_BORRADOR.forEach(id => { if (typeof b[id] === "string") $(id).value = b[id]; });
-        const radio = b.prioridad && $("p" + b.prioridad);
-        if (radio) radio.checked = true;
-        $("cuenta").textContent = $("fDescripcion").value.length;
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 401) { sesionCerrada(); throw new Error("sesion"); }
+        if (!r.ok) { const e = new Error(d.error || "No se pudo completar. Intenta de nuevo."); e.status = r.status; throw e; }
+        return d;
     }
 
     // ── Formulario ────────────────────────────────────────────────
+    function llenarDatos(p) {
+        $("fNombre").value = p.nombre || "";
+        $("fCorreo").value = p.correo || "";
+        $("fDepartamento").value = p.departamento || "";
+    }
     function llenarSubcategorias() {
         const sub = $("fSubcategoria");
         sub.innerHTML = '<option value="">Selecciona…</option>';
@@ -592,7 +504,9 @@
     const zona = $("zona"), entrada = $("fArchivos");
     function agregarArchivos(lista) {
         for (const f of lista) {
+            if (archivos.length >= MAX_ARCHIVOS) { toast(`Puedes adjuntar hasta ${MAX_ARCHIVOS} archivos`, true); break; }
             if (f.size > MAX_ARCHIVO) { toast(`"${f.name}" pesa más de 10 MB`, true); continue; }
+            if (archivos.reduce((s, a) => s + a.size, 0) + f.size > MAX_TOTAL) { toast("Los archivos juntos pueden pesar hasta 20 MB", true); break; }
             if (!archivos.some(x => x.name === f.name && x.size === f.size)) archivos.push(f);
         }
         pintarArchivos();
@@ -611,115 +525,29 @@
     zona.addEventListener("dragleave", () => zona.classList.remove("sobre"));
     zona.addEventListener("drop", e => { e.preventDefault(); zona.classList.remove("sobre"); agregarArchivos([...e.dataTransfer.files]); });
 
-    // Descripción en HTML para el agente de Zoho Desk (todo escapado)
-    function descripcionHtml(d) {
-        const p = PRIORIDAD[d.prioridad] || PRIORIDAD.Low;
-        const fecha = new Date().toLocaleString("es-GT", { dateStyle: "full", timeStyle: "short", timeZone: "America/Guatemala" });
-        const fila = (k, v, alt) => `<tr style="${alt ? "background:#f9fafb;" : ""}"><td style="padding:10px 18px;width:36%;font-size:13px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">${k}</td><td style="padding:10px 18px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${v}</td></tr>`;
-        const tabla = (titulo, filas) => `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td colspan="2" style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">${titulo}</td></tr>${filas}</table>`;
-        const solicitante = [
-            ["Nombre", esc(d.nombreCompleto)],
-            ["Correo", `<a href="mailto:${esc(d.correo)}" style="color:#21b894;text-decoration:none;">${esc(d.correo)}</a>`],
-            d.telefono ? ["Teléfono", esc(d.telefono)] : null,
-            ["Departamento", esc(d.departamento || "—")],
-        ].filter(Boolean);
-        const solicitud = [
-            ["Aplicación", `<strong>${esc(d.aplicacion)}</strong>`],
-            ["Categoría", esc(d.categoria)],
-            d.subcategoria ? ["Subcategoría", esc(d.subcategoria)] : null,
-            ["Prioridad", `<span style="display:inline-block;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${p.bg};color:${p.tx};border:1px solid ${p.bd};">${p.nombre}</span>`],
-        ].filter(Boolean);
-        return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;color:#111827;line-height:1.6;max-width:680px;">
-<div style="background:#21b894;padding:16px 20px;border-radius:8px;margin-bottom:20px;"><div style="color:#fff;font-size:15px;font-weight:700;">Ticket de soporte técnico</div><div style="color:rgba(255,255,255,.8);font-size:12px;margin-top:3px;">${esc(fecha)} · enviado desde Alterna Apps</div></div>
-${tabla("Solicitante", solicitante.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
-${tabla("Solicitud", solicitud.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
-<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-collapse:separate;border-spacing:0;"><tr><td style="padding:11px 18px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.08em;">Descripción del problema</td></tr><tr><td style="padding:16px 18px;font-size:13px;line-height:1.75;color:#1f2937;white-space:pre-wrap;">${esc(d.descripcion)}</td></tr></table>
-</div>`;
-    }
-
-    async function contactoId(token, d) {
-        const r = await desk(token, "/contacts/search?email=" + encodeURIComponent(d.correo) + "&limit=1");
-        if (r.ok && r.status !== 204) {
-            const lista = (await r.json()).data || [];
-            if (lista[0]?.id) return lista[0].id;
-        }
-        const cuerpo = { email: d.correo, firstName: d.nombre || undefined, lastName: d.apellido || d.nombre || d.correo };
-        if (d.telefono) cuerpo.phone = d.telefono;
-        const rc = await desk(token, "/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
-        if (!rc.ok) throw new Error("No se pudo registrar tu contacto en Zoho Desk. " + await mensajeZoho(rc));
-        return (await rc.json()).id;
-    }
-
-    function botonEnviando(texto) {
-        const b = $("btnEnviar");
-        b.disabled = !!texto;
-        b.innerHTML = texto ? `<span class="giro"></span>${esc(texto)}` : "Enviar ticket";
+    function botonOcupado(boton, texto, normal) {
+        boton.disabled = !!texto;
+        boton.innerHTML = texto ? `<span class="giro"></span>${esc(texto)}` : normal;
     }
 
     $("form").addEventListener("submit", async e => {
         e.preventDefault();
         if (!validar()) return;
-        const token = tokenGuardado();
-        if (!token) {
-            guardarBorrador();
-            mostrarConectar("Tu conexión con Zoho venció", "Vuelve a conectar tu cuenta. Lo que escribiste se conserva; los archivos adjuntos tendrás que agregarlos de nuevo.");
-            return;
-        }
-        const d = {
-            nombre:       yo.nombre,
-            apellido:     yo.apellido,
-            nombreCompleto: [yo.nombre, yo.apellido].filter(Boolean).join(" "),
-            correo:       yo.correo,
-            departamento: yo.departamento,
-            telefono:     $("fTelefono").value.trim(),
-            asunto:       $("fAsunto").value.trim(),
-            categoria:    $("fCategoria").value,
-            subcategoria: $("fSubcategoria").value,
-            aplicacion:   $("fAplicacion").value,
-            descripcion:  $("fDescripcion").value.trim(),
-            prioridad:    document.querySelector("input[name=prioridad]:checked")?.value || "Low",
-        };
+        const fd = new FormData();
+        fd.append("telefono", $("fTelefono").value.trim());
+        fd.append("asunto", $("fAsunto").value.trim());
+        fd.append("categoria", $("fCategoria").value);
+        fd.append("subcategoria", $("fSubcategoria").value);
+        fd.append("aplicacion", $("fAplicacion").value);
+        fd.append("descripcion", $("fDescripcion").value.trim());
+        fd.append("prioridad", document.querySelector("input[name=prioridad]:checked")?.value || "Low");
+        archivos.forEach(f => fd.append("archivos", f, f.name));
 
+        botonOcupado($("btnEnviar"), archivos.length ? "Enviando ticket y archivos…" : "Enviando ticket…");
         try {
-            botonEnviando("Buscando tu contacto…");
-            const idContacto = await contactoId(token, d);
-
-            botonEnviando("Creando ticket…");
-            const r = await desk(token, "/tickets", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    subject: d.asunto,
-                    description: descripcionHtml(d),
-                    contactId: idContacto,
-                    email: d.correo,
-                    phone: d.telefono || undefined,
-                    priority: d.prioridad,
-                    category: d.categoria,
-                    departmentId: ZOHO.departmentId,
-                    cf: {
-                        cf_nombre_completo: d.nombreCompleto,
-                        [ZOHO.cfDepartamento]: d.departamento || "",
-                        [ZOHO.cfAplicacion]: d.aplicacion,
-                    },
-                }),
-            });
-            if (!r.ok) throw new Error("Zoho Desk no aceptó el ticket. " + await mensajeZoho(r));
-            const ticket = await r.json();
-
-            // Adjuntos: se suben al ticket ya creado
-            const fallidos = [];
-            for (let i = 0; i < archivos.length; i++) {
-                botonEnviando(`Subiendo archivo ${i + 1} de ${archivos.length}…`);
-                try {
-                    const fd = new FormData();
-                    fd.append("file", archivos[i], archivos[i].name);
-                    const ra = await desk(token, `/tickets/${encodeURIComponent(ticket.id)}/attachments?isPublic=true`, { method: "POST", body: fd });
-                    if (!ra.ok) fallidos.push(archivos[i].name);
-                } catch { fallidos.push(archivos[i].name); }
-            }
-
-            $("listoNum").textContent = "TICKET #" + (ticket.ticketNumber || ticket.id);
+            const d = await api(fd);
+            $("listoNum").textContent = "TICKET #" + d.numero;
+            const fallidos = d.fallidos || [];
             $("listoAviso").hidden = !fallidos.length;
             $("listoAviso").textContent = fallidos.length
                 ? `No se pudieron adjuntar: ${fallidos.join(", ")}. Puedes enviarlos respondiendo el correo del ticket.`
@@ -727,23 +555,19 @@ ${tabla("Solicitud", solicitud.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
             ver("vListo");
             window.scrollTo(0, 0);
         } catch (err) {
+            if (err.message === "sesion") return;
             console.error(err);
-            if (err instanceof TokenVencido) {
-                olvidarToken();
-                guardarBorrador();
-                mostrarConectar("Tu conexión con Zoho venció", "Vuelve a conectar tu cuenta. Lo que escribiste se conserva; los archivos adjuntos tendrás que agregarlos de nuevo.");
-            } else {
-                toast(err.message && !/Failed to fetch|NetworkError/i.test(err.message) ? err.message : "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.", true);
-            }
+            toast(/Failed to fetch|NetworkError|Load failed/i.test(err.message) ? "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo." : err.message, true);
         } finally {
-            botonEnviando("");
+            botonOcupado($("btnEnviar"), "", "Enviar ticket");
         }
     });
 
     $("btnOtro").addEventListener("click", () => {
+        const datos = { nombre: $("fNombre").value, correo: $("fCorreo").value, departamento: $("fDepartamento").value };
         $("form").reset();
+        llenarDatos(datos);
         llenarSubcategorias();
-        if (yo) llenarDatos(yo);
         archivos = []; pintarArchivos();
         $("cuenta").textContent = "0";
         OBLIGATORIOS.forEach(n => { $("f" + n).classList.remove("invalido"); $("e" + n).classList.remove("ver"); });
@@ -751,39 +575,48 @@ ${tabla("Solicitud", solicitud.map(([k, v], i) => fila(k, v, i % 2)).join(""))}
         window.scrollTo(0, 0);
     });
 
+    // ── Configuración única de Zoho Desk (administradores) ────────
+    $("vConfigurar").addEventListener("submit", async e => {
+        e.preventDefault();
+        const datos = { client_id: $("cId").value.trim(), client_secret: $("cSecreto").value.trim(), code: $("cCodigo").value.trim() };
+        $("eConfig").classList.remove("ver");
+        if (!datos.client_id || !datos.client_secret || !datos.code) {
+            $("eConfig").textContent = "Completa los tres datos.";
+            $("eConfig").classList.add("ver");
+            return;
+        }
+        botonOcupado($("btnConfigurar"), "Comprobando con Zoho…");
+        try {
+            await api({ accion: "configurar", ...datos });
+            $("vConfigurar").reset();
+            toast("Zoho Desk quedó conectado");
+            await iniciar();
+        } catch (err) {
+            if (err.message === "sesion") return;
+            $("eConfig").textContent = err.message;
+            $("eConfig").classList.add("ver");
+        } finally {
+            botonOcupado($("btnConfigurar"), "", "Guardar conexión");
+        }
+    });
+
     // ── Inicio ────────────────────────────────────────────────────
     async function iniciar() {
-        const respuesta = leerRespuestaZoho();
-
+        ver("vCargando");
         try {
-            const acceso = await tieneAcceso();
-            if (acceso === null) return;
-            if (!acceso) { mostrarError("No tienes acceso a Soporte", "Pide acceso al área de IT."); return; }
-        } catch (e) {
-            console.error(e);
-            mostrarError("No se pudo cargar", "Revisa tu conexión y recarga la página.");
-            return;
-        }
-
-        if (respuesta?.error) {
-            const negado = /access_denied/i.test(respuesta.error);
-            mostrarConectar(negado ? "No se conectó tu cuenta" : "No se pudo conectar con Zoho",
-                negado ? "Para crear tickets necesitamos permiso para usar tu cuenta de Zoho Desk." : "Inténtalo de nuevo. Si el problema sigue, avisa al área de IT.");
-            return;
-        }
-
-        const token = tokenGuardado();
-        if (!token) { mostrarConectar(); return; }
-
-        try {
-            llenarDatos(await perfil(token));
+            const p = await api({ accion: "perfil" });
+            if (!p.configurado) {
+                if (p.admin) { ver("vConfigurar"); return; }
+                mostrarError("Soporte aún no está listo", "Falta que el área de IT conecte Zoho Desk. Avísales para que lo configuren.");
+                return;
+            }
+            llenarDatos(p);
             ver("form");
-            restaurarBorrador();
-            if (respuesta?.ok) toast("Cuenta de Zoho conectada");
-        } catch (e) {
-            if (e instanceof TokenVencido) { olvidarToken(); mostrarConectar(); return; }
-            console.error(e);
-            mostrarError("No se pudo cargar", "Revisa tu conexión y recarga la página.");
+        } catch (err) {
+            if (err.message === "sesion") return;
+            console.error(err);
+            if (err.status === 403) mostrarError("No tienes acceso a Soporte", "Pide acceso al área de IT.");
+            else mostrarError("No se pudo cargar", "Revisa tu conexión y recarga la página.");
         }
     }
 
