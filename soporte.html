@@ -182,26 +182,6 @@
         .toast.ver { transform: translate(-50%, 0); }
         .toast.mal { background: #3a1513; border-color: rgba(255,69,58,.4); }
 
-        /* Configuración de Zoho Desk */
-        .pasos-intro { font-size: 14px; color: var(--muted); line-height: 1.6; }
-        .pasos { margin: 14px 0 22px 20px; font-size: 14px; line-height: 1.6; color: var(--text); }
-        .pasos li { margin-bottom: 8px; padding-left: 4px; }
-        .pasos a { color: var(--accent); }
-        .pasos code {
-            display: block; margin-top: 8px; padding: 10px 12px; border-radius: 9px;
-            background: var(--input); border: 1px solid var(--border);
-            font: 12.5px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--muted);
-            overflow-wrap: anywhere; user-select: all;
-        }
-        input[type="password"] {
-            width: 100%; background: var(--input); color: var(--text);
-            border: 1px solid var(--border); border-radius: 10px;
-            padding: 11px 13px; font: inherit; font-size: 14px;
-        }
-        input[type="password"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(33,184,148,.18); }
-        #eConfig { margin-top: 14px; }
-        #vConfigurar { margin-top: 32px; }
-
         [hidden] { display: none !important; }
 
         @media (max-width: 600px) {
@@ -230,37 +210,6 @@
 
     <!-- Cargando -->
     <div class="skel" id="vCargando"></div>
-
-    <!-- Configuración única de Zoho Desk (solo administradores) -->
-    <form class="card" id="vConfigurar" novalidate hidden>
-        <div class="card-title">Configurar Zoho Desk · una sola vez</div>
-        <p class="pasos-intro">Los tickets se crean con la conexión de Zoho Desk de la empresa, así nadie tiene que volver a conectar su cuenta. Solo hace falta configurarla una vez:</p>
-        <ol class="pasos">
-            <li>Entra a <a href="https://api-console.zoho.com" target="_blank" rel="noopener">api-console.zoho.com</a> con una cuenta administradora de Zoho Desk y crea un cliente <b>Self Client</b>.</li>
-            <li>En la pestaña <b>Generate Code</b> pega estos permisos, elige 10 minutos y crea el código (si lo pide, elige el portal de Alterna):
-                <code id="scopes">Desk.tickets.CREATE,Desk.tickets.UPDATE,Desk.contacts.CREATE,Desk.contacts.READ,Desk.basic.READ</code></li>
-            <li>Copia aquí el código, y de la pestaña <b>Client Secret</b> el Client ID y el Client Secret.</li>
-        </ol>
-        <div class="row">
-            <div class="field">
-                <label for="cId">Client ID</label>
-                <input type="text" id="cId" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="field">
-                <label for="cSecreto">Client Secret</label>
-                <input type="password" id="cSecreto" autocomplete="off">
-            </div>
-        </div>
-        <div class="field">
-            <label for="cCodigo">Código generado</label>
-            <input type="text" id="cCodigo" autocomplete="off" spellcheck="false">
-        </div>
-        <div class="err" id="eConfig"></div>
-        <div class="acciones">
-            <p class="nota">Se guarda solo en el servidor; no queda en este navegador.</p>
-            <button class="btn" id="btnConfigurar" type="submit">Guardar conexión</button>
-        </div>
-    </form>
 
     <!-- Sin acceso / error -->
     <div class="card estado" id="vError" hidden>
@@ -431,7 +380,7 @@
 
     // ── Pantallas ─────────────────────────────────────────────────
     function ver(id) {
-        ["vCargando", "vConfigurar", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
+        ["vCargando", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
     }
     function mostrarError(titulo, texto) {
         $("errorTitulo").textContent = titulo;
@@ -575,44 +524,12 @@
         window.scrollTo(0, 0);
     });
 
-    // ── Configuración única de Zoho Desk (administradores) ────────
-    $("vConfigurar").addEventListener("submit", async e => {
-        e.preventDefault();
-        const datos = { client_id: $("cId").value.trim(), client_secret: $("cSecreto").value.trim(), code: $("cCodigo").value.trim() };
-        $("eConfig").classList.remove("ver");
-        // Formatos de Zoho: Client ID "1000.ABC…" (mayúsculas), secreto hexadecimal, código "1000.abc….def…"
-        const problema = !datos.client_id || !datos.client_secret || !datos.code ? "Completa los tres datos."
-            : !/^1000\.[A-Z0-9]{20,}$/.test(datos.client_id) ? "Eso no parece un Client ID: empieza con 1000. y va en mayúsculas, sin puntos extra. ¿Quedaron intercambiados los campos?"
-            : !/^[a-f0-9]{30,}$/i.test(datos.client_secret) ? "Eso no parece un Client Secret: son solo letras a–f y números, sin puntos."
-            : !/^1000\.[a-f0-9]+\.[a-f0-9]+$/i.test(datos.code) ? "Eso no parece el código generado: empieza con 1000. y tiene dos partes separadas por puntos."
-            : "";
-        if (problema) {
-            $("eConfig").textContent = problema;
-            $("eConfig").classList.add("ver");
-            return;
-        }
-        botonOcupado($("btnConfigurar"), "Comprobando con Zoho…");
-        try {
-            await api({ accion: "configurar", ...datos });
-            $("vConfigurar").reset();
-            toast("Zoho Desk quedó conectado");
-            await iniciar();
-        } catch (err) {
-            if (err.message === "sesion") return;
-            $("eConfig").textContent = err.message;
-            $("eConfig").classList.add("ver");
-        } finally {
-            botonOcupado($("btnConfigurar"), "", "Guardar conexión");
-        }
-    });
-
     // ── Inicio ────────────────────────────────────────────────────
     async function iniciar() {
         ver("vCargando");
         try {
             const p = await api({ accion: "perfil" });
             if (!p.configurado) {
-                if (p.admin) { ver("vConfigurar"); return; }
                 mostrarError("Soporte aún no está listo", "Falta que el área de IT conecte Zoho Desk. Avísales para que lo configuren.");
                 return;
             }

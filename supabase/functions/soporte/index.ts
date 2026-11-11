@@ -4,8 +4,8 @@
 //    comprueba el acceso a la app (catálogo "aplicaciones", url soporte.html).
 //  • El ticket se crea con la conexión de Zoho Desk de la empresa (tabla zoho_desk_config, solo
 //    servidor), a nombre del correo verificado del usuario: Zoho Desk lo asocia a su contacto.
-//  • Un administrador configura esa conexión una sola vez desde la misma página (accion "configurar").
-// Acciones (JSON): "perfil", "configurar". Envío del ticket: multipart/form-data con los campos y archivos.
+//  • La conexión es interna: se guarda una vez en zoho_desk_config (no se pide en la página).
+// Acciones (JSON): "perfil". Envío del ticket: multipart/form-data con los campos y archivos.
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ORG_ID = Deno.env.get("ZOHO_DESK_ORG_ID") || "718939940";
@@ -30,7 +30,7 @@ const PRIORIDADES: Record<string, { nombre: string; bg: string; tx: string; bd: 
   Urgent: { nombre: "Urgente", bg: "#faf5ff", tx: "#581c87", bd: "#c084fc" },
 };
 
-// Servidores de cuentas de Zoho aceptados (ahí se envía el secreto) y su Zoho Desk
+// Zoho Desk de cada servidor de cuentas de Zoho
 const DESK_DE: Record<string, string> = {
   "https://accounts.zoho.com": "https://desk.zoho.com",
   "https://accounts.zoho.eu": "https://desk.zoho.eu",
@@ -148,45 +148,8 @@ async function perfil(db: SupabaseClient, user: Usuario) {
   return json({
     nombre: user.nombre, correo: user.correo,
     departamento: cfg ? await departamentoDe(cfg, user.correo) : "",
-    configurado: !!cfg, admin: user.rol === "admin",
+    configurado: !!cfg,
   });
-}
-
-async function configurar(db: SupabaseClient, user: Usuario, p: Record<string, unknown>) {
-  if (user.rol !== "admin") return json({ error: "Solo un administrador puede configurar Zoho Desk." }, 403);
-  const clientId = texto(p.client_id, 200), clientSecret = texto(p.client_secret, 200), code = texto(p.code, 400);
-  const servidor = texto(p.servidor || "https://accounts.zoho.com", 60).replace(/\/+$/, "");
-  if (!clientId || !clientSecret || !code) return json({ error: "Completa Client ID, Client Secret y el código." }, 400);
-  if (!DESK_DE[servidor]) return json({ error: "Servidor de Zoho no válido." }, 400);
-
-  const r = await fetch(`${servidor}/oauth/v2/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: clientId, client_secret: clientSecret }),
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.refresh_token) {
-    log("warn", "configurar_fallo", { status: r.status, error: d.error });
-    const motivo = d.error === "invalid_code" ? "El código venció o ya se usó: genera uno nuevo."
-      : d.error === "invalid_client" ? "El Client ID o el Client Secret no coinciden."
-      : d.access_token ? "Zoho no entregó un token permanente: genera un código nuevo."
-      : "Zoho rechazó los datos (" + (d.error || r.status) + ").";
-    return json({ error: motivo }, 400);
-  }
-
-  const cfg: Config = { client_id: clientId, client_secret: clientSecret, refresh_token: d.refresh_token, servidor };
-  cacheToken = { token: d.access_token, vence: Date.now() + (Number(d.expires_in) || 3600) * 1000, refresh: d.refresh_token };
-  // Prueba: el departamento de soporte debe poder leerse con esta conexión
-  const prueba = await desk(cfg, "/departments/" + DEPARTAMENTO_ID);
-  if (!prueba.ok) {
-    log("warn", "configurar_prueba_fallo", { status: prueba.status });
-    return json({ error: "La conexión no tiene acceso a Zoho Desk de Alterna. Revisa los permisos (scopes) del código. " + await mensajeZoho(prueba) }, 400);
-  }
-
-  const { error } = await db.from("zoho_desk_config").upsert({ id: 1, ...cfg, actualizado: new Date().toISOString(), actualizado_por: user.id });
-  if (error) { log("error", "guardar_config", { error: error.message }); return json({ error: "No se pudo guardar la configuración." }, 500); }
-  log("info", "configurado", { usuario_id: user.id });
-  return json({ ok: true });
 }
 
 function descripcionHtml(d: Record<string, string>) {
@@ -307,7 +270,6 @@ Deno.serve(async (req) => {
     if (!(await tieneAcceso(db, user.id))) return json({ error: "No tienes acceso a Soporte. Pide acceso al área de IT." }, 403);
 
     if (p.accion === "perfil") return await perfil(db, user);
-    if (p.accion === "configurar") return await configurar(db, user, p);
     if (p.accion === "crear" && formulario) return await crearTicket(db, user, formulario);
     return json({ error: "Acción no válida" }, 400);
   } catch (e) {
