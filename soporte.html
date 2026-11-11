@@ -580,8 +580,14 @@
         e.preventDefault();
         const datos = { client_id: $("cId").value.trim(), client_secret: $("cSecreto").value.trim(), code: $("cCodigo").value.trim() };
         $("eConfig").classList.remove("ver");
-        if (!datos.client_id || !datos.client_secret || !datos.code) {
-            $("eConfig").textContent = "Completa los tres datos.";
+        // Formatos de Zoho: Client ID "1000.ABC…" (mayúsculas), secreto hexadecimal, código "1000.abc….def…"
+        const problema = !datos.client_id || !datos.client_secret || !datos.code ? "Completa los tres datos."
+            : !/^1000\.[A-Z0-9]{20,}$/.test(datos.client_id) ? "Eso no parece un Client ID: empieza con 1000. y va en mayúsculas, sin puntos extra. ¿Quedaron intercambiados los campos?"
+            : !/^[a-f0-9]{30,}$/i.test(datos.client_secret) ? "Eso no parece un Client Secret: son solo letras a–f y números, sin puntos."
+            : !/^1000\.[a-f0-9]+\.[a-f0-9]+$/i.test(datos.code) ? "Eso no parece el código generado: empieza con 1000. y tiene dos partes separadas por puntos."
+            : "";
+        if (problema) {
+            $("eConfig").textContent = problema;
             $("eConfig").classList.add("ver");
             return;
         }
