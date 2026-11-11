@@ -184,6 +184,87 @@
 
         [hidden] { display: none !important; }
 
+        /* Encabezado y pestañas */
+        .cabeza { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .pestanas { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+        .pestanas a {
+            padding: 8px 16px; border-radius: 9px; font-size: 13.5px; font-weight: 500;
+            color: var(--muted); text-decoration: none; white-space: nowrap; transition: color .15s, background .15s;
+        }
+        .pestanas a:hover { color: var(--text); }
+        .pestanas a.activa { background: #3a3a3c; color: var(--text); }
+        .botones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn { text-decoration: none; }
+        .btn.chico { padding: 8px 14px; font-size: 13px; font-weight: 500; }
+
+        /* Mis tickets */
+        #vMis, #vDetalle { margin-top: 32px; }
+        .barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filtros button {
+            display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px;
+            border: 1px solid var(--border); background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer;
+        }
+        .filtros button:hover { color: var(--text); border-color: var(--border-h); }
+        .filtros button.activo { color: var(--text); border-color: var(--border-h); background: var(--surface); }
+        .filtros b { font-weight: 600; font-size: 12px; color: var(--faint); }
+        .filtros button.activo b { color: var(--muted); }
+        .lista { display: flex; flex-direction: column; gap: 8px; }
+        .fila {
+            display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center;
+            padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface);
+            color: inherit; text-decoration: none; transition: border-color .15s, background .15s;
+        }
+        .fila:hover, .fila:focus-visible { border-color: var(--border-h); background: var(--hover); outline: none; }
+        .fila .num { font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: .02em; }
+        .fila .asunto { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fila .meta { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+        .fila .badge { grid-row: 1 / span 2; grid-column: 2; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+            font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent);
+        }
+        .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+        .vacio { text-align: center; padding: 48px 24px; border: 1px dashed var(--border-h); border-radius: 16px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+        .vacio b { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+        .vacio .btn { margin-top: 16px; }
+        .skel.fila-skel { height: 76px; margin-top: 8px; }
+
+        /* Detalle */
+        .atras { display: inline-block; color: var(--muted); text-decoration: none; font-size: 13px; margin-bottom: 14px; }
+        .atras:hover { color: var(--text); }
+        .det-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .det-cab .num { font-size: 12.5px; font-weight: 700; color: var(--accent); letter-spacing: .04em; }
+        .det-cab h2 { margin-top: 4px; font-size: 21px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+        .pasos-t { display: flex; margin-top: 22px; }
+        .pasos-t div { flex: 1; position: relative; padding-top: 18px; font-size: 12.5px; color: var(--faint); }
+        .pasos-t div::before { content: ""; position: absolute; top: 4px; left: 0; right: 0; height: 3px; background: var(--border-h); border-radius: 2px; }
+        .pasos-t div::after { content: ""; position: absolute; top: 0; left: 0; width: 11px; height: 11px; border-radius: 50%; background: #3a3a3c; }
+        .pasos-t div + div { margin-left: 6px; }
+        .pasos-t div.ok { color: var(--text); }
+        .pasos-t div.ok::before, .pasos-t div.ok::after { background: var(--c); }
+        .det-cuerpo { display: grid; gap: 16px; margin-top: 16px; }
+        .det-cuerpo > .card { margin-top: 0; }
+        .hilo { display: flex; flex-direction: column; gap: 14px; }
+        .msj { max-width: 88%; }
+        .msj.yo { align-self: flex-end; }
+        .msj .quien { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+        .msj.yo .quien { text-align: right; }
+        .msj .burbuja {
+            padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere;
+            background: var(--input); border: 1px solid var(--border);
+        }
+        .msj.yo .burbuja { background: rgba(33,184,148,.12); border-color: rgba(33,184,148,.28); }
+        .msj .clip { margin-top: 5px; font-size: 12px; color: var(--faint); }
+        .datos { display: grid; gap: 0; }
+        .datos div { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 13px; }
+        .datos div:first-child { border-top: 0; padding-top: 0; }
+        .datos span { color: var(--muted); }
+        .datos b { font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+        .adjuntos-det { margin-top: 18px; }
+        .adjuntos-det .archivo { margin-top: 6px; }
+        .nota-resp { margin-top: 16px; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+
         /* Escritorio: la solicitud a la izquierda; adjuntos y envío a la derecha, sin hacer scroll */
         @media (min-width: 960px) {
             main { max-width: 1080px; }
@@ -193,7 +274,8 @@
             #form > .acciones { grid-column: 2; grid-row: 2; flex-direction: column-reverse; align-items: stretch; gap: 12px; margin-top: 16px; }
             #form > .acciones .btn { width: 100%; }
             #form > .acciones .nota { text-align: center; }
-            .estado, .skel { max-width: 720px; margin-left: auto; margin-right: auto; }
+            .estado, #vCargando { max-width: 720px; margin-left: auto; margin-right: auto; }
+            .det-cuerpo { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
         }
 
         @media (max-width: 600px) {
@@ -205,6 +287,13 @@
             .row { grid-template-columns: 1fr; gap: 0; }
             .row .field { margin-bottom: 18px; }
             .acciones .btn { width: 100%; }
+            .pestanas { width: 100%; }
+            .pestanas a { flex: 1; text-align: center; }
+            .fila { grid-template-columns: 1fr; padding: 14px; }
+            .fila .badge { grid-row: auto; grid-column: 1; justify-self: start; }
+            .fila .asunto { white-space: normal; }
+            .msj { max-width: 100%; }
+            .det-cab h2 { font-size: 18px; }
         }
     </style>
 </head>
@@ -217,8 +306,16 @@
 </header>
 
 <main>
-    <h1>Enviar un ticket de soporte</h1>
-    <p class="sub">Cuéntanos qué está pasando y el equipo de soporte te ayudará a resolverlo.</p>
+    <div class="cabeza">
+        <div>
+            <h1 id="titulo">Enviar un ticket de soporte</h1>
+            <p class="sub" id="subtitulo">Cuéntanos qué está pasando y el equipo de soporte te ayudará a resolverlo.</p>
+        </div>
+        <nav class="pestanas" id="pestanas" aria-label="Secciones" hidden>
+            <a href="#nuevo" data-p="nuevo">Nuevo ticket</a>
+            <a href="#mis-tickets" data-p="mis">Mis tickets</a>
+        </nav>
+    </div>
 
     <!-- Cargando -->
     <div class="skel" id="vCargando"></div>
@@ -238,8 +335,26 @@
         <h2>¡Ticket enviado!</h2>
         <p>Tu solicitud quedó registrada. Te responderemos a tu correo.</p>
         <div class="aviso" id="listoAviso" hidden></div>
-        <button class="btn sec" id="btnOtro" type="button">Enviar otro ticket</button>
+        <div class="botones">
+            <a class="btn" href="#mis-tickets">Ver mis tickets</a>
+            <button class="btn sec" id="btnOtro" type="button">Enviar otro ticket</button>
+        </div>
     </div>
+
+    <!-- Mis tickets -->
+    <section id="vMis" hidden>
+        <div class="barra">
+            <div class="filtros" id="filtros" role="tablist" aria-label="Filtrar por estado"></div>
+            <button class="btn sec chico" id="btnRecargar" type="button" title="Actualizar">↻ Actualizar</button>
+        </div>
+        <div id="listaTickets"></div>
+    </section>
+
+    <!-- Detalle de un ticket -->
+    <section id="vDetalle" hidden>
+        <a class="atras" href="#mis-tickets">← Mis tickets</a>
+        <div id="detalle"></div>
+    </section>
 
     <!-- Formulario -->
     <form id="form" novalidate hidden>
@@ -393,7 +508,7 @@
 
     // ── Pantallas ─────────────────────────────────────────────────
     function ver(id) {
-        ["vCargando", "vError", "vListo", "form"].forEach(v => { $(v).hidden = v !== id; });
+        ["vCargando", "vError", "vListo", "form", "vMis", "vDetalle"].forEach(v => { $(v).hidden = v !== id; });
     }
     function mostrarError(titulo, texto) {
         $("errorTitulo").textContent = titulo;
@@ -514,6 +629,8 @@
             $("listoAviso").textContent = fallidos.length
                 ? `No se pudieron adjuntar: ${fallidos.join(", ")}. Puedes enviarlos respondiendo el correo del ticket.`
                 : "";
+            enviadoVisible = true;
+            misTickets = null; // la lista se vuelve a pedir con el ticket nuevo
             ver("vListo");
             window.scrollTo(0, 0);
         } catch (err) {
@@ -533,9 +650,156 @@
         archivos = []; pintarArchivos();
         $("cuenta").textContent = "0";
         OBLIGATORIOS.forEach(n => { $("f" + n).classList.remove("invalido"); $("e" + n).classList.remove("ver"); });
+        enviadoVisible = false;
         ver("form");
         window.scrollTo(0, 0);
     });
+
+    // ── Mis tickets ───────────────────────────────────────────────
+    const GRUPOS = {
+        abierto: { nombre: "Abiertos",   color: "#0a84ff" },
+        proceso: { nombre: "En proceso", color: "#ffd60a" },
+        espera:  { nombre: "En espera",  color: "#bf5af2" },
+        cerrado: { nombre: "Cerrados",   color: "#30d158" },
+    };
+    const PRIORIDAD_ES = { Low: "Baja", Medium: "Media", High: "Alta", Urgent: "Urgente" };
+    // Estados estándar de Zoho Desk en español (los personalizados se muestran tal cual)
+    const ESTADO_ES = { "open": "Abierto", "on hold": "En espera", "escalated": "Escalado", "closed": "Cerrado", "in progress": "En proceso", "waiting for customer": "Esperando tu respuesta" };
+    const estadoEs = s => ESTADO_ES[String(s || "").trim().toLowerCase()] || s;
+    const ZONA = { timeZone: "America/Guatemala" };
+    const fecha = iso => iso ? new Date(iso).toLocaleString("es-GT", { ...ZONA, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    function hace(iso) {
+        if (!iso) return "";
+        const s = (Date.now() - new Date(iso).getTime()) / 1000;
+        if (s < 60) return "hace un momento";
+        if (s < 3600) return `hace ${Math.round(s / 60)} min`;
+        if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
+        if (s < 86400 * 30) { const d = Math.round(s / 86400); return d === 1 ? "ayer" : `hace ${d} días`; }
+        return new Date(iso).toLocaleDateString("es-GT", { ...ZONA, day: "numeric", month: "short", year: "numeric" });
+    }
+    const badge = (grupo, texto) => `<span class="badge" style="--c:${(GRUPOS[grupo] || GRUPOS.abierto).color}">${esc(estadoEs(texto) || (GRUPOS[grupo] || GRUPOS.abierto).nombre)}</span>`;
+
+    let misTickets = null, filtro = "todos", cargandoLista = false;
+
+    function pintarLista() {
+        const lista = misTickets || [];
+        const cuenta = g => lista.filter(t => t.grupo === g).length;
+        const opciones = [["todos", "Todos", lista.length], ...Object.entries(GRUPOS).map(([g, v]) => [g, v.nombre, cuenta(g)]).filter(([g, , n]) => n || g !== "espera")];
+        $("filtros").innerHTML = opciones.map(([g, nombre, n]) =>
+            `<button type="button" role="tab" data-f="${g}" class="${filtro === g ? "activo" : ""}" aria-selected="${filtro === g}">${esc(nombre)} <b>${n}</b></button>`).join("");
+        const visibles = filtro === "todos" ? lista : lista.filter(t => t.grupo === filtro);
+        if (!lista.length) {
+            $("listaTickets").innerHTML = `<div class="vacio"><b>Aún no has enviado tickets</b>Cuando envíes uno, aquí podrás ver si está abierto, en proceso o cerrado.<br><a class="btn" href="#nuevo">Enviar un ticket</a></div>`;
+            return;
+        }
+        if (!visibles.length) {
+            $("listaTickets").innerHTML = `<div class="vacio"><b>No tienes tickets ${esc((GRUPOS[filtro]?.nombre || "").toLowerCase())}</b>Elige otro filtro para ver el resto.</div>`;
+            return;
+        }
+        $("listaTickets").innerHTML = `<div class="lista">${visibles.map(t => `
+            <a class="fila" href="#ticket=${encodeURIComponent(t.id)}">
+                <div><div class="num">#${esc(t.numero)}</div><div class="asunto">${esc(t.asunto || "(sin asunto)")}</div></div>
+                ${badge(t.grupo, t.estado)}
+                <div class="meta">${[t.categoria, "Enviado " + hace(t.creado), t.actualizado && t.actualizado !== t.creado ? "actualizado " + hace(t.actualizado) : ""].filter(Boolean).map(esc).join(" · ")}</div>
+            </a>`).join("")}</div>`;
+    }
+    $("filtros").addEventListener("click", e => {
+        const b = e.target.closest("button[data-f]");
+        if (b) { filtro = b.dataset.f; pintarLista(); }
+    });
+
+    async function cargarMisTickets(forzar = false) {
+        if (cargandoLista) return;
+        if (misTickets && !forzar) { pintarLista(); return; }
+        cargandoLista = true;
+        if (!misTickets) { $("filtros").innerHTML = ""; $("listaTickets").innerHTML = '<div class="skel fila-skel"></div><div class="skel fila-skel"></div><div class="skel fila-skel"></div>'; }
+        botonOcupado($("btnRecargar"), "Actualizando…");
+        try {
+            misTickets = (await api({ accion: "mis_tickets" })).tickets || [];
+            pintarLista();
+        } catch (err) {
+            if (err.message === "sesion") return;
+            console.error(err);
+            if (!misTickets) $("listaTickets").innerHTML = `<div class="vacio"><b>No se pudieron cargar tus tickets</b>${esc(/Failed to fetch|NetworkError|Load failed/i.test(err.message) ? "Revisa tu conexión." : err.message)}</div>`;
+            else toast("No se pudieron actualizar tus tickets", true);
+        } finally {
+            cargandoLista = false;
+            botonOcupado($("btnRecargar"), "", "↻ Actualizar");
+        }
+    }
+    $("btnRecargar").addEventListener("click", () => cargarMisTickets(true));
+
+    async function verDetalle(id) {
+        $("detalle").innerHTML = '<div class="skel" style="height:90px"></div><div class="skel" style="height:220px;margin-top:16px"></div>';
+        try {
+            const { ticket: t, mensajes, adjuntos } = await api({ accion: "ticket", id });
+            if (location.hash !== "#ticket=" + id) return; // ya se fue a otra vista
+            const c = (GRUPOS[t.grupo] || GRUPOS.abierto).color;
+            const paso = { abierto: 1, espera: 2, proceso: 2, cerrado: 3 }[t.grupo] || 1;
+            const datos = [
+                ["Estado", estadoEs(t.estado)], ["Prioridad", PRIORIDAD_ES[t.prioridad] || t.prioridad], ["Categoría", t.categoria],
+                ["Aplicación", t.aplicacion], ["Atendido por", t.responsable || "Por asignar"], ["Enviado", fecha(t.creado)],
+                ["Última actualización", fecha(t.actualizado)], ["Cerrado", fecha(t.cerrado)],
+            ].filter(([, v]) => v);
+            $("detalle").innerHTML = `
+                <div class="card" style="margin-top:0">
+                    <div class="det-cab">
+                        <div><div class="num">TICKET #${esc(t.numero)}</div><h2>${esc(t.asunto || "(sin asunto)")}</h2></div>
+                        ${badge(t.grupo, t.estado)}
+                    </div>
+                    <div class="pasos-t" style="--c:${c}">
+                        <div class="${paso >= 1 ? "ok" : ""}">Recibido</div>
+                        <div class="${paso >= 2 ? "ok" : ""}">${t.grupo === "espera" ? "En espera" : "En proceso"}</div>
+                        <div class="${paso >= 3 ? "ok" : ""}">Cerrado</div>
+                    </div>
+                </div>
+                <div class="det-cuerpo">
+                    <div class="card">
+                        <div class="card-title">Conversación</div>
+                        ${mensajes.length ? `<div class="hilo">${mensajes.map(m => `
+                            <div class="msj ${m.deSoporte ? "" : "yo"}">
+                                <div class="quien">${esc(m.deSoporte ? (m.autor || "Soporte") : "Tú")} · ${esc(fecha(m.fecha))}</div>
+                                <div class="burbuja">${esc(m.texto || "(sin texto)")}</div>
+                                ${m.adjuntos ? `<div class="clip">📎 ${m.adjuntos} archivo${m.adjuntos > 1 ? "s" : ""} adjunto${m.adjuntos > 1 ? "s" : ""}</div>` : ""}
+                            </div>`).join("")}</div>` : '<p class="pasos-intro">Aún no hay mensajes en este ticket.</p>'}
+                        <p class="nota-resp">Para responder o agregar información, contesta el correo que te llegó de este ticket.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Detalles</div>
+                        <div class="datos">${datos.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>
+                        ${adjuntos.length ? `<div class="adjuntos-det"><div class="card-title" style="margin-bottom:4px">Archivos</div>${adjuntos.map(a => `<div class="archivo"><span>${esc(a.nombre)}</span>${a.tamano ? `<small>${Math.max(1, Math.round(a.tamano / 1024))} KB</small>` : ""}</div>`).join("")}</div>` : ""}
+                    </div>
+                </div>`;
+            // Si cambió de estado, la lista lo refleja sin recargar
+            const enLista = misTickets?.find(x => x.id === t.id);
+            if (enLista) Object.assign(enLista, { estado: t.estado, grupo: t.grupo, actualizado: t.actualizado });
+        } catch (err) {
+            if (err.message === "sesion") return;
+            console.error(err);
+            $("detalle").innerHTML = `<div class="vacio"><b>${esc(err.status === 404 ? "No encontramos ese ticket" : "No se pudo cargar el ticket")}</b>${esc(err.status === 404 ? "Solo puedes ver los tickets que tú enviaste." : "Revisa tu conexión e inténtalo de nuevo.")}<br><a class="btn sec" href="#mis-tickets">Volver a mis tickets</a></div>`;
+        }
+    }
+
+    // ── Navegación: #nuevo · #mis-tickets · #ticket=ID ────────────
+    let listo = false, enviadoVisible = false;
+    function mostrarSeccion() {
+        if (!listo) return;
+        const h = location.hash;
+        const idTicket = (h.match(/^#ticket=(\d{1,30})$/) || [])[1];
+        const seccion = idTicket ? "detalle" : h === "#mis-tickets" ? "mis" : "nuevo";
+        document.querySelectorAll("#pestanas a").forEach(a => a.classList.toggle("activa", a.dataset.p === (seccion === "nuevo" ? "nuevo" : "mis")));
+        $("titulo").textContent = seccion === "nuevo" ? "Enviar un ticket de soporte" : "Mis tickets";
+        $("subtitulo").textContent = seccion === "nuevo"
+            ? "Cuéntanos qué está pasando y el equipo de soporte te ayudará a resolverlo."
+            : "Solo ves los tickets que tú enviaste, con su estado al día.";
+        if (seccion === "nuevo") ver(enviadoVisible ? "vListo" : "form");
+        else if (seccion === "mis") { ver("vMis"); cargarMisTickets(); }
+        else { ver("vDetalle"); verDetalle(idTicket); }
+        window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", mostrarSeccion);
+    // Al volver a la pestaña, la lista se actualiza sola
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && listo && location.hash === "#mis-tickets") cargarMisTickets(true); });
 
     // ── Inicio ────────────────────────────────────────────────────
     async function iniciar() {
@@ -547,7 +811,9 @@
                 return;
             }
             llenarDatos(p);
-            ver("form");
+            listo = true;
+            $("pestanas").hidden = false;
+            mostrarSeccion();
         } catch (err) {
             if (err.message === "sesion") return;
             console.error(err);

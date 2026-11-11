@@ -5,7 +5,7 @@
 //  • El ticket se crea con la conexión de Zoho Desk de la empresa (tabla zoho_desk_config, solo
 //    servidor), a nombre del correo verificado del usuario: Zoho Desk lo asocia a su contacto.
 //  • La conexión es interna: se guarda una vez en zoho_desk_config (no se pide en la página).
-// Acciones (JSON): "perfil". Envío del ticket: multipart/form-data con los campos y archivos.
+// Acciones (JSON): "perfil", "mis_tickets", "ticket" (detalle con conversación). Envío del ticket: multipart/form-data con los campos y archivos.
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ORG_ID = Deno.env.get("ZOHO_DESK_ORG_ID") || "718939940";
@@ -149,6 +149,89 @@ async function departamentoDe(cfg: Config, correo: string): Promise<string> {
   }
 }
 
+/* ───────────── Mis tickets (solo los del correo de la sesión) ───────────── */
+
+// Grupo para la interfaz: abierto · proceso · espera · cerrado (Zoho permite estados personalizados)
+function grupoEstado(status: string, statusType: string): string {
+  if (/closed/i.test(statusType)) return "cerrado";
+  if (/progress|proceso|escalat|asignad|atendiendo|revisi/i.test(status)) return "proceso";
+  if (/hold/i.test(statusType)) return "espera";
+  return "abierto";
+}
+const nombreDe = (p: { firstName?: string; lastName?: string; name?: string } | null | undefined) =>
+  p ? (p.name || [p.firstName, p.lastName].filter(Boolean).join(" ")).trim() : "";
+const esDelUsuario = (t: Record<string, any>, correo: string) =>
+  [t.email, t.contact?.email].some((e) => String(e ?? "").toLowerCase() === correo.toLowerCase());
+
+async function misTickets(cfg: Config, user: Usuario) {
+  const r = await desk(cfg, "/tickets/search?limit=100&email=" + encodeURIComponent(user.correo));
+  if (r.status === 204) return json({ tickets: [] });
+  if (!r.ok) {
+    const motivo = await mensajeZoho(r);
+    log("error", "mis_tickets_fallo", { status: r.status, motivo });
+    throw new ErrorUsuario("No se pudieron cargar tus tickets. Intenta de nuevo en unos minutos.", 502);
+  }
+  const lista: Record<string, any>[] = (await r.json()).data ?? [];
+  const tickets = lista
+    .filter((t) => esDelUsuario(t, user.correo))
+    .map((t) => ({
+      id: String(t.id), numero: String(t.ticketNumber ?? ""), asunto: String(t.subject ?? ""),
+      estado: String(t.status ?? ""), grupo: grupoEstado(String(t.status ?? ""), String(t.statusType ?? "")),
+      prioridad: String(t.priority ?? ""), categoria: String(t.category ?? ""),
+      creado: t.createdTime ?? null, actualizado: t.modifiedTime ?? t.createdTime ?? null, cerrado: t.closedTime ?? null,
+    }))
+    .sort((a, b) => String(b.creado).localeCompare(String(a.creado)));
+  return json({ tickets });
+}
+
+async function verTicket(cfg: Config, user: Usuario, id: string) {
+  if (!/^\d{1,30}$/.test(id)) throw new ErrorUsuario("Ticket no válido.");
+  const r = await desk(cfg, `/tickets/${id}?include=contacts,assignee`);
+  if (r.status === 404 || r.status === 422) throw new ErrorUsuario("No encontramos ese ticket.", 404);
+  if (!r.ok) { log("error", "ver_ticket_fallo", { status: r.status, motivo: await mensajeZoho(r) }); throw new ErrorUsuario("No se pudo cargar el ticket.", 502); }
+  const t = await r.json();
+  // Solo el dueño del ticket lo puede ver (mismo mensaje que si no existiera)
+  if (!esDelUsuario(t, user.correo)) throw new ErrorUsuario("No encontramos ese ticket.", 404);
+
+  // Conversación pública (las notas internas de soporte no se muestran)
+  const rh = await desk(cfg, `/tickets/${id}/threads?limit=50`);
+  const hilos: Record<string, any>[] = rh.ok && rh.status !== 204 ? ((await rh.json()).data ?? []) : [];
+  const publicos = hilos.filter((h) => h.visibility !== "private").slice(-30);
+  const mensajes = await Promise.all(publicos.map(async (h) => {
+    let texto = String(h.summary ?? "");
+    try {
+      const rd = await desk(cfg, `/tickets/${id}/threads/${h.id}?include=plainText`);
+      if (rd.ok) { const d = await rd.json(); texto = String(d.plainText ?? d.summary ?? texto); }
+    } catch { /* se queda el resumen */ }
+    return {
+      id: String(h.id), fecha: h.createdTime ?? null,
+      deSoporte: h.direction === "out" || /AGENT/i.test(String(h.author?.type ?? "")),
+      autor: nombreDe(h.author) || (h.direction === "out" ? "Soporte" : user.nombre),
+      texto: texto.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 8000),
+      adjuntos: Number(h.attachmentCount ?? 0),
+    };
+  }));
+  mensajes.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+
+  let adjuntos: { nombre: string; tamano: number }[] = [];
+  try {
+    const ra = await desk(cfg, `/tickets/${id}/attachments?limit=50`);
+    if (ra.ok && ra.status !== 204) adjuntos = ((await ra.json()).data ?? []).filter((a: any) => a.isPublic !== false)
+      .map((a: any) => ({ nombre: String(a.name ?? "archivo"), tamano: Number(a.size ?? 0) }));
+  } catch { /* sin adjuntos */ }
+
+  return json({
+    ticket: {
+      id: String(t.id), numero: String(t.ticketNumber ?? ""), asunto: String(t.subject ?? ""),
+      estado: String(t.status ?? ""), grupo: grupoEstado(String(t.status ?? ""), String(t.statusType ?? "")),
+      prioridad: String(t.priority ?? ""), categoria: String(t.category ?? ""), aplicacion: String(t.cf?.[CF_APLICACION] ?? ""),
+      responsable: nombreDe(t.assignee), creado: t.createdTime ?? null, actualizado: t.modifiedTime ?? null,
+      cerrado: t.closedTime ?? null, vence: t.dueDate ?? null,
+    },
+    mensajes, adjuntos,
+  });
+}
+
 /* ───────────── Acciones ───────────── */
 
 async function perfil(db: SupabaseClient, user: Usuario) {
@@ -278,6 +361,11 @@ Deno.serve(async (req) => {
     if (!(await tieneAcceso(db, user.id))) return json({ error: "No tienes acceso a Soporte. Pide acceso al área de IT." }, 403);
 
     if (p.accion === "perfil") return await perfil(db, user);
+    if (p.accion === "mis_tickets" || p.accion === "ticket") {
+      const cfg = await leerConfig(db);
+      if (!cfg) throw new ErrorUsuario("Zoho Desk aún no está configurado. Avisa al área de IT.", 503);
+      return p.accion === "ticket" ? await verTicket(cfg, user, String(p.id ?? "")) : await misTickets(cfg, user);
+    }
     if (p.accion === "crear" && formulario) return await crearTicket(db, user, formulario);
     return json({ error: "Acción no válida" }, 400);
   } catch (e) {
