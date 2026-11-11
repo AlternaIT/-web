@@ -723,7 +723,7 @@
     // Venimos de una página abierta cuya sesión cerró un admin (sesion.js)
     if (new URLSearchParams(location.search).get("sesion") === "cerrada") {
         history.replaceState(null, "", location.pathname);
-        showError("Tu sesión se cerró (todas las sesiones terminan a las 12 a.m.) o tu acceso fue bloqueado. Vuelve a iniciar sesión; si no puedes, avisa al área de IT.");
+        showError("Tu sesión se cerró (las sesiones terminan a la medianoche, 12:00 a. m. de la hora de tu computadora) o tu acceso fue bloqueado. Vuelve a iniciar sesión; si no puedes, avisa al área de IT.");
     }
 
     // Cargar stat
@@ -753,8 +753,16 @@
     }
 
     // Zona horaria del navegador (p. ej. "America/Guatemala"); el servidor la guarda en el historial de inicios
+    // La sesión vence a las 00:00 (12:00 a. m.) de esta zona. Si el navegador no da el nombre de la zona,
+    // se arma con la diferencia horaria de la computadora: getTimezoneOffset() = 360 → "Etc/GMT+6" (UTC−6).
     function zonaHoraria() {
-        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; }
+        try {
+            const z = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (z && z !== "Etc/Unknown") return z;
+        } catch { /* navegador sin Intl */ }
+        const min = new Date().getTimezoneOffset();
+        if (min % 60 !== 0 || Math.abs(min) > 14 * 60) return null;   // zonas de media hora: el servidor usa Guatemala
+        return min === 0 ? "Etc/UTC" : "Etc/GMT" + (min > 0 ? "+" : "-") + Math.abs(min / 60);
     }
 
     function showError(msg) {
