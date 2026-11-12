@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="dashboard.css?v=20261103b">
     <link rel="stylesheet" href="ai-assistant.css?v=20261103a">
 <link rel="stylesheet" href="it-equipos.css?v=20261104a">
+<link rel="stylesheet" href="servidor.css?v=20261112a">
 </head>
 <body>
 
@@ -116,6 +117,12 @@
             <div class="menu-item" data-page="equipos" onclick="navegar('equipos')">
                 <span class="menu-icon"><i data-lucide="monitor"></i></span>
                 <span class="menu-text">Equipos</span>
+            </div>
+
+            <div class="menu-item" data-page="servidor" onclick="abrirServidor()">
+                <span class="menu-icon"><i data-lucide="server"></i></span>
+                <span class="menu-text">Servidor</span>
+                <span class="srv-menu-dot" id="srvMenuDot" aria-hidden="true"></span>
             </div>
 
             <br>
@@ -570,6 +577,111 @@
                         <tr class="loading-row"><td colspan="6">Cargando aplicaciones...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+        </section>
+
+
+        <!-- ══════════════════════════════════════
+             PÁGINA: SERVIDOR (panel y escritorio remoto del Ubuntu, vía Tailscale)
+             La dirección se cambia en servidor.js → SERVIDOR_URL
+        ══════════════════════════════════════ -->
+        <section class="page" id="page-servidor">
+
+            <div class="srv-hero">
+                <div class="srv-hero-glow" aria-hidden="true"></div>
+                <div class="srv-hero-main">
+                    <div class="srv-hero-icon"><i data-lucide="server"></i></div>
+                    <div class="srv-hero-text">
+                        <div class="srv-eyebrow">Servidor Alterna · Ubuntu</div>
+                        <h2 class="srv-title">Panel y escritorio remoto</h2>
+                        <p class="srv-desc">Revisa el estado del equipo y controla su escritorio desde cualquier red, cifrado con Tailscale.</p>
+                        <div class="srv-meta">
+                            <span class="srv-status" id="srvStatus" data-estado="revisando">
+                                <span class="srv-status-dot"></span>
+                                <span id="srvStatusText">Comprobando conexión…</span>
+                            </span>
+                            <button type="button" class="srv-url" id="srvUrlBtn" onclick="copiarUrlServidor()" title="Copiar enlace">
+                                <i data-lucide="link-2"></i>
+                                <span id="srvUrlText"></span>
+                                <i data-lucide="copy" class="srv-url-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="srv-hero-actions">
+                    <a class="srv-btn srv-btn-primary" id="srvAbrir" target="_blank" rel="noopener">
+                        <i data-lucide="external-link"></i> Abrir servidor
+                    </a>
+                    <button type="button" class="srv-btn srv-btn-ghost" onclick="revisarServidor()">
+                        <i data-lucide="refresh-cw"></i> Probar conexión
+                    </button>
+                </div>
+            </div>
+
+            <div class="srv-aviso" id="srvAviso" hidden>
+                <i data-lucide="wifi-off"></i>
+                <div>
+                    <strong>No se pudo llegar al servidor desde esta computadora.</strong>
+                    <span>Revisa que Tailscale esté abierto y conectado con la cuenta de Alterna, y que el Ubuntu esté encendido. Si ya lo está, pulsa <em>Abrir servidor</em> de todos modos.</span>
+                </div>
+                <a class="srv-btn srv-btn-soft" href="https://tailscale.com/download" target="_blank" rel="noopener">Descargar Tailscale</a>
+            </div>
+
+            <div class="srv-grid">
+                <a class="srv-card" id="srvCardPanel" target="_blank" rel="noopener">
+                    <div class="srv-card-icon srv-c-blue"><i data-lucide="activity"></i></div>
+                    <div class="srv-card-title">Panel</div>
+                    <p class="srv-card-desc">Estadísticas en vivo del equipo, actualizadas cada 2 segundos.</p>
+                    <ul class="srv-chips">
+                        <li><i data-lucide="cpu"></i> Procesador</li>
+                        <li><i data-lucide="memory-stick"></i> Memoria</li>
+                        <li><i data-lucide="hard-drive"></i> Discos</li>
+                        <li><i data-lucide="network"></i> Red</li>
+                        <li><i data-lucide="thermometer"></i> Temperatura</li>
+                        <li><i data-lucide="users"></i> Equipos conectados</li>
+                    </ul>
+                    <span class="srv-card-link">Ir al panel <i data-lucide="arrow-up-right"></i></span>
+                </a>
+
+                <a class="srv-card" id="srvCardRemoto" target="_blank" rel="noopener">
+                    <div class="srv-card-icon srv-c-teal"><i data-lucide="monitor-smartphone"></i></div>
+                    <div class="srv-card-title">Escritorio remoto</div>
+                    <p class="srv-card-desc">Escritorio compartido del Ubuntu: varias PCs pueden verlo y controlarlo a la vez.</p>
+                    <ul class="srv-chips">
+                        <li><i data-lucide="eye"></i> Solo ver</li>
+                        <li><i data-lucide="maximize"></i> Pantalla completa</li>
+                        <li><i data-lucide="keyboard"></i> Ctrl+Alt+Supr</li>
+                        <li><i data-lucide="clipboard-paste"></i> Pegar texto</li>
+                        <li><i data-lucide="rotate-ccw"></i> Reiniciar escritorio</li>
+                    </ul>
+                    <span class="srv-card-link">Abrir escritorio <i data-lucide="arrow-up-right"></i></span>
+                </a>
+            </div>
+
+            <div class="srv-pasos">
+                <div class="srv-pasos-head">
+                    <div class="srv-pasos-title"><i data-lucide="globe"></i> Entrar desde cualquier red</div>
+                    <span class="srv-pasos-sub">Solo la primera vez en cada computadora</span>
+                </div>
+                <ol class="srv-pasos-list">
+                    <li>
+                        <span class="srv-num">1</span>
+                        <div><strong>Instala Tailscale</strong><span>Inicia sesión con la misma cuenta de Alterna. No hay que abrir puertos.</span></div>
+                    </li>
+                    <li>
+                        <span class="srv-num">2</span>
+                        <div><strong>Abre el servidor</strong><span>Con el botón de arriba; se abre en una pestaña nueva.</span></div>
+                    </li>
+                    <li>
+                        <span class="srv-num">3</span>
+                        <div><strong>Identifícate</strong><span>Escribe el nombre de esta PC y la contraseña del panel.</span></div>
+                    </li>
+                    <li>
+                        <span class="srv-num">4</span>
+                        <div><strong>Instálalo como app</strong><span>Pulsa “Instalar app” para tener el ícono de Alterna en el escritorio.</span></div>
+                    </li>
+                </ol>
             </div>
 
         </section>
@@ -2638,6 +2750,7 @@
 <script src="dashboard.js?v=20261104a"></script>
 <script src="it-equipos.js?v=20261104a"></script>
 <script src="ai-assistant.js?v=20261104a"></script>
+<script src="servidor.js?v=20261112a"></script>
 
 
 </body>
