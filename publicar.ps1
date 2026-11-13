@@ -1,4 +1,4 @@
-﻿# Alterna — publica esta web en el servidor Ubuntu (https://srv.tailbbc6ef.ts.net/web/)
+﻿# Alterna — publica esta web en el servidor Ubuntu (https://srv.tailbbc6ef.ts.net/)
 # Uso, en PowerShell dentro de esta carpeta:
 #     powershell -ExecutionPolicy Bypass -File .\publicar.ps1
 # La primera vez pide la clave de publicación (Panel del servidor > Web de Alterna) y la guarda
@@ -40,7 +40,7 @@ try {
         $d = $r.Content | ConvertFrom-Json
         Write-Host ""
         Write-Host "  Listo: web publicada ($($d.files) archivos)." -ForegroundColor Green
-        Write-Host "  $Servidor/web/" -ForegroundColor Green
+        Write-Host "  $Servidor/" -ForegroundColor Green
         Write-Host "  Recarga la página con Ctrl+F5 para ver los cambios."
     } catch {
         $msg = $_.Exception.Message

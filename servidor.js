@@ -3,8 +3,8 @@
    • "Probar conexión" solo comprueba que la dirección responde (petición sin cookies ni datos).
    Para cambiar de servidor: SERVIDOR_URL aquí y en servidor.html. */
 (() => {
-    // Si esta web ya la sirve el propio servidor (en /web/), el panel está en la raíz de la misma dirección
-    const SERVIDOR_URL = location.pathname.startsWith("/web/") ? location.origin + "/" : "https://srv.tailbbc6ef.ts.net/";
+    // Panel del servidor Ubuntu (en /panel/). Si esta web ya la sirve el propio servidor, es la misma dirección
+    const SERVIDOR_URL = (location.hostname.endsWith("github.io") || !location.protocol.startsWith("http") ? "https://srv.tailbbc6ef.ts.net" : location.origin) + "/panel/";
     const ESPERA_MS = 7000;
 
     const $ = id => document.getElementById(id);

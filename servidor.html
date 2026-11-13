@@ -41,8 +41,8 @@
         <a class="btn" id="btn" href="servidor.html">Intentar de nuevo</a>
     </div>
 <script>
-    // Si esta web ya la sirve el propio servidor (en /web/), el panel está en la raíz de la misma dirección
-    const SERVIDOR_URL = location.pathname.startsWith("/web/") ? location.origin + "/" : "https://srv.tailbbc6ef.ts.net/";
+    // Panel del servidor Ubuntu (en /panel/). Si esta web ya la sirve el propio servidor, es la misma dirección
+    const SERVIDOR_URL = (location.hostname.endsWith("github.io") || !location.protocol.startsWith("http") ? "https://srv.tailbbc6ef.ts.net" : location.origin) + "/panel/";
 
     (() => {
         let token = "";

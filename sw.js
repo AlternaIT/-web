@@ -58,6 +58,8 @@ self.addEventListener("fetch", (event) => {
   // No interceptamos solicitudes a Supabase API (siempre deben ir a la red)
   const url = new URL(event.request.url);
   if (url.hostname.includes("supabase.co")) return;
+  // Panel del servidor Ubuntu (misma dirección): nunca se guarda en caché
+  if (url.origin === self.location.origin && /^\/(panel|api|novnc|ws)\//.test(url.pathname)) return;
 
   event.respondWith(
     // no-cache: el navegador siempre pregunta al servidor si hay versión nueva
