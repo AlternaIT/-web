@@ -1,8 +1,7 @@
 /* Alterna — acceso directo al servidor Ubuntu (panel de estadísticas y escritorio remoto).
-   • El servidor se publica por Tailscale: desde otra red, la PC necesita Tailscale conectado.
-   • "Probar conexión" solo comprueba que la dirección responde (petición sin cookies ni datos);
-     el inicio de sesión lo pide el propio panel con su contraseña.
-   Para cambiar de servidor basta con editar SERVIDOR_URL. */
+   • Los botones van a servidor.html, que abre el servidor con la sesión de Alterna (sin contraseña).
+   • "Probar conexión" solo comprueba que la dirección responde (petición sin cookies ni datos).
+   Para cambiar de servidor: SERVIDOR_URL aquí y en servidor.html. */
 (() => {
     const SERVIDOR_URL = "https://srv.tailbbc6ef.ts.net/";
     const ESPERA_MS = 7000;
@@ -67,7 +66,8 @@
     // Enlaces y dirección visibles
     const host = SERVIDOR_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
     if ($("srvUrlText")) $("srvUrlText").textContent = host;
-    ["srvAbrir", "srvCardPanel", "srvCardRemoto"].forEach(id => { if ($(id)) $(id).href = SERVIDOR_URL; });
+    // Se abre por el puente servidor.html, que le pasa la sesión de Alterna al servidor (sin contraseña)
+    ["srvAbrir", "srvCardPanel", "srvCardRemoto"].forEach(id => { if ($(id)) $(id).href = "servidor.html"; });
 
     window.abrirServidor = abrirServidor;
     window.revisarServidor = revisarServidor;

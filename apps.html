@@ -162,6 +162,8 @@
         let volver = "";
         try { volver = sessionStorage.getItem("alterna_volver") || ""; sessionStorage.removeItem("alterna_volver"); } catch { /* sin almacenamiento */ }
         if (/^it\.html#(equipo|ticket)=[\w-]{1,40}$/.test(volver) && apps.some(a => /^it\.html/.test(a.url || ""))) { location.replace(volver); return; }
+        // Se pidió entrar al servidor (panel del Ubuntu): vuelve al puente, que lo abre con esta sesión
+        if (volver === "servidor.html") { location.replace(volver); return; }
         if (apps.length === 1) { location.replace(urlSegura(apps[0].url)); return; }
         if (!apps.length) {
             grid.innerHTML = `<div class="estado" style="grid-column:1/-1"><b>Aún no tienes acceso a ninguna aplicación.</b><br>Pide acceso al área de IT.</div>`;
