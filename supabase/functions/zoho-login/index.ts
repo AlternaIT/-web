@@ -26,6 +26,7 @@ const SERVIDORES_ZOHO = new Set([
 // Páginas a las que Zoho puede regresar (deben coincidir con las del cliente en api-console.zoho.com)
 const REDIRECCIONES = new Set([
   "https://alternait.github.io/-web/index.html",
+  "https://srv.tailbbc6ef.ts.net/web/index.html",     // web servida por el servidor Ubuntu
   "http://localhost:5500/index.html",
 ]);
 

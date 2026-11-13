@@ -3,7 +3,8 @@
    • "Probar conexión" solo comprueba que la dirección responde (petición sin cookies ni datos).
    Para cambiar de servidor: SERVIDOR_URL aquí y en servidor.html. */
 (() => {
-    const SERVIDOR_URL = "https://srv.tailbbc6ef.ts.net/";
+    // Si esta web ya la sirve el propio servidor (en /web/), el panel está en la raíz de la misma dirección
+    const SERVIDOR_URL = location.pathname.startsWith("/web/") ? location.origin + "/" : "https://srv.tailbbc6ef.ts.net/";
     const ESPERA_MS = 7000;
 
     const $ = id => document.getElementById(id);

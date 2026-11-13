@@ -41,7 +41,8 @@
         <a class="btn" id="btn" href="servidor.html">Intentar de nuevo</a>
     </div>
 <script>
-    const SERVIDOR_URL = "https://srv.tailbbc6ef.ts.net/";
+    // Si esta web ya la sirve el propio servidor (en /web/), el panel está en la raíz de la misma dirección
+    const SERVIDOR_URL = location.pathname.startsWith("/web/") ? location.origin + "/" : "https://srv.tailbbc6ef.ts.net/";
 
     (() => {
         let token = "";
