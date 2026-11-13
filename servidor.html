@@ -6,12 +6,12 @@
     <meta name="robots" content="noindex">
     <title>Alterna | Servidor</title>
     <!--
-      Puente al servidor (panel y escritorio remoto del Ubuntu).
-      · Con sesión de Alterna: abre el servidor y le pasa la sesión (#alterna=…, nunca viaja en la URL
-        al servidor web; el panel la confirma con Alterna y la borra de la barra de direcciones).
+      Puente al panel del servidor Ubuntu (estadísticas y escritorio remoto).
+      · El panel tiene una dirección secreta (solo IT). Aquí se manda la sesión de Alterna al servidor;
+        si es válida y tiene acceso a IT, el servidor responde con esa dirección y se abre.
       · Sin sesión: va al login de Alterna y, al entrar, apps.html regresa aquí solo.
-      · #salir: la sesión guardada ya no vale (la rechazó el servidor) → se pide entrar de nuevo.
-      Para cambiar de servidor: SERVIDOR_URL.
+      · #salir: la sesión guardada ya no vale → se pide entrar de nuevo.
+      · Desde GitHub Pages (respaldo) se pasa al servidor, porque la sesión se guarda por dirección.
     -->
     <style>
         :root { color-scheme: dark; }
@@ -41,32 +41,54 @@
         <a class="btn" id="btn" href="servidor.html">Intentar de nuevo</a>
     </div>
 <script>
-    // Panel del servidor Ubuntu (en /panel/). Si esta web ya la sirve el propio servidor, es la misma dirección
-    const SERVIDOR_URL = (location.hostname.endsWith("github.io") || !location.protocol.startsWith("http") ? "https://srv.tailbbc6ef.ts.net" : location.origin) + "/panel/";
+    const SERVIDOR = "https://srv.tailbbc6ef.ts.net";
+    const $ = (id) => document.getElementById(id);
 
-    (() => {
-        let token = "";
-        if (location.hash === "#salir") {
-            try { localStorage.removeItem("usuario"); } catch { /* sin almacenamiento */ }
-            history.replaceState(null, "", location.pathname);
-        } else {
-            try { token = JSON.parse(localStorage.getItem("usuario"))?.token || ""; } catch { /* sin sesión */ }
-        }
+    function falla(texto) {
+        $("texto").textContent = texto;
+        $("giro").style.display = "none";
+        $("btn").style.display = "block";
+    }
 
-        if (!/^[\w-]{16,128}$/.test(token)) {
-            // Sin sesión: al login de Alterna; después del login, apps.html regresa a esta página
-            try { sessionStorage.setItem("alterna_volver", "servidor.html"); } catch { /* sin almacenamiento */ }
-            document.getElementById("texto").textContent = "Inicia sesión en Alterna para entrar al servidor…";
-            location.replace("index.html");
+    function alLogin() {
+        // Sin sesión: al login de Alterna; después del login, apps.html regresa a esta página
+        try { localStorage.removeItem("usuario"); } catch { /* sin almacenamiento */ }
+        try { sessionStorage.setItem("alterna_volver", "servidor.html"); } catch { /* sin almacenamiento */ }
+        $("texto").textContent = "Inicia sesión en Alterna para entrar al servidor…";
+        location.replace("index.html");
+    }
+
+    (async () => {
+        // Esta página solo funciona servida por el propio servidor (misma dirección que el panel)
+        if (location.hostname.endsWith("github.io") || !location.protocol.startsWith("http")) {
+            location.replace(SERVIDOR + "/servidor.html");
             return;
         }
-        location.replace(SERVIDOR_URL + "#alterna=" + encodeURIComponent(token));
-        // Si el navegador no pudo salir de aquí (bloqueado, sin red), se deja un botón
-        setTimeout(() => {
-            document.getElementById("texto").textContent = "No se pudo abrir el servidor. Revisa tu conexión e inténtalo de nuevo.";
-            document.getElementById("giro").style.display = "none";
-            document.getElementById("btn").style.display = "block";
-        }, 8000);
+        let token = "";
+        if (location.hash === "#salir") {
+            history.replaceState(null, "", location.pathname);
+            return alLogin();
+        }
+        try { token = JSON.parse(localStorage.getItem("usuario"))?.token || ""; } catch { /* sin sesión */ }
+        if (!/^[\w-]{16,128}$/.test(token)) return alLogin();
+
+        try {
+            const r = await fetch("/api/sso", {
+                method: "POST", credentials: "same-origin", cache: "no-store",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok && typeof d.panel === "string" && /^\/[\w-]{40,}\/$/.test(d.panel)) {
+                location.replace(d.panel);
+                return;
+            }
+            if (r.status === 401) return alLogin();
+            if (r.status === 403) return falla(d.error || "Tu usuario de Alterna no tiene acceso al servidor.");
+            falla(d.error || "No se pudo abrir el servidor. Inténtalo de nuevo.");
+        } catch {
+            falla("No se pudo abrir el servidor. Revisa tu conexión e inténtalo de nuevo.");
+        }
     })();
 </script>
 </body>
